@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Arthere 2.0",
+    "slug": "arthere-2",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "scheme": "arthere",
+    "userInterfaceStyle": "light"
+  }
+}
