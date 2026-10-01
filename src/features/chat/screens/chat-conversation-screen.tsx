@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  Alert,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -20,17 +21,25 @@ import { colors } from '@/shared/theme/colors';
 export default function ChatConversationScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { conversations, sendMessage } = useChat();
+  const { conversations, sendMessage, carregarMensagens } = useChat();
   const [draft, setDraft] = useState('');
-  const conversation = conversations.find(
-    (item) => item.id === route.params?.conversationId,
-  );
+  const conversation = conversations.find((item) => item.id === route.params?.conversationId);
+
+  useEffect(() => {
+    if (route.params?.conversationId) void carregarMensagens(route.params.conversationId);
+  }, [route.params?.conversationId, carregarMensagens]);
 
   if (!conversation) return null;
 
-  const submit = () => {
-    sendMessage(conversation.id, draft);
-    setDraft('');
+  const submit = async () => {
+    const texto = draft.trim();
+    if (!texto) return;
+    try {
+      await sendMessage(conversation.id, texto);
+      setDraft('');
+    } catch (error) {
+      Alert.alert('Não foi possível enviar', error instanceof Error ? error.message : 'Tente novamente.');
+    }
   };
 
   return (
