@@ -1,122 +1,170 @@
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "mysql" }
+generator client {
+  provider = "prisma-client-js"
+}
 
-enum TipoUsuario { AGENTE CONTRATANTE ADMIN }
-enum StatusProjeto { ABERTO EM_ANDAMENTO CONCLUIDO CANCELADO }
-enum StatusCandidatura { PENDENTE ACEITA RECUSADA }
+datasource db {
+  provider = "mysql"
+}
+
+enum TipoUsuario {
+  AGENTE
+  CONTRATANTE
+  ADMIN
+}
+
+enum StatusProjeto {
+  ABERTO
+  EM_ANDAMENTO
+  CONCLUIDO
+  CANCELADO
+}
+
+enum StatusCandidatura {
+  PENDENTE
+  ACEITA
+  RECUSADA
+}
 
 model Usuario {
-  id String @id @default(uuid())
-  email String @unique
-  senha String
-  tipo TipoUsuario
-  criadoEm DateTime @default(now())
-  agente AgenteCriativo?
+  id          String        @id @default(uuid())
+  email       String        @unique
+  senha       String
+  tipo        TipoUsuario
+  criadoEm    DateTime      @default(now())
+  agente      AgenteCriativo?
   contratante Contratante?
   @@map("usuario")
 }
+
 model AgenteCriativo {
-  id String @id @default(uuid())
-  usuarioId String @unique
-  usuario Usuario @relation(fields:[usuarioId],references:[id],onDelete:Cascade)
-  nome String
-  especialidade String
-  bio String? @db.Text
-  cidade String @default("")
-  endereco String @default("")
-  latitude Float?
-  longitude Float?
-  visivelMapa Boolean @default(false)
-  avatarUrl String?
-  notaMedia Float @default(0)
-  totalAvaliacoes Int @default(0)
-  totalProjetos Int @default(0)
-  criadoEm DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
-  portfolio Portfolio[]
-  candidaturas Candidatura[]
-  avaliacoes Avaliacao[]
+  id               String         @id @default(uuid())
+  usuarioId        String         @unique
+  usuario          Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  nome             String
+  especialidade    String
+  bio              String?        @db.Text
+  cidade           String         @default("")
+  endereco         String         @default("")
+  latitude         Float?
+  longitude        Float?
+  visivelMapa      Boolean        @default(false)
+  avatarUrl        String?
+  notaMedia        Float          @default(0)
+  totalAvaliacoes  Int            @default(0)
+  totalProjetos    Int            @default(0)
+  criadoEm         DateTime       @default(now())
+  atualizadoEm     DateTime       @updatedAt
+  portfolio        Portfolio[]
+  candidaturas     Candidatura[]
+  avaliacoes       Avaliacao[]
+  @@index([cidade])
+  @@index([especialidade])
   @@map("agente_criativo")
 }
+
 model Contratante {
-  id String @id @default(uuid())
-  usuarioId String @unique
-  usuario Usuario @relation(fields:[usuarioId],references:[id],onDelete:Cascade)
-  nome String
-  empresa String?
-  avatarUrl String?
-  telefone String?
-  descricao String? @db.Text
-  site String?
-  cidade String?
-  endereco String?
-  categoria String?
-  criadoEm DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
-  projetos Projeto[]
-  avaliacoes Avaliacao[]
+  id          String      @id @default(uuid())
+  usuarioId   String      @unique
+  usuario     Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  nome        String
+  nomeSocial  String?
+  pronomes    String?
+  cpfCnpj     String?     @unique
+  empresa     String?
+  avatarUrl   String?
+  telefone    String?
+  descricao   String?     @db.Text
+  site        String?
+  cidade      String?
+  endereco    String?
+  categoria   String?
+  criadoEm    DateTime    @default(now())
+  atualizadoEm DateTime   @updatedAt
+  projetos    Projeto[]
+  avaliacoes  Avaliacao[]
+  eventos     Evento[]
+  @@index([cidade])
   @@map("contratante")
 }
+
 model Projeto {
-  id String @id @default(uuid())
-  titulo String
-  descricao String @db.Text
-  categoria String
-  status StatusProjeto @default(ABERTO)
-  orcamento Float?
-  dataEvento DateTime?
+  id            String             @id @default(uuid())
+  titulo        String
+  descricao     String             @db.Text
+  categoria     String
+  status        StatusProjeto      @default(ABERTO)
+  orcamento     Float?
+  dataEvento    DateTime?
   contratanteId String
-  contratante Contratante @relation(fields:[contratanteId],references:[id],onDelete:Cascade)
-  criadoEm DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
+  contratante   Contratante        @relation(fields: [contratanteId], references: [id], onDelete: Cascade)
+  criadoEm     DateTime           @default(now())
+  atualizadoEm DateTime           @updatedAt
   candidaturas Candidatura[]
+  @@index([status])
+  @@index([categoria])
+  @@index([contratanteId])
   @@map("projeto")
 }
+
 model Candidatura {
-  id String @id @default(uuid())
-  status StatusCandidatura @default(PENDENTE)
-  mensagem String? @db.Text
-  agenteId String
-  agente AgenteCriativo @relation(fields:[agenteId],references:[id],onDelete:Cascade)
-  projetoId String
-  projeto Projeto @relation(fields:[projetoId],references:[id],onDelete:Cascade)
-  criadoEm DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
-  @@unique([agenteId,projetoId])
+  id            String            @id @default(uuid())
+  status        StatusCandidatura @default(PENDENTE)
+  mensagem      String?           @db.Text
+  agenteId      String
+  agente        AgenteCriativo    @relation(fields: [agenteId], references: [id], onDelete: Cascade)
+  projetoId     String
+  projeto       Projeto           @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  criadoEm      DateTime          @default(now())
+  atualizadoEm  DateTime          @updatedAt
+  @@unique([agenteId, projetoId])
+  @@index([status])
+  @@index([projetoId])
   @@map("candidatura")
 }
+
 model Portfolio {
-  id String @id @default(uuid())
-  imageUrl String
-  titulo String?
-  descricao String?
-  agenteId String
-  agente AgenteCriativo @relation(fields:[agenteId],references:[id],onDelete:Cascade)
-  criadoEm DateTime @default(now())
+  id          String          @id @default(uuid())
+  imageUrl    String
+  titulo      String?
+  descricao   String?         @db.Text
+  agenteId    String
+  agente      AgenteCriativo  @relation(fields: [agenteId], references: [id], onDelete: Cascade)
+  criadoEm    DateTime        @default(now())
   @@map("portfolio")
 }
+
 model Avaliacao {
-  id String @id @default(uuid())
-  nota Int
-  comentario String? @db.Text
-  agenteId String
-  agente AgenteCriativo @relation(fields:[agenteId],references:[id],onDelete:Cascade)
+  id            String       @id @default(uuid())
+  nota          Int
+  comentario    String?      @db.Text
+  agenteId      String
+  agente        AgenteCriativo @relation(fields: [agenteId], references: [id], onDelete: Cascade)
   contratanteId String
-  contratante Contratante @relation(fields:[contratanteId],references:[id],onDelete:Cascade)
-  criadoEm DateTime @default(now())
+  contratante   Contratante  @relation(fields: [contratanteId], references: [id], onDelete: Cascade)
+  criadoEm      DateTime     @default(now())
+  @@index([agenteId])
+  @@index([contratanteId])
   @@map("avaliacao")
 }
+
 model Evento {
-  id String @id @default(uuid())
-  titulo String
-  descricao String @db.Text
-  categoria String
-  local String
-  cidade String
-  dataEvento DateTime
-  horario String
-  organizador String
-  premium Boolean @default(false)
-  criadoEm DateTime @default(now())
+  id             String       @id @default(uuid())
+  titulo         String
+  descricao      String       @db.Text
+  categoria      String
+  local          String
+  cidade         String
+  dataEvento     DateTime
+  horario        String
+  organizador    String
+  premium        Boolean      @default(false)
+  fixado         Boolean      @default(false)
+  contratanteId  String?
+  contratante    Contratante? @relation(fields: [contratanteId], references: [id], onDelete: SetNull)
+  criadoEm       DateTime     @default(now())
+  @@index([cidade])
+  @@index([categoria])
+  @@index([dataEvento])
+  @@index([premium, fixado])
   @@map("evento")
 }
