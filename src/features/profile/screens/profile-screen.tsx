@@ -41,26 +41,6 @@ export interface AgentePerfil {
   portfolio: PortfolioItem[];
 }
 
-export const MOCK_AGENT_PROFILE: AgentePerfil = {
-  id: '1',
-  nome: 'Marina Oliveira',
-  especialidade: 'Fotógrafa e videomaker',
-  bio: 'Transformo momentos em imagens com personalidade. Disponível para ensaios, eventos e projetos autorais.',
-  cidade: 'Santos, SP',
-  avatarUrl: 'https://i.pravatar.cc/300?img=47',
-  notaMedia: 4.8,
-  totalAvaliacoes: 127,
-  totalProjetos: 94,
-  portfolio: [
-    { id: 'p1', imageUrl: 'https://picsum.photos/seed/arthere-1/400/400', titulo: 'Ensaio urbano' },
-    { id: 'p2', imageUrl: 'https://picsum.photos/seed/arthere-2/400/400', titulo: 'Casamento Ana & Bruno' },
-    { id: 'p3', imageUrl: 'https://picsum.photos/seed/arthere-3/400/400', titulo: 'Editorial de moda' },
-    { id: 'p4', imageUrl: 'https://picsum.photos/seed/arthere-4/400/400', titulo: 'Evento cultural' },
-    { id: 'p5', imageUrl: 'https://picsum.photos/seed/arthere-5/400/400', titulo: 'Retrato' },
-    { id: 'p6', imageUrl: 'https://picsum.photos/seed/arthere-6/400/400', titulo: 'Produto' },
-  ],
-};
-
 export default function ProfileScreen() {
   const { user } = useUser();
 
