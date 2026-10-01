@@ -4,19 +4,13 @@ API NestJS + Prisma 7 + MySQL/MariaDB.
 
 ## Configuração
 
-Crie `backend/.env` a partir de `.env.example`.
-
-Importante: se a senha do MySQL tiver caracteres reservados em uma URL, como `@`, codifique o caractere. Por exemplo, `@` deve ser representado como `%40`.
-
-Nunca envie `.env` para o GitHub.
+Crie backend/.env a partir de .env.example. Nunca envie .env para o GitHub.
 
 ## Banco existente
 
-Esta versão não usa `prisma migrate reset` e não apaga os dados existentes.
+Esta versão é aditiva e não usa prisma migrate reset.
 
-### Se o banco já possui as tabelas
-
-Se as tabelas `usuario`, `agente_criativo`, `contratante`, `projeto`, `candidatura`, `portfolio` e `avaliacao` já existem, mas o banco não possui a tabela `_prisma_migrations`, faça o baseline da migração inicial antes de aplicar a complementação:
+Se o banco já possui as tabelas iniciais, mas não possui _prisma_migrations, registre a migração inicial e depois aplique somente as complementares:
 
 ```bash
 cd backend
@@ -29,11 +23,7 @@ npm run build
 npm run start:dev
 ```
 
-O comando `migrate resolve` apenas registra que a estrutura inicial já existe; ele não recria nem apaga as tabelas. Depois disso, `migrate deploy` aplica somente a migração de complementação.
-
-Se o banco já possui `_prisma_migrations` e a migração inicial está registrada, não execute `migrate resolve` novamente. Use apenas `npm run prisma:deploy`.
-
-Execute:
+Se _prisma_migrations já existe e a migração inicial está registrada, use:
 
 ```bash
 cd backend
@@ -45,63 +35,50 @@ npm run build
 npm run start:dev
 ```
 
-`prisma migrate deploy` aplica somente as migrações ainda não registradas. A migração `20261001120000_database_completion` complementa o banco inicial com os campos de contratante e a tabela de eventos.
+## Migrações adicionais
+
+- 20261001120000_database_completion: completa campos de contratante e cria eventos.
+- 20261001150000_event_participation_requests: cria solicitações de participação em eventos.
+- 20261001153000_chat_persistence: cria conversas e mensagens.
 
 ## Verificação
 
-Depois de iniciar a API:
-
-```text
-GET http://localhost:3000/health
-```
-
-Resposta esperada:
-
-```json
-{"status":"ok","database":"connected"}
-```
+GET /health deve retornar status ok e database connected.
 
 ## Recursos persistentes
 
-- autenticação com JWT e senha com bcrypt;
-- cadastro de agente criativo;
-- cadastro de contratante com CPF/CNPJ, nome social e pronomes;
-- edição de perfil;
-- busca de agentes;
-- portfólio;
-- oportunidades/projetos;
-- candidaturas;
-- aceite/recusa de candidaturas;
-- avaliações e cálculo da nota média;
-- calendário de eventos;
-- eventos premium/fixados;
-- busca e filtros de eventos;
-- autorização por proprietário;
-- conexão real com MySQL/MariaDB.
+Autenticação, agentes, contratantes, edição de perfil, mapa, portfólio, projetos, candidaturas, avaliações, eventos, solicitações de participação, conversas e mensagens.
 
-## API
+## API pública
 
-### Públicos
+POST /auth/register
+POST /auth/login
+GET /usuarios/agentes
+GET /projetos
+GET /projetos/:id
+GET /eventos
+GET /eventos/:id
+GET /portfolio/:agenteId
+GET /avaliacoes/agente/:agenteId
+GET /health
 
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /usuarios/agentes`
-- `GET /projetos`
-- `GET /projetos/:id`
-- `GET /eventos`
-- `GET /eventos/:id`
-- `GET /portfolio/:agenteId`
-- `GET /avaliacoes/agente/:agenteId`
-- `GET /health`
+## API autenticada
 
-### Autenticados
-
-- `GET/PATCH /usuarios/me`
-- `POST/PATCH /projetos`
-- `POST /projetos/:id/candidaturas`
-- `GET /projetos/minhas/candidaturas`
-- `GET /projetos/:id/candidaturas`
-- `PATCH /projetos/candidaturas/:id`
-- `POST/PATCH/DELETE /eventos`
-- `POST/PATCH/DELETE /portfolio`
-- `POST /avaliacoes/agente/:agenteId`
+GET/PATCH /usuarios/me
+GET /projetos/minhas
+GET /projetos/minhas/candidaturas
+GET /projetos/:id/candidaturas
+POST/PATCH /projetos
+POST /projetos/:id/candidaturas
+PATCH /projetos/candidaturas/:id
+POST/PATCH/DELETE /eventos
+GET /eventos/minhas/solicitacoes
+POST /eventos/:id/solicitacoes
+PATCH /eventos/solicitacoes/:id
+POST/PATCH/DELETE /portfolio
+POST /avaliacoes/agente/:agenteId
+GET /chat/conversas
+POST /chat/conversas
+POST /chat/agentes/:agenteId/conversa
+GET /chat/conversas/:id/mensagens
+POST /chat/conversas/:id/mensagens
