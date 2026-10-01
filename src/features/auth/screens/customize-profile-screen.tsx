@@ -35,18 +35,10 @@ export default function CustomizeProfileScreen() {
 
     try {
       setCarregando(true);
-      await new Promise((resolve) => setTimeout(resolve, 600));
-
-      if (updateProfile) {
-        updateProfile({
-          nome: nomeEmpresa,
-          cidade,
-        });
-      }
-
+      await updateProfile({ nome: nomeEmpresa.trim(), cidade: cidade.trim(), telefone: telefone.trim() || undefined, categoria: interessePrincipal });
       navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
-    } catch {
-      Alert.alert("Erro", "Falha ao salvar preferências de perfil.");
+    } catch (error) {
+      Alert.alert("Erro", error instanceof Error ? error.message : "Falha ao salvar preferências de perfil.");
     } finally {
       setCarregando(false);
     }
