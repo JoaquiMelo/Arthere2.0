@@ -256,6 +256,32 @@ export async function deleteEvent(id: string) {
   });
 }
 
+export async function listarConversas() {
+  return requestAutenticado<any[]>('/chat/conversas');
+}
+
+export async function iniciarChatComAgente(agenteId: string) {
+  return requestAutenticado<any>('/chat/agentes/' + agenteId + '/conversa', { method: 'POST' });
+}
+
+export async function criarConversa(usuarioId: string) {
+  return requestAutenticado<any>('/chat/conversas', {
+    method: 'POST',
+    body: JSON.stringify({ usuarioId }),
+  });
+}
+
+export async function mensagensDaConversa(conversaId: string) {
+  return requestAutenticado<any[]>('/chat/conversas/' + conversaId + '/mensagens');
+}
+
+export async function enviarMensagem(conversaId: string, texto: string) {
+  return requestAutenticado<any>('/chat/conversas/' + conversaId + '/mensagens', {
+    method: 'POST',
+    body: JSON.stringify({ texto }),
+  });
+}
+
 export async function minhasSolicitacoesEvento() {
   return requestAutenticado<any[]>('/eventos/minhas/solicitacoes');
 }
