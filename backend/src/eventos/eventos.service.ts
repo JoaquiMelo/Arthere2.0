@@ -1,1 +1,8 @@
-import {Injectable} from '@nestjs/common'; import {PrismaService} from '../prisma/prisma.service'; @Injectable() export class EventosService{constructor(private prisma:PrismaService){} listar(cidade?:string){return this.prisma.evento.findMany({where:cidade?{cidade:{contains:cidade}}:undefined,orderBy:[{premium:'desc'},{dataEvento:'asc'}]})}}
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class EventosService {
+  listar(cidade?: string) {
+    return [];
+  }
+}

@@ -1,1 +1,116 @@
-import {ConflictException,ForbiddenException,Injectable,NotFoundException} from '@nestjs/common'; import {PrismaService} from '../prisma/prisma.service'; @Injectable() export class ProjetosService{constructor(private prisma:PrismaService){} listar(){return this.prisma.projeto.findMany({where:{status:'ABERTO'},include:{contratante:{select:{id:true,nome:true,empresa:true,avatarUrl:true,cidade:true}}},orderBy:{criadoEm:'desc'}})} async criar(uid:string,d:any){const c=await this.prisma.contratante.findUnique({where:{usuarioId:uid}});if(!c)throw new ForbiddenException('Somente contratantes podem publicar oportunidades.');if(!d.titulo||!d.descricao||!d.categoria)throw new ConflictException('Título, descrição e categoria são obrigatórios.');return this.prisma.projeto.create({data:{titulo:d.titulo.trim(),descricao:d.descricao.trim(),categoria:d.categoria.trim(),orcamento:d.orcamento==null?undefined:Number(d.orcamento),dataEvento:d.dataEvento?new Date(d.dataEvento):undefined,contratanteId:c.id}})} async candidatar(uid:string,pid:string,mensagem?:string){const a=await this.prisma.agenteCriativo.findUnique({where:{usuarioId:uid}});if(!a)throw new ForbiddenException('Somente agentes criativos podem se candidatar.');const p=await this.prisma.projeto.findUnique({where:{id:pid}});if(!p||p.status!=='ABERTO')throw new NotFoundException('Oportunidade não está disponível.');try{return await this.prisma.candidatura.create({data:{agenteId:a.id,projetoId:pid,mensagem:mensagem?.trim()||undefined}})}catch(e:any){if(e?.code==='P2002')throw new ConflictException('Você já se candidatou a esta oportunidade.');throw e}}}
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class ProjetosService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  listar() {
+    return this.prisma.projeto.findMany({
+      where: {
+        status: 'ABERTO',
+      },
+      include: {
+        contratante: {
+          select: {
+            id: true,
+            nome: true,
+            empresa: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: {
+        criadoEm: 'desc',
+      },
+    });
+  }
+
+  async criar(uid: string, dados: any) {
+    const contratante = await this.prisma.contratante.findUnique({
+      where: {
+        usuarioId: uid,
+      },
+    });
+
+    if (!contratante) {
+      throw new ForbiddenException(
+        'Somente contratantes podem publicar oportunidades.',
+      );
+    }
+
+    if (!dados.titulo || !dados.descricao || !dados.categoria) {
+      throw new ConflictException(
+        'Título, descrição e categoria são obrigatórios.',
+      );
+    }
+
+    return this.prisma.projeto.create({
+      data: {
+        titulo: dados.titulo.trim(),
+        descricao: dados.descricao.trim(),
+        categoria: dados.categoria.trim(),
+        orcamento:
+          dados.orcamento == null ? undefined : Number(dados.orcamento),
+        dataEvento: dados.dataEvento
+          ? new Date(dados.dataEvento)
+          : undefined,
+        contratanteId: contratante.id,
+      },
+    });
+  }
+
+  async candidatar(
+    uid: string,
+    projetoId: string,
+    mensagem?: string,
+  ) {
+    const agente = await this.prisma.agenteCriativo.findUnique({
+      where: {
+        usuarioId: uid,
+      },
+    });
+
+    if (!agente) {
+      throw new ForbiddenException(
+        'Somente agentes criativos podem se candidatar.',
+      );
+    }
+
+    const projeto = await this.prisma.projeto.findUnique({
+      where: {
+        id: projetoId,
+      },
+    });
+
+    if (!projeto || projeto.status !== 'ABERTO') {
+      throw new NotFoundException(
+        'Oportunidade não está disponível.',
+      );
+    }
+
+    try {
+      return await this.prisma.candidatura.create({
+        data: {
+          agenteId: agente.id,
+          projetoId,
+          mensagem: mensagem?.trim() || undefined,
+        },
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
+        throw new ConflictException(
+          'Você já se candidatou a esta oportunidade.',
+        );
+      }
+
+      throw error;
+    }
+  }
+}
