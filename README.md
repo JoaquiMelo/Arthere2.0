@@ -1,29 +1,46 @@
 # Arthere 2.0
 
-Versão do Arthere com persistência real via API NestJS + Prisma + MySQL/MariaDB.
+Aplicativo móvel completo do Arthere conectado a uma API NestJS + Prisma 7 + MySQL/MariaDB.
 
-## O que mudou
-- Removidos dados mockados da nova versão.
-- Cadastro e login persistem no banco.
-- Senhas são armazenadas com bcrypt.
-- Sessão usa JWT e SecureStore.
-- Perfis de agente e contratante são persistidos.
-- Oportunidades/projetos e candidaturas usam Prisma.
-- Eventos são carregados do banco.
-- O endpoint público de cadastro aceita somente AGENTE ou CONTRATANTE; ADMIN não pode ser criado pelo app.
+## Frontend
+
+A interface foi trazida do projeto completo Arthere_, incluindo mapa regional de agentes, busca e filtros, perfis de agente e contratante, edição de perfil, portfólio, oportunidades e candidaturas, calendário regional, eventos premium/destaques, solicitações de participação, avaliações, chat e configurações.
+
+Os recursos principais não dependem de dados de demonstração. Quando não há registros, a interface apresenta o estado vazio real.
 
 ## Backend
-`cd backend`, copie `.env.example` para `.env`, configure `DATABASE_URL` e `JWT_SECRET`, depois:
-`npm install`
-`npx prisma generate`
-`npx prisma migrate deploy`
-`npm run start:dev`
+
+```bash
+cd backend
+npm install
+npm run prisma:generate
+npm run prisma:validate
+npm run prisma:deploy
+npm run build
+npm run start:dev
+```
+
+O backend não executa prisma migrate reset. Para banco existente, siga backend/README.md.
 
 ## Mobile
-Na raiz:
-`npm install`
 
-Defina `EXPO_PUBLIC_API_URL` apontando para o IP/host onde a API NestJS está rodando. Em aparelho físico, use o IP da máquina na rede local em vez de `localhost`.
+```bash
+npm install
+npx expo start -c
+```
 
-## Observação
-Esta versão não inclui seed de dados fictícios. Após a migração, listas vazias são esperadas até usuários, projetos e eventos reais serem cadastrados.
+Configure EXPO_PUBLIC_API_URL no .env da raiz do mobile. Em aparelho físico, use o IPv4 do computador na rede local, não localhost.
+
+## Persistência
+
+As migrações adicionais desta versão são:
+
+- 20261001120000_database_completion
+- 20261001150000_event_participation_requests
+- 20261001153000_chat_persistence
+
+Elas adicionam campos de contratante, eventos, solicitações de participação, conversas e mensagens sem resetar o banco.
+
+## Imagens
+
+O portfólio aceita URL pública http/https para persistência. A seleção de imagem local funciona como pré-visualização; upload binário para servidor ainda não faz parte desta versão.
