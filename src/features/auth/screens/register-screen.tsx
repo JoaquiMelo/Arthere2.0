@@ -9,9 +9,12 @@ type TipoUsuario = 'AGENTE' | 'CONTRATANTE';
 
 export default function RegisterScreen() {
   const navigation = useNavigation<any>();
-  const { updateProfile } = useUser();
+  const { register } = useUser();
   const [tipoUsuario, setTipoUsuario] = useState<TipoUsuario>('AGENTE');
   const [nome, setNome] = useState('');
+  const [nomeSocial, setNomeSocial] = useState('');
+  const [pronomes, setPronomes] = useState('');
+  const [cpfCnpj, setCpfCnpj] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
@@ -47,32 +50,40 @@ export default function RegisterScreen() {
       Alert.alert('Atenção', 'Informe sua área de atuação.');
       return;
     }
+    if (tipoUsuario === 'CONTRATANTE' && !cpfCnpj.trim()) {
+      Alert.alert('CPF/CNPJ obrigatório', 'Informe o CPF ou CNPJ do contratante.');
+      return;
+    }
     if (tipoUsuario === 'CONTRATANTE' && (!empresa.trim() || !categoria.trim())) {
       Alert.alert('Atenção', 'Informe a empresa e a categoria da organização.');
       return;
     }
 
     setCarregando(true);
-
-    // Cadastro temporário: os dados ficam apenas no estado local do app.
-    updateProfile({
-      id: `local-${Date.now()}`,
-      nome: nome.trim(),
-      email: email.trim().toLowerCase(),
-      tipo: tipoUsuario,
-      especialidade: especialidade.trim(),
-      empresa: empresa.trim(),
-      telefone: telefone.trim(),
-      descricao: bio.trim(),
-      bio: bio.trim(),
-      site: site.trim(),
-      cidade: cidade.trim(),
-      endereco: endereco.trim(),
-      categoria: categoria.trim(),
-    });
-
-    setCarregando(false);
-    navigation.navigate(tipoUsuario === 'AGENTE' ? 'CreatePortfolio' : 'CustomizeProfile');
+    try {
+      await register({
+        nome: nome.trim(),
+        nomeSocial: nomeSocial.trim() || undefined,
+        pronomes: pronomes.trim() || undefined,
+        cpfCnpj: cpfCnpj.trim() || undefined,
+        email: email.trim().toLowerCase(),
+        senha,
+        tipo: tipoUsuario,
+        especialidade: especialidade.trim() || undefined,
+        empresa: empresa.trim() || undefined,
+        telefone: telefone.trim() || undefined,
+        descricao: bio.trim() || undefined,
+        site: site.trim() || undefined,
+        cidade: cidade.trim(),
+        endereco: endereco.trim() || undefined,
+        categoria: categoria.trim() || undefined,
+      });
+      navigation.navigate(tipoUsuario === 'AGENTE' ? 'CreatePortfolio' : 'CustomizeProfile');
+    } catch (error) {
+      Alert.alert('Não foi possível criar a conta', error instanceof Error ? error.message : 'Tente novamente.');
+    } finally {
+      setCarregando(false);
+    }
   };
 
   const renderInput = (
@@ -142,6 +153,9 @@ export default function RegisterScreen() {
           </View>
 
           {renderInput('NOME COMPLETO', nome, setNome, 'Seu nome completo', 'person-outline', { autoCapitalize: 'words' })}
+          {renderInput('NOME SOCIAL (OPCIONAL)', nomeSocial, setNomeSocial, 'Nome social', 'person-outline', { autoCapitalize: 'words' })}
+          {renderInput('PRONOMES (OPCIONAL)', pronomes, setPronomes, 'Ex.: ela/dela, ele/dele', 'people-outline')}
+          {tipoUsuario === 'CONTRATANTE' && renderInput('CPF OU CNPJ', cpfCnpj, setCpfCnpj, 'Digite CPF ou CNPJ', 'card-outline', { keyboardType: 'numeric' })}
           {tipoUsuario === 'CONTRATANTE' && renderInput('EMPRESA / ORGANIZAÇÃO', empresa, setEmpresa, 'Nome da empresa ou organização', 'business-outline', { autoCapitalize: 'words' })}
           {tipoUsuario === 'CONTRATANTE' && renderInput('SEGMENTO', categoria, setCategoria, 'Ex.: eventos, publicidade, cultura', 'briefcase-outline', { autoCapitalize: 'sentences' })}
           {tipoUsuario === 'AGENTE' && renderInput('ÁREA DE ATUAÇÃO', especialidade, setEspecialidade, 'Ex.: fotografia, design, música', 'sparkles-outline', { autoCapitalize: 'sentences' })}
