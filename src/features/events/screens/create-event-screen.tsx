@@ -133,45 +133,43 @@ export default function CreateEventScreen() {
     }
   };
 
-  const publicar = () => {
-    if (
-      !titulo.trim() ||
-      !descricao.trim() ||
-      !data ||
-      !horario ||
-      !local.trim() ||
-      !cidade.trim() ||
-      !organizador.trim()
-    ) {
+  const [publicando, setPublicando] = useState(false);
+
+  const publicar = async () => {
+    if (!titulo.trim() || !descricao.trim() || !data || !horario || !local.trim() || !cidade.trim() || !organizador.trim()) {
       setErro("Preencha todos os campos obrigatórios.");
       return;
     }
-
     if (!dataValida) {
       setErro("Use a data no formato AAAA-MM-DD. Ex.: 2026-10-18.");
       return;
     }
-
     if (!horarioValido) {
       setErro("Use o horário no formato HH:MM. Ex.: 19:30.");
       return;
     }
-
-    criarEvento({
-      titulo: titulo.trim(),
-      categoria,
-      descricao: descricao.trim(),
-      local: local.trim(),
-      cidade: cidade.trim(),
-      data,
-      horario,
-      organizador: organizador.trim(),
-      premium,
-      destaque,
-      imagemUrl: imagemUrl.trim() || imagemPadrao,
-    });
-
-    navigation.goBack();
+    setPublicando(true);
+    try {
+      await criarEvento({
+        titulo: titulo.trim(),
+        categoria,
+        descricao: descricao.trim(),
+        local: local.trim(),
+        cidade: cidade.trim(),
+        data,
+        horario,
+        organizador: organizador.trim(),
+        premium,
+        destaque,
+        imagemUrl: imagemUrl.trim() || undefined,
+      });
+      Alert.alert("Evento publicado", "O evento foi salvo no banco de dados e já está disponível na agenda.");
+      navigation.goBack();
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : "Não foi possível publicar o evento.");
+    } finally {
+      setPublicando(false);
+    }
   };
 
   return (
@@ -753,7 +751,7 @@ export default function CreateEventScreen() {
           )}
 
           <TouchableOpacity
-            onPress={publicar}
+            onPress={publicar} disabled={publicando}
             activeOpacity={0.88}
             style={[
               styles.publishButton,
