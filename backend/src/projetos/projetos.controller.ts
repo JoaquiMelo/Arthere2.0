@@ -6,6 +6,7 @@ import { ProjetosService } from './projetos.service';
 export class ProjetosController {
  constructor(private readonly service:ProjetosService){}
  @Get() listar(@Query('categoria') categoria?:string,@Query('cidade') cidade?:string,@Query('busca') busca?:string,@Query('status') status?:string){return this.service.listar({categoria,cidade,busca,status});}
+ @UseGuards(JwtAuthGuard) @Get('minhas') meus(@Req() req:any){return this.service.meus(req.user.id);}
  @UseGuards(JwtAuthGuard) @Get('minhas/candidaturas') minhas(@Req() req:any){return this.service.minhasCandidaturas(req.user.id);}
  @UseGuards(JwtAuthGuard) @Get(':id/candidaturas') candidaturas(@Req() req:any,@Param('id') id:string){return this.service.candidaturasDoProjeto(req.user.id,id);}
  @Get(':id') obter(@Param('id') id:string){return this.service.obter(id);}
