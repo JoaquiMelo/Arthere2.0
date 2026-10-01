@@ -16,6 +16,9 @@ model Usuario {
   criadoEm    DateTime        @default(now())
   agente      AgenteCriativo?
   contratante Contratante?
+  conversasComoA Conversa[] @relation("ConversaUsuarioA")
+  conversasComoB Conversa[] @relation("ConversaUsuarioB")
+  mensagens Mensagem[]
 
   @@map("usuario")
 }
@@ -164,6 +167,35 @@ model Evento {
   @@index([dataEvento])
   @@index([fixado, premium])
   @@map("evento")
+}
+
+model Conversa {
+  id          String   @id @default(uuid())
+  usuarioAId  String
+  usuarioBId  String
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  usuarioA    Usuario  @relation("ConversaUsuarioA", fields: [usuarioAId], references: [id], onDelete: Cascade)
+  usuarioB    Usuario  @relation("ConversaUsuarioB", fields: [usuarioBId], references: [id], onDelete: Cascade)
+  mensagens   Mensagem[]
+
+  @@unique([usuarioAId, usuarioBId])
+  @@index([usuarioBId])
+  @@map("conversa")
+}
+
+model Mensagem {
+  id          String   @id @default(uuid())
+  texto       String   @db.Text
+  conversaId  String
+  remetenteId String
+  criadoEm    DateTime @default(now())
+  conversa    Conversa @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  remetente   Usuario  @relation(fields: [remetenteId], references: [id], onDelete: Cascade)
+
+  @@index([conversaId, criadoEm])
+  @@index([remetenteId])
+  @@map("mensagem")
 }
 
 model SolicitacaoEvento {
