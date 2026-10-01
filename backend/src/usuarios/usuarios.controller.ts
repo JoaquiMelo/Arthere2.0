@@ -1,1 +1,25 @@
-import {Body,Controller,Get,Patch,Req,UseGuards} from '@nestjs/common'; import {JwtAuthGuard} from '../auth/jwt-auth.guard'; import {UsuariosService} from './usuarios.service'; @Controller('usuarios') @UseGuards(JwtAuthGuard) export class UsuariosController{constructor(private s:UsuariosService){} @Get('me') me(@Req() r:any){return this.s.meuPerfil(r.user.id)} @Patch('me') update(@Req() r:any,@Body() d:any){return this.s.atualizarMeuPerfil(r.user.id,r.user.tipo,d)}}
+import { Body, Controller, Get, Patch, Query, Req, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { UsuariosService } from './usuarios.service';
+
+@Controller('usuarios')
+export class UsuariosController {
+  constructor(private readonly service: UsuariosService) {}
+
+  @Get('agentes')
+  listarAgentes(@Query('cidade') cidade?: string, @Query('especialidade') especialidade?: string, @Query('busca') busca?: string) {
+    return this.service.listarAgentes({ cidade, especialidade, busca });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  me(@Req() req: any) {
+    return this.service.meuPerfil(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  update(@Req() req: any, @Body() dados: any) {
+    return this.service.atualizarMeuPerfil(req.user.id, req.user.tipo, dados);
+  }
+}
