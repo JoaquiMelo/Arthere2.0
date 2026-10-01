@@ -3,6 +3,9 @@ import * as SecureStore from 'expo-secure-store';
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 export type AuthResponse = { access_token: string; usuario: any };
+export type ContratanteResumo={id:string;nome:string;nomeSocial?:string|null;empresa?:string|null;avatarUrl?:string|null;cidade?:string|null};
+export type Projeto={id:string;titulo:string;descricao:string;categoria:string;status:string;orcamento:number|null;dataEvento:string|null;contratante:ContratanteResumo};
+
 export type Sessao = { accessToken: string; usuario: any };
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
