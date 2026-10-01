@@ -13,6 +13,13 @@ CREATE UNIQUE INDEX `contratante_cpfCnpj_key` ON `contratante`(`cpfCnpj`);
 CREATE INDEX `contratante_cidade_idx` ON `contratante`(`cidade`);
 CREATE INDEX `contratante_categoria_idx` ON `contratante`(`categoria`);
 
+CREATE INDEX `agente_criativo_cidade_idx` ON `agente_criativo`(`cidade`);
+CREATE INDEX `agente_criativo_especialidade_idx` ON `agente_criativo`(`especialidade`);
+CREATE INDEX `projeto_categoria_idx` ON `projeto`(`categoria`);
+CREATE INDEX `projeto_status_idx` ON `projeto`(`status`);
+CREATE INDEX `candidatura_status_idx` ON `candidatura`(`status`);
+CREATE UNIQUE INDEX `avaliacao_agenteId_contratanteId_key` ON `avaliacao`(`agenteId`,`contratanteId`);
+
 CREATE TABLE `evento` (
   `id` VARCHAR(191) NOT NULL,
   `titulo` VARCHAR(191) NOT NULL,
