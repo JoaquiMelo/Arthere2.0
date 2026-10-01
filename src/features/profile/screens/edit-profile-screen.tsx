@@ -5,11 +5,24 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { AgentePerfil, MOCK_AGENT_PROFILE } from './profile-screen';
 import { colors } from '@/shared/theme/colors';
+import { useUser } from '@/providers/user-provider';
 
 export default function EditProfileScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const agenteAtual: AgentePerfil = route.params?.agente ?? MOCK_AGENT_PROFILE;
+  const { user, updateProfile } = useUser();
+  const agenteAtual: AgentePerfil = route.params?.agente ?? {
+    id: user?.id ?? '',
+    nome: user?.nome ?? '',
+    especialidade: user?.especialidade ?? '',
+    bio: user?.bio ?? '',
+    cidade: user?.cidade ?? '',
+    avatarUrl: user?.avatarUrl ?? 'https://i.pravatar.cc/300?img=12',
+    notaMedia: Number(user?.notaMedia ?? 0),
+    totalAvaliacoes: Number(user?.totalAvaliacoes ?? 0),
+    totalProjetos: Number(user?.totalProjetos ?? 0),
+    portfolio: user?.portfolio ?? [],
+  } as AgentePerfil;
   const [avatarUri, setAvatarUri] = useState(agenteAtual.avatarUrl);
   const [nome, setNome] = useState(agenteAtual.nome);
   const [especialidade, setEspecialidade] = useState(agenteAtual.especialidade);
@@ -34,7 +47,10 @@ export default function EditProfileScreen() {
     }
     setSalvando(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 450));
+      const dados: Record<string, unknown> = { nome: nome.trim(), especialidade: especialidade.trim(), cidade: cidade.trim(), bio: bio.trim() };
+      if (/^(https?:\/\/|data:)/i.test(avatarUri)) dados.avatarUrl = avatarUri;
+      await updateProfile(dados);
+      Alert.alert('Perfil atualizado', 'Suas alterações foram salvas no banco de dados.');
       navigation.goBack();
     } finally {
       setSalvando(false);
