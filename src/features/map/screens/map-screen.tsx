@@ -117,7 +117,7 @@ export function MapScreen() {
 
       return categoriaOk && termoOk;
     });
-  }, [busca, categoria]);
+  }, [agentesBaixadaSantista, busca, categoria]);
 
   const destaque = [...filtrados].sort((a, b) => b.avaliacao - a.avaliacao).slice(0, 3);
 
