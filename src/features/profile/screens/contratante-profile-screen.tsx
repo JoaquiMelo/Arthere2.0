@@ -54,7 +54,7 @@ const MOCK_EVENTOS_ANTERIORES: EventoAnterior[] = [
 
 export default function ContratanteProfileScreen() {
   const navigation = useNavigation<any>();
-  const { user } = useUser();
+  const { user, updateProfile } = useUser();
   const { vagas, eventos } = useManagement();
 
   const [empresa, setEmpresa] = useState(
@@ -77,9 +77,16 @@ export default function ContratanteProfileScreen() {
     setEditando(true);
   };
 
-  const salvarEmpresa = () => {
-    setEmpresa(rascunhoEmpresa.trim() || empresa);
-    setEditando(false);
+  const salvarEmpresa = async () => {
+    const valor = rascunhoEmpresa.trim();
+    if (!valor) return;
+    try {
+      await updateProfile({ empresa: valor });
+      setEmpresa(valor);
+      setEditando(false);
+    } catch (error) {
+      Alert.alert('Não foi possível salvar', error instanceof Error ? error.message : 'Tente novamente.');
+    }
   };
 
   const avatarSource =
