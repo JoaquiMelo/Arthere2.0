@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -70,7 +70,7 @@ export default function EventsScreen() {
   const { eventos } = useManagement();
 
   const primeiroEvento = eventos[0];
-  const dataInicial = dataDoEvento(primeiroEvento.data);
+  const dataInicial = primeiroEvento ? dataDoEvento(primeiroEvento.data) : new Date();
 
   const [filtro, setFiltro] = useState<Filtro>("TODOS");
   const [busca, setBusca] = useState("");
@@ -78,12 +78,20 @@ export default function EventsScreen() {
   const [mes, setMes] = useState(dataInicial.getMonth());
   const [diaSelecionado, setDiaSelecionado] = useState(dataInicial.getDate());
 
+  useEffect(() => {
+    if (!primeiroEvento) return;
+    const data = dataDoEvento(primeiroEvento.data);
+    setAno(data.getFullYear());
+    setMes(data.getMonth());
+    setDiaSelecionado(data.getDate());
+  }, [primeiroEvento?.id]);
+
   const categorias = useMemo(() => {
     const unicas = Array.from(
       new Set(eventos.map((evento) => evento.categoria)),
     );
     return ["TODOS", ...unicas, "PREMIUM"];
-  }, []);
+  }, [eventos, busca, filtro]);
 
   const eventosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -129,7 +137,7 @@ export default function EventsScreen() {
 
   const eventosDestaque = useMemo(
     () => eventos.filter((evento) => evento.destaque),
-    [],
+    [eventos],
   );
 
   const diasDoMes = useMemo(() => {
