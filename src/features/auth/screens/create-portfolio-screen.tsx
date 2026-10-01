@@ -23,16 +23,11 @@ export default function CreatePortfolioScreen() {
   const [especialidade, setEspecialidade] = useState(user?.especialidade || "");
   const [cidade, setCidade] = useState(user?.cidade || "");
   const [bio, setBio] = useState("");
-  const [portfolio, setPortfolio] = useState<string[]>([
-    "https://picsum.photos/seed/p1/300/300",
-    "https://picsum.photos/seed/p2/300/300",
-  ]);
+  const [portfolio, setPortfolio] = useState<string[]>([]);
   const [carregando, setCarregando] = useState(false);
 
   const handleAdicionarFoto = () => {
-    // Simulação de adição de foto
-    const novaFoto = `https://picsum.photos/seed/${Date.now()}/300/300`;
-    setPortfolio((prev) => [...prev, novaFoto]);
+    Alert.alert('Portfólio', 'Depois de concluir o cadastro, adicione seus trabalhos pela tela Portfólio com URLs públicas das imagens.');
   };
 
   const handleSalvarPerfil = async () => {
@@ -43,16 +38,7 @@ export default function CreatePortfolioScreen() {
 
     try {
       setCarregando(true);
-      await new Promise((resolve) => setTimeout(resolve, 600));
-
-      if (updateProfile) {
-        updateProfile({
-          especialidade,
-          cidade,
-          bio,
-        });
-      }
-
+      await updateProfile({ especialidade: especialidade.trim(), cidade: cidade.trim(), bio: bio.trim() });
       navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
     } catch {
       Alert.alert("Erro", "Falha ao salvar dados do portfólio.");
