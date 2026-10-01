@@ -40,6 +40,8 @@ model AgenteCriativo {
   candidaturas    Candidatura[]
   portfolio       Portfolio[]
 
+  @@index([cidade])
+  @@index([especialidade])
   @@map("agente_criativo")
 }
 
@@ -47,14 +49,26 @@ model Contratante {
   id           String      @id @default(uuid())
   usuarioId    String      @unique
   nome         String
+  nomeSocial   String?
+  pronomes     String?
+  cpfCnpj      String?     @unique
   empresa      String?
   avatarUrl    String?
+  telefone     String?
+  descricao    String?     @db.Text
+  site         String?
+  cidade       String?
+  endereco     String?
+  categoria    String?
   criadoEm     DateTime    @default(now())
   atualizadoEm DateTime    @updatedAt
   avaliacoes   Avaliacao[]
   usuario      Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   projetos     Projeto[]
+  eventos      Evento[]
 
+  @@index([cidade])
+  @@index([categoria])
   @@map("contratante")
 }
 
@@ -72,7 +86,9 @@ model Projeto {
   candidaturas  Candidatura[]
   contratante   Contratante   @relation(fields: [contratanteId], references: [id], onDelete: Cascade)
 
-  @@index([contratanteId], map: "projeto_contratanteId_fkey")
+  @@index([contratanteId])
+  @@index([categoria])
+  @@index([status])
   @@map("projeto")
 }
 
@@ -88,7 +104,8 @@ model Candidatura {
   projeto      Projeto           @relation(fields: [projetoId], references: [id], onDelete: Cascade)
 
   @@unique([agenteId, projetoId])
-  @@index([projetoId], map: "candidatura_projetoId_fkey")
+  @@index([projetoId])
+  @@index([status])
   @@map("candidatura")
 }
 
@@ -96,12 +113,12 @@ model Portfolio {
   id        String         @id @default(uuid())
   imageUrl  String
   titulo    String?
-  descricao String?
+  descricao String?        @db.Text
   agenteId  String
   criadoEm  DateTime       @default(now())
   agente    AgenteCriativo @relation(fields: [agenteId], references: [id], onDelete: Cascade)
 
-  @@index([agenteId], map: "portfolio_agenteId_fkey")
+  @@index([agenteId])
   @@map("portfolio")
 }
 
@@ -115,9 +132,34 @@ model Avaliacao {
   agente        AgenteCriativo @relation(fields: [agenteId], references: [id], onDelete: Cascade)
   contratante   Contratante    @relation(fields: [contratanteId], references: [id], onDelete: Cascade)
 
-  @@index([agenteId], map: "avaliacao_agenteId_fkey")
-  @@index([contratanteId], map: "avaliacao_contratanteId_fkey")
+  @@unique([agenteId, contratanteId])
+  @@index([agenteId])
+  @@index([contratanteId])
   @@map("avaliacao")
+}
+
+model Evento {
+  id            String       @id @default(uuid())
+  titulo        String
+  descricao     String       @db.Text
+  categoria     String
+  local         String
+  cidade        String
+  dataEvento    DateTime
+  horario       String?
+  organizador   String?
+  premium       Boolean      @default(false)
+  fixado        Boolean      @default(false)
+  contratanteId String?
+  criadoEm      DateTime     @default(now())
+  atualizadoEm  DateTime     @updatedAt
+  contratante   Contratante? @relation(fields: [contratanteId], references: [id], onDelete: SetNull)
+
+  @@index([cidade])
+  @@index([categoria])
+  @@index([dataEvento])
+  @@index([fixado, premium])
+  @@map("evento")
 }
 
 enum TipoUsuario {
