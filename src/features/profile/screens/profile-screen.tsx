@@ -76,13 +76,21 @@ function AgenteProfileScreenContent() {
   const { user } = useUser();
   const [abaAtiva, setAbaAtiva] = useState<'portfolio' | 'sobre' | 'avaliacoes'>('portfolio');
   const agente: AgentePerfil = {
-    ...MOCK_AGENT_PROFILE,
-    id: user.id || MOCK_AGENT_PROFILE.id,
-    nome: user.nome || MOCK_AGENT_PROFILE.nome,
-    especialidade: user.especialidade || MOCK_AGENT_PROFILE.especialidade,
-    bio: user.bio || user.descricao || MOCK_AGENT_PROFILE.bio,
-    cidade: user.cidade || MOCK_AGENT_PROFILE.cidade,
-    avatarUrl: user.avatarUrl || user.foto || MOCK_AGENT_PROFILE.avatarUrl,
+    id: user.id,
+    nome: user.nome || 'Seu nome',
+    especialidade: user.especialidade || 'Profissional criativo',
+    bio: user.bio || 'Adicione uma apresentação sobre seu trabalho.',
+    cidade: user.cidade || 'Cidade não informada',
+    avatarUrl: user.avatarUrl || 'https://i.pravatar.cc/300?img=12',
+    notaMedia: Number(user.notaMedia ?? 0),
+    totalAvaliacoes: Number(user.totalAvaliacoes ?? 0),
+    totalProjetos: Number(user.totalProjetos ?? 0),
+    portfolio: Array.isArray(user.portfolio) ? user.portfolio.map((item:any) => ({
+      id: item.id,
+      imageUrl: item.imageUrl,
+      titulo: item.titulo ?? undefined,
+      descricao: item.descricao ?? undefined,
+    })) : [],
   };
   const { avaliacoesPorAgente, mediaPorAgente } = useReviews();
   const avaliacoes = avaliacoesPorAgente(agente.id);
