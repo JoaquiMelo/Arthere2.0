@@ -93,15 +93,23 @@ export class EventosService {
     if (!evento) throw new NotFoundException('Evento não encontrado.');
     if (!evento.contratanteId) throw new ConflictException('Este evento não possui um contratante responsável para receber solicitações.');
 
-    try {
-      return await this.prisma.solicitacaoEvento.create({
-        data: { agenteId: agente.id, eventoId, mensagem: mensagem?.trim() || undefined },
+    const existente = await this.prisma.solicitacaoEvento.findUnique({
+      where: { agenteId_eventoId: { agenteId: agente.id, eventoId } },
+    });
+    if (existente) {
+      if (existente.status !== 'RECUSADA') {
+        throw new ConflictException('Você já possui uma solicitação para este evento.');
+      }
+      return this.prisma.solicitacaoEvento.update({
+        where: { id: existente.id },
+        data: { status: 'PENDENTE', mensagem: mensagem?.trim() || null },
         include: { evento: true, agente: true },
       });
-    } catch (error: any) {
-      if (error?.code === 'P2002') throw new ConflictException('Você já enviou uma solicitação para este evento.');
-      throw error;
     }
+    return this.prisma.solicitacaoEvento.create({
+      data: { agenteId: agente.id, eventoId, mensagem: mensagem?.trim() || undefined },
+      include: { evento: true, agente: true },
+    });
   }
 
   async minhasSolicitacoes(uid: string) {
