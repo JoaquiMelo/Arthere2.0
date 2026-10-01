@@ -43,8 +43,10 @@ export default function EventDetailsScreen() {
   const solicitacao = solicitacoesEvento.find((item) => item.eventId === evento.id && item.agenteId === user.id);
   const statusSolicitacao = solicitacao?.status;
 
+  const [enviando, setEnviando] = useState(false);
+
   const solicitarParticipacao = () => {
-    if (statusSolicitacao === 'PENDENTE' || statusSolicitacao === 'ACEITA') return;
+    if (statusSolicitacao === 'PENDENTE' || statusSolicitacao === 'ACEITA' || enviando) return;
 
     Alert.alert(
       'Enviar solicitação',
@@ -53,15 +55,23 @@ export default function EventDetailsScreen() {
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Enviar',
-          onPress: () => {
-            enviarSolicitacaoEvento({
-              eventId: evento.id,
-              eventoTitulo: evento.titulo,
-              agenteId: user.id,
-              agenteNome: user.nomeSocial || user.nome,
-              agenteEspecialidade: user.especialidade || 'Profissional criativo',
-              mensagem: 'Olá! Gostaria de participar deste projeto como agente criativo.',
-            });
+          onPress: async () => {
+            setEnviando(true);
+            try {
+              await enviarSolicitacaoEvento({
+                eventId: evento.id,
+                eventoTitulo: evento.titulo,
+                agenteId: user.id,
+                agenteNome: user.nomeSocial || user.nome,
+                agenteEspecialidade: user.especialidade || 'Profissional criativo',
+                mensagem: 'Olá! Gostaria de participar deste projeto como agente criativo.',
+              });
+              Alert.alert('Solicitação enviada', 'O contratante recebeu seu pedido de participação.');
+            } catch (error) {
+              Alert.alert('Não foi possível enviar', error instanceof Error ? error.message : 'Tente novamente.');
+            } finally {
+              setEnviando(false);
+            }
           },
         },
       ],
@@ -129,7 +139,7 @@ export default function EventDetailsScreen() {
           <View style={[styles.registration, { backgroundColor: palette.brandInk }]}>
             <View style={styles.registrationCopy}>
               <Text style={[styles.registrationTitle, { color: palette.brandPaper }]}>
-                {statusSolicitacao === 'ACEITA' ? 'Solicitação aceita!' : statusSolicitacao === 'PENDENTE' ? 'Solicitação enviada!' : 'Quer participar?'}
+                {statusSolicitacao === 'ACEITA' ? 'Solicitação aceita!' : statusSolicitacao === 'PENDENTE' ? 'Solicitação enviada!' : statusSolicitacao === 'RECUSADA' ? 'Solicitação recusada' : 'Quer participar?'}
               </Text>
               <Text style={[styles.registrationText, { color: palette.brandPaper }]}>
                 {statusSolicitacao === 'ACEITA'
@@ -148,7 +158,7 @@ export default function EventDetailsScreen() {
             >
               <Ionicons name={statusSolicitacao === 'ACEITA' ? 'checkmark-circle' : statusSolicitacao === 'PENDENTE' ? 'time-outline' : 'send-outline'} size={19} color={palette.brandPaper} />
               <Text style={[styles.registerButtonText, { color: palette.brandPaper }]}>
-                {statusSolicitacao === 'ACEITA' ? 'ACEITO' : statusSolicitacao === 'PENDENTE' ? 'PENDENTE' : 'SOLICITAR'}
+                {statusSolicitacao === 'ACEITA' ? 'ACEITO' : statusSolicitacao === 'PENDENTE' ? 'PENDENTE' : enviando ? 'ENVIANDO...' : 'SOLICITAR'}
               </Text>
             </TouchableOpacity>
           </View>
