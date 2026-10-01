@@ -19,6 +19,7 @@ export default function EventDetailsScreen() {
   const { palette } = useTheme();
   const { user } = useUser();
   const { eventos, solicitacoesEvento, enviarSolicitacaoEvento } = useManagement();
+  const [enviando, setEnviando] = useState(false);
 
   const evento = eventos.find((item) => item.id === route.params.eventId);
 
@@ -42,8 +43,6 @@ export default function EventDetailsScreen() {
   const isAgente = user.tipo === 'AGENTE';
   const solicitacao = solicitacoesEvento.find((item) => item.eventId === evento.id && item.agenteId === user.id);
   const statusSolicitacao = solicitacao?.status;
-
-  const [enviando, setEnviando] = useState(false);
 
   const solicitarParticipacao = () => {
     if (statusSolicitacao === 'PENDENTE' || statusSolicitacao === 'ACEITA' || enviando) return;
