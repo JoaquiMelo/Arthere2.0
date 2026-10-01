@@ -14,6 +14,25 @@ Nunca envie `.env` para o GitHub.
 
 Esta versão não usa `prisma migrate reset` e não apaga os dados existentes.
 
+### Se o banco já possui as tabelas
+
+Se as tabelas `usuario`, `agente_criativo`, `contratante`, `projeto`, `candidatura`, `portfolio` e `avaliacao` já existem, mas o banco não possui a tabela `_prisma_migrations`, faça o baseline da migração inicial antes de aplicar a complementação:
+
+```bash
+cd backend
+npm install
+npm run prisma:generate
+npm run prisma:validate
+npx prisma migrate resolve --applied 20260806122819_init
+npm run prisma:deploy
+npm run build
+npm run start:dev
+```
+
+O comando `migrate resolve` apenas registra que a estrutura inicial já existe; ele não recria nem apaga as tabelas. Depois disso, `migrate deploy` aplica somente a migração de complementação.
+
+Se o banco já possui `_prisma_migrations` e a migração inicial está registrada, não execute `migrate resolve` novamente. Use apenas `npm run prisma:deploy`.
+
 Execute:
 
 ```bash
