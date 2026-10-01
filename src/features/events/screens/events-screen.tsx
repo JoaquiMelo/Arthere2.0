@@ -91,7 +91,7 @@ export default function EventsScreen() {
       new Set(eventos.map((evento) => evento.categoria)),
     );
     return ["TODOS", ...unicas, "PREMIUM"];
-  }, [eventos, busca, filtro]);
+  }, [eventos]);
 
   const eventosFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -116,7 +116,7 @@ export default function EventsScreen() {
         evento.organizador,
       ].some((campo) => campo.toLowerCase().includes(termo));
     });
-  }, [busca, filtro]);
+  }, [eventos, busca, filtro]);
 
   const eventosDoMes = useMemo(
     () =>
