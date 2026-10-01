@@ -5,7 +5,7 @@ import {useUser} from '@/providers/user-provider';
 
 export type ChatMessage={id:string;text:string;sentByMe:boolean;createdAt:Date};
 export type Conversation={id:string;participant:Pick<AgenteCriativo,'id'|'nome'|'avatarUrl'|'especialidades'|'disponivel'>;messages:ChatMessage[]};
-type Context={conversations:Conversation[];loading:boolean;refresh:()=>Promise<void>;startConversation:(agent:AgenteCriativo)=>Promise<string>;sendMessage:(conversationId:string,text:string)=>Promise<void>};
+type Context={conversations:Conversation[];loading:boolean;refresh:()=>Promise<void>;startConversation:(agent:AgenteCriativo)=>Promise<string>;sendMessage:(conversationId:string,text:string)=>Promise<void>;carregarMensagens:(conversationId:string)=>Promise<void>};
 const Ctx=createContext<Context>({} as Context);
 
 function participante(raw:any){
@@ -58,7 +58,7 @@ export function ChatProvider({children}:{children:React.ReactNode}){
   setConversations(c=>c.map(conv=>conv.id===id?{...conv,messages:(lista??[]).map((m:any)=>({id:m.id,text:m.texto,sentByMe:m.remetenteId===user.usuarioId,createdAt:new Date(m.criadoEm)}))}:conv));
  },[user?.usuarioId]);
 
- const value=useMemo(()=>({conversations,loading,refresh,startConversation,sendMessage,carregarMensagens} as Context&{carregarMensagens:(id:string)=>Promise<void>}),[conversations,loading,refresh,startConversation,sendMessage,carregarMensagens]);
- return <Ctx.Provider value={value as Context}>{children}</Ctx.Provider>;
+ const value=useMemo<Context>(()=>({conversations,loading,refresh,startConversation,sendMessage,carregarMensagens}),[conversations,loading,refresh,startConversation,sendMessage,carregarMensagens]);
+ return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 export const useChat=()=>useContext(Ctx);
