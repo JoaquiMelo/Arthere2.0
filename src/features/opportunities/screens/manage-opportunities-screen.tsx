@@ -85,24 +85,17 @@ export default function ManageOpportunitiesScreen() {
     setAvaliando({ vagaId: vaga.id, candidato: contratado });
   };
 
-  const enviarAvaliacao = ({
-    nota,
-    comentario,
-  }: {
-    nota: number;
-    comentario: string;
-  }) => {
+  const enviarAvaliacao = async ({ nota, comentario }: { nota: number; comentario: string }) => {
     if (!avaliando) return;
-    adicionarAvaliacao({
-      agenteId: avaliando.candidato.agenteId,
-      autorNome: 'Você',
-      nota,
-      comentario,
-    });
-    marcarAvaliado(avaliando.vagaId);
-    const nome = avaliando.candidato.nome;
-    setAvaliando(null);
-    Alert.alert('Avaliação enviada!', `Obrigado por avaliar ${nome}.`);
+    try {
+      const nome = avaliando.candidato.nome;
+      await adicionarAvaliacao({ agenteId: avaliando.candidato.agenteId, autorNome: 'Você', nota, comentario });
+      marcarAvaliado(avaliando.vagaId);
+      setAvaliando(null);
+      Alert.alert('Avaliação enviada!', `Obrigado por avaliar ${nome}.`);
+    } catch (error) {
+      Alert.alert('Não foi possível avaliar', error instanceof Error ? error.message : 'Tente novamente.');
+    }
   };
 
   return (
