@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Image,
@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 
 import type { AgenteCriativo } from '@/features/agents/types/agent';
+import { agents } from '@/services/api';
 import { useChat } from '@/providers/chat-provider';
 import { colors } from '@/shared/theme/colors';
 import { AgentProfileCard } from '../../../features/agents/components/agent-profile-card';
@@ -28,64 +29,14 @@ const REGIAO_INICIAL: Region = {
   longitudeDelta: 0.12,
 };
 
-const agentesBaixadaSantista: AgenteCriativo[] = [
-  {
-    id: '1',
-    nome: 'Marina Oliveira',
-    categoria: 'fotografo',
-    disponivel: true,
-    avaliacao: 4.9,
-    cidade: 'Santos, SP',
-    especialidades: ['Fotógrafo'],
-    latitude: -23.9608,
-    longitude: -46.3339,
-    avatarUrl: 'https://i.pravatar.cc/150?img=47',
-    descricao: 'Fotógrafa de eventos e retratos autorais.',
-    portfolio: [{ id: 'marina-1', titulo: 'Retrato editorial', imagemUrl: 'https://picsum.photos/seed/marina-1/300/200' }],
-  },
-  {
-    id: '2',
-    nome: 'João Paulo',
-    categoria: 'videomaker',
-    disponivel: true,
-    avaliacao: 4.7,
-    cidade: 'São Vicente, SP',
-    especialidades: ['Videomaker'],
-    latitude: -23.965,
-    longitude: -46.38,
-    avatarUrl: 'https://i.pravatar.cc/150?img=12',
-    descricao: 'Videomaker para campanhas, eventos e conteúdo digital.',
-    portfolio: [{ id: 'joao-1', titulo: 'Vídeo de campanha', imagemUrl: 'https://picsum.photos/seed/joao-1/300/200' }],
-  },
-  {
-    id: '3',
-    nome: 'Beatriz Costa',
-    categoria: 'dj',
-    disponivel: false,
-    avaliacao: 4.8,
-    cidade: 'Guarujá, SP',
-    especialidades: ['DJ'],
-    latitude: -23.99,
-    longitude: -46.26,
-    avatarUrl: 'https://i.pravatar.cc/150?img=25',
-    descricao: 'DJ para casamentos, festas e eventos corporativos.',
-    portfolio: [{ id: 'beatriz-1', titulo: 'Evento ao vivo', imagemUrl: 'https://picsum.photos/seed/beatriz-1/300/200' }],
-  },
-  {
-    id: '4',
-    nome: 'Rafael Souza',
-    categoria: 'artesao',
-    disponivel: true,
-    avaliacao: 4.6,
-    cidade: 'Praia Grande, SP',
-    especialidades: ['Artesanato'],
-    latitude: -24.005,
-    longitude: -46.41,
-    avatarUrl: 'https://i.pravatar.cc/150?img=33',
-    descricao: 'Artesão de peças autorais em madeira para casas e eventos.',
-    portfolio: [{ id: 'rafael-1', titulo: 'Coleção em madeira', imagemUrl: 'https://picsum.photos/seed/rafael-1/300/200' }],
-  },
-];
+function categoriaDoAgente(especialidade: string) {
+  const termo = especialidade.toLowerCase();
+  if (termo.includes('foto')) return 'fotografo';
+  if (termo.includes('vídeo') || termo.includes('video')) return 'videomaker';
+  if (termo.includes('dj') || termo.includes('música') || termo.includes('musica')) return 'dj';
+  if (termo.includes('artesan')) return 'artesao';
+  return 'design';
+}
 
 function CustomPin({
   agente,
@@ -122,6 +73,34 @@ export function MapScreen() {
   const [busca, setBusca] = useState('');
   const [categoria, setCategoria] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState<AgenteCriativo | null>(null);
+  const [agentesBaixadaSantista, setAgentesBaixadaSantista] = useState<AgenteCriativo[]>([]);
+
+  useEffect(() => {
+    let ativo = true;
+    agents()
+      .then((lista) => {
+        if (!ativo) return;
+        const mapeados = (lista ?? [])
+          .filter((item: any) => Number.isFinite(Number(item.latitude)) && Number.isFinite(Number(item.longitude)))
+          .map((item: any): AgenteCriativo => ({
+            id: item.id,
+            nome: item.nome,
+            categoria: categoriaDoAgente(item.especialidade ?? ''),
+            disponivel: true,
+            avaliacao: Number(item.notaMedia ?? 0),
+            cidade: item.cidade ?? 'Região da Baixada Santista',
+            especialidades: item.especialidade ? [item.especialidade] : ['Profissional criativo'],
+            latitude: Number(item.latitude),
+            longitude: Number(item.longitude),
+            avatarUrl: item.avatarUrl ?? 'https://i.pravatar.cc/150?img=12',
+            descricao: item.bio ?? 'Profissional criativo cadastrado na Arthere.',
+            portfolio: (item.portfolio ?? []).map((p: any) => ({ id: p.id, titulo: p.titulo ?? 'Trabalho', imagemUrl: p.imageUrl })),
+          }));
+        setAgentesBaixadaSantista(mapeados);
+      })
+      .catch(() => { if (ativo) setAgentesBaixadaSantista([]); });
+    return () => { ativo = false; };
+  }, []);
 
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
