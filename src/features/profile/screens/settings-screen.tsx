@@ -20,7 +20,7 @@ type IconName = keyof typeof Ionicons.glyphMap;
 
 export default function SettingsScreen() {
   const navigation = useNavigation<any>();
-  const { logout } = useUser();
+  const { user, logout } = useUser();
   const { paletteName, palette, setPalette } = useTheme();
   const [paletaAberta, setPaletaAberta] = useState(false);
   const [notificacoes, setNotificacoes] = useState(true);
@@ -105,7 +105,7 @@ export default function SettingsScreen() {
             palette={palette}
             icon="person-outline"
             label="Editar perfil"
-            onPress={() => navigation.navigate("EditProfile")}
+            onPress={() => navigation.navigate(user?.tipo === "CONTRATANTE" ? "EditContractorProfile" : "EditProfile")}
           />
           <SettingRow
             palette={palette}
