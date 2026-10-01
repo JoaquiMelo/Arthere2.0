@@ -6,6 +6,7 @@ import { ProjetosModule } from './projetos/projetos.module';
 import { EventosModule } from './eventos/eventos.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 import { AvaliacoesModule } from './avaliacoes/avaliacoes.module';
+import { ChatModule } from './chat/chat.module';
 import { HealthController } from './health.controller';
-@Module({imports:[PrismaModule,AuthModule,UsuariosModule,ProjetosModule,EventosModule,PortfolioModule,AvaliacoesModule],controllers:[HealthController]})
+@Module({imports:[PrismaModule,AuthModule,UsuariosModule,ProjetosModule,EventosModule,PortfolioModule,AvaliacoesModule,ChatModule],controllers:[HealthController]})
 export class AppModule {}
