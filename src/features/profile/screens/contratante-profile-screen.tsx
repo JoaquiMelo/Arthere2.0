@@ -21,37 +21,6 @@ import { colors } from "@/shared/theme/colors";
 
 const AVATAR_PADRAO = "https://i.pravatar.cc/300?img=68";
 
-interface EventoAnterior {
-  id: string;
-  titulo: string;
-  data: string;
-  imagemUrl: string;
-}
-
-const MOCK_EVENTOS_ANTERIORES: EventoAnterior[] = [
-  {
-    id: "1",
-    titulo: "Festival Verão de Música",
-    data: "Jan 2026",
-    imagemUrl:
-      "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: "2",
-    titulo: "Desfile Primavera/Verão",
-    data: "Nov 2025",
-    imagemUrl:
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    id: "3",
-    titulo: "Gala Corporativa 2025",
-    data: "Out 2025",
-    imagemUrl:
-      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=600&q=80",
-  },
-];
-
 export default function ContratanteProfileScreen() {
   const navigation = useNavigation<any>();
   const { user, updateProfile } = useUser();
