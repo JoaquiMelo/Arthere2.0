@@ -121,10 +121,14 @@ export function MapScreen() {
 
   const destaque = [...filtrados].sort((a, b) => b.avaliacao - a.avaliacao).slice(0, 3);
 
-  const abrirChat = (agente: AgenteCriativo) => {
-    const conversationId = startConversation(agente);
-    setSelecionado(null);
-    navigation.navigate('ChatConversation', { conversationId });
+  const abrirChat = async (agente: AgenteCriativo) => {
+    try {
+      const conversationId = await startConversation(agente);
+      setSelecionado(null);
+      navigation.navigate('ChatConversation', { conversationId });
+    } catch (error) {
+      Alert.alert('Não foi possível iniciar a conversa', error instanceof Error ? error.message : 'Tente novamente.');
+    }
   };
 
   return (
