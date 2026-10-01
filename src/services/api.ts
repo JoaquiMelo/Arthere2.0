@@ -192,6 +192,10 @@ export async function candidatarProjeto(id: string, mensagem?: string) {
   return applyToProject(id, mensagem);
 }
 
+export async function meusProjetos() {
+  return requestAutenticado<any[]>('/projetos/minhas');
+}
+
 export async function myApplications() {
   return requestAutenticado<any[]>('/projetos/minhas/candidaturas');
 }
