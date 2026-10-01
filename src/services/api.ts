@@ -256,6 +256,24 @@ export async function deleteEvent(id: string) {
   });
 }
 
+export async function minhasSolicitacoesEvento() {
+  return requestAutenticado<any[]>('/eventos/minhas/solicitacoes');
+}
+
+export async function solicitarParticipacaoEvento(eventoId: string, mensagem?: string) {
+  return requestAutenticado<any>('/eventos/' + eventoId + '/solicitacoes', {
+    method: 'POST',
+    body: JSON.stringify({ mensagem }),
+  });
+}
+
+export async function responderSolicitacaoEvento(id: string, status: 'ACEITA' | 'RECUSADA') {
+  return requestAutenticado<any>('/eventos/solicitacoes/' + id, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+}
+
 export async function portfolio(agenteId: string) {
   return request<any[]>(`/portfolio/${agenteId}`);
 }
