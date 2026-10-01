@@ -25,6 +25,23 @@ export class ProjetosService {
     });
   }
 
+  async meus(uid: string) {
+    const contratante = await this.prisma.contratante.findUnique({ where: { usuarioId: uid } });
+    if (!contratante) throw new ForbiddenException('Somente contratantes possuem projetos publicados.');
+
+    return this.prisma.projeto.findMany({
+      where: { contratanteId: contratante.id },
+      include: {
+        contratante: true,
+        candidaturas: {
+          include: { agente: { include: { portfolio: true } } },
+          orderBy: { criadoEm: 'desc' },
+        },
+      },
+      orderBy: { criadoEm: 'desc' },
+    });
+  }
+
   async obter(id: string) {
     const projeto = await this.prisma.projeto.findUnique({
       where: { id },
