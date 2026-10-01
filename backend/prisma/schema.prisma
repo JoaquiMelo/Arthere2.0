@@ -41,6 +41,7 @@ model AgenteCriativo {
   avaliacoes      Avaliacao[]
   candidaturas    Candidatura[]
   portfolio       Portfolio[]
+  solicitacoesEvento SolicitacaoEvento[]
 
   @@index([cidade])
   @@index([especialidade])
@@ -156,12 +157,30 @@ model Evento {
   criadoEm      DateTime     @default(now())
   atualizadoEm  DateTime     @updatedAt
   contratante   Contratante? @relation(fields: [contratanteId], references: [id], onDelete: SetNull)
+  solicitacoes  SolicitacaoEvento[]
 
   @@index([cidade])
   @@index([categoria])
   @@index([dataEvento])
   @@index([fixado, premium])
   @@map("evento")
+}
+
+model SolicitacaoEvento {
+  id           String                  @id @default(uuid())
+  status       StatusSolicitacaoEvento @default(PENDENTE)
+  mensagem     String?                 @db.Text
+  agenteId     String
+  eventoId     String
+  criadoEm     DateTime                @default(now())
+  atualizadoEm DateTime                @updatedAt
+  agente       AgenteCriativo          @relation(fields: [agenteId], references: [id], onDelete: Cascade)
+  evento       Evento                  @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+
+  @@unique([agenteId, eventoId])
+  @@index([eventoId])
+  @@index([status])
+  @@map("solicitacao_evento")
 }
 
 enum TipoUsuario {
@@ -178,6 +197,12 @@ enum StatusProjeto {
 }
 
 enum StatusCandidatura {
+  PENDENTE
+  ACEITA
+  RECUSADA
+}
+
+enum StatusSolicitacaoEvento {
   PENDENTE
   ACEITA
   RECUSADA
