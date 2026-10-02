@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -38,6 +38,20 @@ export class UsuariosService {
 
   async atualizarMeuPerfil(id: string, tipo: string, dados: any) {
     if (tipo === 'AGENTE') {
+      const coordenada = (valor: unknown, limite: number, nome: string) => {
+        if (valor == null || valor === '') return null;
+        const n = Number(valor);
+        if (!Number.isFinite(n) || Math.abs(n) > limite) throw new BadRequestException(nome + ' inválida.');
+        return n;
+      };
+      const atual = await this.prisma.agenteCriativo.findUnique({ where: { usuarioId: id } });
+      if (!atual) throw new NotFoundException('Perfil de agente não encontrado.');
+      const latFinal = dados.latitude !== undefined ? coordenada(dados.latitude, 90, 'Latitude') : atual.latitude;
+      const lngFinal = dados.longitude !== undefined ? coordenada(dados.longitude, 180, 'Longitude') : atual.longitude;
+      const visivelFinal = dados.visivelNoMapa !== undefined ? Boolean(dados.visivelNoMapa) : atual.visivelMapa;
+      if ((latFinal == null) !== (lngFinal == null)) throw new BadRequestException('Informe latitude e longitude juntas.');
+      if (visivelFinal && latFinal == null) throw new BadRequestException('Escolha o local no mapa para aparecer nele.');
+
       const perfil = await this.prisma.agenteCriativo.update({
         where: { usuarioId: id },
         data: {
@@ -48,8 +62,8 @@ export class UsuariosService {
           ...(dados.endereco !== undefined ? { endereco: String(dados.endereco).trim() } : {}),
           ...(dados.avatarUrl !== undefined ? { avatarUrl: dados.avatarUrl || null } : {}),
           ...(dados.visivelNoMapa !== undefined ? { visivelMapa: Boolean(dados.visivelNoMapa) } : {}),
-          ...(dados.latitude !== undefined ? { latitude: dados.latitude == null ? null : Number(dados.latitude) } : {}),
-          ...(dados.longitude !== undefined ? { longitude: dados.longitude == null ? null : Number(dados.longitude) } : {}),
+          ...(dados.latitude !== undefined ? { latitude: latFinal } : {}),
+          ...(dados.longitude !== undefined ? { longitude: lngFinal } : {}),
         },
       });
       return { perfil };
