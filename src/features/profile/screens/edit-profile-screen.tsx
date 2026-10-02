@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -29,8 +29,18 @@ export default function EditProfileScreen() {
   const [cidade, setCidade] = useState(agenteAtual.cidade);
   const [bio, setBio] = useState(agenteAtual.bio);
   const [visivelMapa, setVisivelMapa] = useState(Boolean(user?.visivelMapa));
-  const [latitude, setLatitude] = useState(user?.latitude != null ? String(user.latitude) : '');
-  const [longitude, setLongitude] = useState(user?.longitude != null ? String(user.longitude) : '');
+  const [local, setLocal] = useState<{ latitude: number | null; longitude: number | null; endereco: string }>({
+    latitude: user?.latitude != null ? Number(user.latitude) : null,
+    longitude: user?.longitude != null ? Number(user.longitude) : null,
+    endereco: user?.endereco ?? '',
+  });
+
+  useEffect(() => {
+    const escolhido = route.params?.localSelecionado;
+    if (!escolhido) return;
+    setLocal({ latitude: escolhido.latitude, longitude: escolhido.longitude, endereco: escolhido.endereco });
+    if (escolhido.cidade) setCidade(escolhido.cidade);
+  }, [route.params?.localSelecionado]);
   const [salvando, setSalvando] = useState(false);
 
   const escolherFoto = async () => {
@@ -48,9 +58,13 @@ export default function EditProfileScreen() {
       Alert.alert('Nome obrigatório', 'Informe seu nome para continuar.');
       return;
     }
+    if (visivelMapa && (local.latitude == null || local.longitude == null)) {
+      Alert.alert('Escolha seu local', 'Para aparecer no mapa, indique no mapa onde você atende.');
+      return;
+    }
     setSalvando(true);
     try {
-      const dados: Record<string, unknown> = { nome: nome.trim(), especialidade: especialidade.trim(), cidade: cidade.trim(), bio: bio.trim(), visivelNoMapa: visivelMapa, latitude: latitude.trim() ? Number(latitude.replace(',', '.')) : null, longitude: longitude.trim() ? Number(longitude.replace(',', '.')) : null };
+      const dados: Record<string, unknown> = { nome: nome.trim(), especialidade: especialidade.trim(), cidade: cidade.trim(), bio: bio.trim(), visivelNoMapa: visivelMapa, latitude: local.latitude, longitude: local.longitude, endereco: local.endereco };
       if (/^(https?:\/\/|data:)/i.test(avatarUri)) dados.avatarUrl = avatarUri;
       await updateProfile(dados);
       Alert.alert('Perfil atualizado', 'Suas alterações foram salvas no banco de dados.');
@@ -90,8 +104,16 @@ export default function EditProfileScreen() {
             </View>
             {visivelMapa ? (
               <>
-                <Field label="Latitude" value={latitude} onChangeText={setLatitude} placeholder="Ex.: -23.64" keyboardType="numeric" />
-                <Field label="Longitude" value={longitude} onChangeText={setLongitude} placeholder="Ex.: -46.62" keyboardType="numeric" />
+                <TouchableOpacity style={styles.localCard} onPress={() => navigation.navigate('SelectLocation', { latitude: local.latitude, longitude: local.longitude })} accessibilityLabel="Escolher local no mapa">
+                  <Ionicons name="location" size={22} color={colors.primary} />
+                  <View style={styles.mapCopy}>
+                    <Text style={styles.label}>Local no mapa</Text>
+                    <Text style={styles.mapHint} numberOfLines={2}>
+                      {local.latitude != null ? local.endereco || 'Local marcado no mapa' : 'Toque para indicar onde você atende'}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+                </TouchableOpacity>
               </>
             ) : null}
             <View style={styles.field}>
@@ -127,6 +149,6 @@ const styles = StyleSheet.create({
   header: { height: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   backButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' }, headerTitle: { color: colors.text, fontSize: 17, fontWeight: '800' }, headerSpacer: { width: 38 },
   content: { paddingHorizontal: 20, paddingBottom: 38 }, photoSection: { alignItems: 'center', paddingVertical: 18 }, avatarWrapper: { position: 'relative' }, avatar: { width: 104, height: 104, borderRadius: 52, borderWidth: 3, borderColor: colors.secondary }, cameraBadge: { position: 'absolute', right: 0, bottom: 1, width: 31, height: 31, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primaryDark, borderWidth: 2, borderColor: colors.white }, changePhoto: { marginTop: 10, color: colors.primaryDark, fontSize: 13, fontWeight: '800' },
-  form: { gap: 15 }, mapCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.white }, mapCopy: { flex: 1 }, mapHint: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: 3 }, field: { gap: 7 }, label: { color: colors.text, fontSize: 13, fontWeight: '800' }, inputWithIcon: { minHeight: 49, borderWidth: 1, borderColor: colors.border, borderRadius: 9, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: colors.white }, input: { flex: 1, paddingVertical: 12, color: colors.text, fontSize: 14 }, multiline: { minHeight: 108, borderWidth: 1, borderColor: colors.border, borderRadius: 9, paddingHorizontal: 13, backgroundColor: colors.white }, counter: { alignSelf: 'flex-end', color: colors.muted, fontSize: 11 },
+  form: { gap: 15 }, mapCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.white }, mapCopy: { flex: 1 }, mapHint: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: 3 }, localCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.white }, field: { gap: 7 }, label: { color: colors.text, fontSize: 13, fontWeight: '800' }, inputWithIcon: { minHeight: 49, borderWidth: 1, borderColor: colors.border, borderRadius: 9, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: colors.white }, input: { flex: 1, paddingVertical: 12, color: colors.text, fontSize: 14 }, multiline: { minHeight: 108, borderWidth: 1, borderColor: colors.border, borderRadius: 9, paddingHorizontal: 13, backgroundColor: colors.white }, counter: { alignSelf: 'flex-end', color: colors.muted, fontSize: 11 },
   saveButton: { height: 50, marginTop: 27, borderRadius: 9, backgroundColor: colors.primaryDark, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 }, saveButtonDisabled: { opacity: 0.7 }, saveText: { color: colors.white, fontSize: 15, fontWeight: '800' },
 });
