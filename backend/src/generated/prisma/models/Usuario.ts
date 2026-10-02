@@ -184,6 +184,9 @@ export type UsuarioWhereInput = {
   criadoEm?: Prisma.DateTimeFilter<"Usuario"> | Date | string
   agente?: Prisma.XOR<Prisma.AgenteCriativoNullableScalarRelationFilter, Prisma.AgenteCriativoWhereInput> | null
   contratante?: Prisma.XOR<Prisma.ContratanteNullableScalarRelationFilter, Prisma.ContratanteWhereInput> | null
+  conversasComoA?: Prisma.ConversaListRelationFilter
+  conversasComoB?: Prisma.ConversaListRelationFilter
+  mensagens?: Prisma.MensagemListRelationFilter
 }
 
 export type UsuarioOrderByWithRelationInput = {
@@ -194,6 +197,9 @@ export type UsuarioOrderByWithRelationInput = {
   criadoEm?: Prisma.SortOrder
   agente?: Prisma.AgenteCriativoOrderByWithRelationInput
   contratante?: Prisma.ContratanteOrderByWithRelationInput
+  conversasComoA?: Prisma.ConversaOrderByRelationAggregateInput
+  conversasComoB?: Prisma.ConversaOrderByRelationAggregateInput
+  mensagens?: Prisma.MensagemOrderByRelationAggregateInput
   _relevance?: Prisma.UsuarioOrderByRelevanceInput
 }
 
@@ -208,6 +214,9 @@ export type UsuarioWhereUniqueInput = Prisma.AtLeast<{
   criadoEm?: Prisma.DateTimeFilter<"Usuario"> | Date | string
   agente?: Prisma.XOR<Prisma.AgenteCriativoNullableScalarRelationFilter, Prisma.AgenteCriativoWhereInput> | null
   contratante?: Prisma.XOR<Prisma.ContratanteNullableScalarRelationFilter, Prisma.ContratanteWhereInput> | null
+  conversasComoA?: Prisma.ConversaListRelationFilter
+  conversasComoB?: Prisma.ConversaListRelationFilter
+  mensagens?: Prisma.MensagemListRelationFilter
 }, "id" | "email">
 
 export type UsuarioOrderByWithAggregationInput = {
@@ -240,6 +249,9 @@ export type UsuarioCreateInput = {
   criadoEm?: Date | string
   agente?: Prisma.AgenteCriativoCreateNestedOneWithoutUsuarioInput
   contratante?: Prisma.ContratanteCreateNestedOneWithoutUsuarioInput
+  conversasComoA?: Prisma.ConversaCreateNestedManyWithoutUsuarioAInput
+  conversasComoB?: Prisma.ConversaCreateNestedManyWithoutUsuarioBInput
+  mensagens?: Prisma.MensagemCreateNestedManyWithoutRemetenteInput
 }
 
 export type UsuarioUncheckedCreateInput = {
@@ -250,6 +262,9 @@ export type UsuarioUncheckedCreateInput = {
   criadoEm?: Date | string
   agente?: Prisma.AgenteCriativoUncheckedCreateNestedOneWithoutUsuarioInput
   contratante?: Prisma.ContratanteUncheckedCreateNestedOneWithoutUsuarioInput
+  conversasComoA?: Prisma.ConversaUncheckedCreateNestedManyWithoutUsuarioAInput
+  conversasComoB?: Prisma.ConversaUncheckedCreateNestedManyWithoutUsuarioBInput
+  mensagens?: Prisma.MensagemUncheckedCreateNestedManyWithoutRemetenteInput
 }
 
 export type UsuarioUpdateInput = {
@@ -260,6 +275,9 @@ export type UsuarioUpdateInput = {
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   agente?: Prisma.AgenteCriativoUpdateOneWithoutUsuarioNestedInput
   contratante?: Prisma.ContratanteUpdateOneWithoutUsuarioNestedInput
+  conversasComoA?: Prisma.ConversaUpdateManyWithoutUsuarioANestedInput
+  conversasComoB?: Prisma.ConversaUpdateManyWithoutUsuarioBNestedInput
+  mensagens?: Prisma.MensagemUpdateManyWithoutRemetenteNestedInput
 }
 
 export type UsuarioUncheckedUpdateInput = {
@@ -270,6 +288,9 @@ export type UsuarioUncheckedUpdateInput = {
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   agente?: Prisma.AgenteCriativoUncheckedUpdateOneWithoutUsuarioNestedInput
   contratante?: Prisma.ContratanteUncheckedUpdateOneWithoutUsuarioNestedInput
+  conversasComoA?: Prisma.ConversaUncheckedUpdateManyWithoutUsuarioANestedInput
+  conversasComoB?: Prisma.ConversaUncheckedUpdateManyWithoutUsuarioBNestedInput
+  mensagens?: Prisma.MensagemUncheckedUpdateManyWithoutRemetenteNestedInput
 }
 
 export type UsuarioCreateManyInput = {
@@ -371,6 +392,48 @@ export type UsuarioUpdateOneRequiredWithoutContratanteNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UsuarioUpdateToOneWithWhereWithoutContratanteInput, Prisma.UsuarioUpdateWithoutContratanteInput>, Prisma.UsuarioUncheckedUpdateWithoutContratanteInput>
 }
 
+export type UsuarioCreateNestedOneWithoutConversasComoAInput = {
+  create?: Prisma.XOR<Prisma.UsuarioCreateWithoutConversasComoAInput, Prisma.UsuarioUncheckedCreateWithoutConversasComoAInput>
+  connectOrCreate?: Prisma.UsuarioCreateOrConnectWithoutConversasComoAInput
+  connect?: Prisma.UsuarioWhereUniqueInput
+}
+
+export type UsuarioCreateNestedOneWithoutConversasComoBInput = {
+  create?: Prisma.XOR<Prisma.UsuarioCreateWithoutConversasComoBInput, Prisma.UsuarioUncheckedCreateWithoutConversasComoBInput>
+  connectOrCreate?: Prisma.UsuarioCreateOrConnectWithoutConversasComoBInput
+  connect?: Prisma.UsuarioWhereUniqueInput
+}
+
+export type UsuarioUpdateOneRequiredWithoutConversasComoANestedInput = {
+  create?: Prisma.XOR<Prisma.UsuarioCreateWithoutConversasComoAInput, Prisma.UsuarioUncheckedCreateWithoutConversasComoAInput>
+  connectOrCreate?: Prisma.UsuarioCreateOrConnectWithoutConversasComoAInput
+  upsert?: Prisma.UsuarioUpsertWithoutConversasComoAInput
+  connect?: Prisma.UsuarioWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UsuarioUpdateToOneWithWhereWithoutConversasComoAInput, Prisma.UsuarioUpdateWithoutConversasComoAInput>, Prisma.UsuarioUncheckedUpdateWithoutConversasComoAInput>
+}
+
+export type UsuarioUpdateOneRequiredWithoutConversasComoBNestedInput = {
+  create?: Prisma.XOR<Prisma.UsuarioCreateWithoutConversasComoBInput, Prisma.UsuarioUncheckedCreateWithoutConversasComoBInput>
+  connectOrCreate?: Prisma.UsuarioCreateOrConnectWithoutConversasComoBInput
+  upsert?: Prisma.UsuarioUpsertWithoutConversasComoBInput
+  connect?: Prisma.UsuarioWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UsuarioUpdateToOneWithWhereWithoutConversasComoBInput, Prisma.UsuarioUpdateWithoutConversasComoBInput>, Prisma.UsuarioUncheckedUpdateWithoutConversasComoBInput>
+}
+
+export type UsuarioCreateNestedOneWithoutMensagensInput = {
+  create?: Prisma.XOR<Prisma.UsuarioCreateWithoutMensagensInput, Prisma.UsuarioUncheckedCreateWithoutMensagensInput>
+  connectOrCreate?: Prisma.UsuarioCreateOrConnectWithoutMensagensInput
+  connect?: Prisma.UsuarioWhereUniqueInput
+}
+
+export type UsuarioUpdateOneRequiredWithoutMensagensNestedInput = {
+  create?: Prisma.XOR<Prisma.UsuarioCreateWithoutMensagensInput, Prisma.UsuarioUncheckedCreateWithoutMensagensInput>
+  connectOrCreate?: Prisma.UsuarioCreateOrConnectWithoutMensagensInput
+  upsert?: Prisma.UsuarioUpsertWithoutMensagensInput
+  connect?: Prisma.UsuarioWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UsuarioUpdateToOneWithWhereWithoutMensagensInput, Prisma.UsuarioUpdateWithoutMensagensInput>, Prisma.UsuarioUncheckedUpdateWithoutMensagensInput>
+}
+
 export type UsuarioCreateWithoutAgenteInput = {
   id?: string
   email: string
@@ -378,6 +441,9 @@ export type UsuarioCreateWithoutAgenteInput = {
   tipo: $Enums.TipoUsuario
   criadoEm?: Date | string
   contratante?: Prisma.ContratanteCreateNestedOneWithoutUsuarioInput
+  conversasComoA?: Prisma.ConversaCreateNestedManyWithoutUsuarioAInput
+  conversasComoB?: Prisma.ConversaCreateNestedManyWithoutUsuarioBInput
+  mensagens?: Prisma.MensagemCreateNestedManyWithoutRemetenteInput
 }
 
 export type UsuarioUncheckedCreateWithoutAgenteInput = {
@@ -387,6 +453,9 @@ export type UsuarioUncheckedCreateWithoutAgenteInput = {
   tipo: $Enums.TipoUsuario
   criadoEm?: Date | string
   contratante?: Prisma.ContratanteUncheckedCreateNestedOneWithoutUsuarioInput
+  conversasComoA?: Prisma.ConversaUncheckedCreateNestedManyWithoutUsuarioAInput
+  conversasComoB?: Prisma.ConversaUncheckedCreateNestedManyWithoutUsuarioBInput
+  mensagens?: Prisma.MensagemUncheckedCreateNestedManyWithoutRemetenteInput
 }
 
 export type UsuarioCreateOrConnectWithoutAgenteInput = {
@@ -412,6 +481,9 @@ export type UsuarioUpdateWithoutAgenteInput = {
   tipo?: Prisma.EnumTipoUsuarioFieldUpdateOperationsInput | $Enums.TipoUsuario
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contratante?: Prisma.ContratanteUpdateOneWithoutUsuarioNestedInput
+  conversasComoA?: Prisma.ConversaUpdateManyWithoutUsuarioANestedInput
+  conversasComoB?: Prisma.ConversaUpdateManyWithoutUsuarioBNestedInput
+  mensagens?: Prisma.MensagemUpdateManyWithoutRemetenteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutAgenteInput = {
@@ -421,6 +493,9 @@ export type UsuarioUncheckedUpdateWithoutAgenteInput = {
   tipo?: Prisma.EnumTipoUsuarioFieldUpdateOperationsInput | $Enums.TipoUsuario
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contratante?: Prisma.ContratanteUncheckedUpdateOneWithoutUsuarioNestedInput
+  conversasComoA?: Prisma.ConversaUncheckedUpdateManyWithoutUsuarioANestedInput
+  conversasComoB?: Prisma.ConversaUncheckedUpdateManyWithoutUsuarioBNestedInput
+  mensagens?: Prisma.MensagemUncheckedUpdateManyWithoutRemetenteNestedInput
 }
 
 export type UsuarioCreateWithoutContratanteInput = {
@@ -430,6 +505,9 @@ export type UsuarioCreateWithoutContratanteInput = {
   tipo: $Enums.TipoUsuario
   criadoEm?: Date | string
   agente?: Prisma.AgenteCriativoCreateNestedOneWithoutUsuarioInput
+  conversasComoA?: Prisma.ConversaCreateNestedManyWithoutUsuarioAInput
+  conversasComoB?: Prisma.ConversaCreateNestedManyWithoutUsuarioBInput
+  mensagens?: Prisma.MensagemCreateNestedManyWithoutRemetenteInput
 }
 
 export type UsuarioUncheckedCreateWithoutContratanteInput = {
@@ -439,6 +517,9 @@ export type UsuarioUncheckedCreateWithoutContratanteInput = {
   tipo: $Enums.TipoUsuario
   criadoEm?: Date | string
   agente?: Prisma.AgenteCriativoUncheckedCreateNestedOneWithoutUsuarioInput
+  conversasComoA?: Prisma.ConversaUncheckedCreateNestedManyWithoutUsuarioAInput
+  conversasComoB?: Prisma.ConversaUncheckedCreateNestedManyWithoutUsuarioBInput
+  mensagens?: Prisma.MensagemUncheckedCreateNestedManyWithoutRemetenteInput
 }
 
 export type UsuarioCreateOrConnectWithoutContratanteInput = {
@@ -464,6 +545,9 @@ export type UsuarioUpdateWithoutContratanteInput = {
   tipo?: Prisma.EnumTipoUsuarioFieldUpdateOperationsInput | $Enums.TipoUsuario
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   agente?: Prisma.AgenteCriativoUpdateOneWithoutUsuarioNestedInput
+  conversasComoA?: Prisma.ConversaUpdateManyWithoutUsuarioANestedInput
+  conversasComoB?: Prisma.ConversaUpdateManyWithoutUsuarioBNestedInput
+  mensagens?: Prisma.MensagemUpdateManyWithoutRemetenteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutContratanteInput = {
@@ -473,8 +557,250 @@ export type UsuarioUncheckedUpdateWithoutContratanteInput = {
   tipo?: Prisma.EnumTipoUsuarioFieldUpdateOperationsInput | $Enums.TipoUsuario
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   agente?: Prisma.AgenteCriativoUncheckedUpdateOneWithoutUsuarioNestedInput
+  conversasComoA?: Prisma.ConversaUncheckedUpdateManyWithoutUsuarioANestedInput
+  conversasComoB?: Prisma.ConversaUncheckedUpdateManyWithoutUsuarioBNestedInput
+  mensagens?: Prisma.MensagemUncheckedUpdateManyWithoutRemetenteNestedInput
 }
 
+export type UsuarioCreateWithoutConversasComoAInput = {
+  id?: string
+  email: string
+  senha: string
+  tipo: $Enums.TipoUsuario
+  criadoEm?: Date | string
+  agente?: Prisma.AgenteCriativoCreateNestedOneWithoutUsuarioInput
+  contratante?: Prisma.ContratanteCreateNestedOneWithoutUsuarioInput
+  conversasComoB?: Prisma.ConversaCreateNestedManyWithoutUsuarioBInput
+  mensagens?: Prisma.MensagemCreateNestedManyWithoutRemetenteInput
+}
+
+export type UsuarioUncheckedCreateWithoutConversasComoAInput = {
+  id?: string
+  email: string
+  senha: string
+  tipo: $Enums.TipoUsuario
+  criadoEm?: Date | string
+  agente?: Prisma.AgenteCriativoUncheckedCreateNestedOneWithoutUsuarioInput
+  contratante?: Prisma.ContratanteUncheckedCreateNestedOneWithoutUsuarioInput
+  conversasComoB?: Prisma.ConversaUncheckedCreateNestedManyWithoutUsuarioBInput
+  mensagens?: Prisma.MensagemUncheckedCreateNestedManyWithoutRemetenteInput
+}
+
+export type UsuarioCreateOrConnectWithoutConversasComoAInput = {
+  where: Prisma.UsuarioWhereUniqueInput
+  create: Prisma.XOR<Prisma.UsuarioCreateWithoutConversasComoAInput, Prisma.UsuarioUncheckedCreateWithoutConversasComoAInput>
+}
+
+export type UsuarioCreateWithoutConversasComoBInput = {
+  id?: string
+  email: string
+  senha: string
+  tipo: $Enums.TipoUsuario
+  criadoEm?: Date | string
+  agente?: Prisma.AgenteCriativoCreateNestedOneWithoutUsuarioInput
+  contratante?: Prisma.ContratanteCreateNestedOneWithoutUsuarioInput
+  conversasComoA?: Prisma.ConversaCreateNestedManyWithoutUsuarioAInput
+  mensagens?: Prisma.MensagemCreateNestedManyWithoutRemetenteInput
+}
+
+export type UsuarioUncheckedCreateWithoutConversasComoBInput = {
+  id?: string
+  email: string
+  senha: string
+  tipo: $Enums.TipoUsuario
+  criadoEm?: Date | string
+  agente?: Prisma.AgenteCriativoUncheckedCreateNestedOneWithoutUsuarioInput
+  contratante?: Prisma.ContratanteUncheckedCreateNestedOneWithoutUsuarioInput
+  conversasComoA?: Prisma.ConversaUncheckedCreateNestedManyWithoutUsuarioAInput
+  mensagens?: Prisma.MensagemUncheckedCreateNestedManyWithoutRemetenteInput
+}
+
+export type UsuarioCreateOrConnectWithoutConversasComoBInput = {
+  where: Prisma.UsuarioWhereUniqueInput
+  create: Prisma.XOR<Prisma.UsuarioCreateWithoutConversasComoBInput, Prisma.UsuarioUncheckedCreateWithoutConversasComoBInput>
+}
+
+export type UsuarioUpsertWithoutConversasComoAInput = {
+  update: Prisma.XOR<Prisma.UsuarioUpdateWithoutConversasComoAInput, Prisma.UsuarioUncheckedUpdateWithoutConversasComoAInput>
+  create: Prisma.XOR<Prisma.UsuarioCreateWithoutConversasComoAInput, Prisma.UsuarioUncheckedCreateWithoutConversasComoAInput>
+  where?: Prisma.UsuarioWhereInput
+}
+
+export type UsuarioUpdateToOneWithWhereWithoutConversasComoAInput = {
+  where?: Prisma.UsuarioWhereInput
+  data: Prisma.XOR<Prisma.UsuarioUpdateWithoutConversasComoAInput, Prisma.UsuarioUncheckedUpdateWithoutConversasComoAInput>
+}
+
+export type UsuarioUpdateWithoutConversasComoAInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
+  tipo?: Prisma.EnumTipoUsuarioFieldUpdateOperationsInput | $Enums.TipoUsuario
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  agente?: Prisma.AgenteCriativoUpdateOneWithoutUsuarioNestedInput
+  contratante?: Prisma.ContratanteUpdateOneWithoutUsuarioNestedInput
+  conversasComoB?: Prisma.ConversaUpdateManyWithoutUsuarioBNestedInput
+  mensagens?: Prisma.MensagemUpdateManyWithoutRemetenteNestedInput
+}
+
+export type UsuarioUncheckedUpdateWithoutConversasComoAInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
+  tipo?: Prisma.EnumTipoUsuarioFieldUpdateOperationsInput | $Enums.TipoUsuario
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  agente?: Prisma.AgenteCriativoUncheckedUpdateOneWithoutUsuarioNestedInput
+  contratante?: Prisma.ContratanteUncheckedUpdateOneWithoutUsuarioNestedInput
+  conversasComoB?: Prisma.ConversaUncheckedUpdateManyWithoutUsuarioBNestedInput
+  mensagens?: Prisma.MensagemUncheckedUpdateManyWithoutRemetenteNestedInput
+}
+
+export type UsuarioUpsertWithoutConversasComoBInput = {
+  update: Prisma.XOR<Prisma.UsuarioUpdateWithoutConversasComoBInput, Prisma.UsuarioUncheckedUpdateWithoutConversasComoBInput>
+  create: Prisma.XOR<Prisma.UsuarioCreateWithoutConversasComoBInput, Prisma.UsuarioUncheckedCreateWithoutConversasComoBInput>
+  where?: Prisma.UsuarioWhereInput
+}
+
+export type UsuarioUpdateToOneWithWhereWithoutConversasComoBInput = {
+  where?: Prisma.UsuarioWhereInput
+  data: Prisma.XOR<Prisma.UsuarioUpdateWithoutConversasComoBInput, Prisma.UsuarioUncheckedUpdateWithoutConversasComoBInput>
+}
+
+export type UsuarioUpdateWithoutConversasComoBInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
+  tipo?: Prisma.EnumTipoUsuarioFieldUpdateOperationsInput | $Enums.TipoUsuario
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  agente?: Prisma.AgenteCriativoUpdateOneWithoutUsuarioNestedInput
+  contratante?: Prisma.ContratanteUpdateOneWithoutUsuarioNestedInput
+  conversasComoA?: Prisma.ConversaUpdateManyWithoutUsuarioANestedInput
+  mensagens?: Prisma.MensagemUpdateManyWithoutRemetenteNestedInput
+}
+
+export type UsuarioUncheckedUpdateWithoutConversasComoBInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
+  tipo?: Prisma.EnumTipoUsuarioFieldUpdateOperationsInput | $Enums.TipoUsuario
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  agente?: Prisma.AgenteCriativoUncheckedUpdateOneWithoutUsuarioNestedInput
+  contratante?: Prisma.ContratanteUncheckedUpdateOneWithoutUsuarioNestedInput
+  conversasComoA?: Prisma.ConversaUncheckedUpdateManyWithoutUsuarioANestedInput
+  mensagens?: Prisma.MensagemUncheckedUpdateManyWithoutRemetenteNestedInput
+}
+
+export type UsuarioCreateWithoutMensagensInput = {
+  id?: string
+  email: string
+  senha: string
+  tipo: $Enums.TipoUsuario
+  criadoEm?: Date | string
+  agente?: Prisma.AgenteCriativoCreateNestedOneWithoutUsuarioInput
+  contratante?: Prisma.ContratanteCreateNestedOneWithoutUsuarioInput
+  conversasComoA?: Prisma.ConversaCreateNestedManyWithoutUsuarioAInput
+  conversasComoB?: Prisma.ConversaCreateNestedManyWithoutUsuarioBInput
+}
+
+export type UsuarioUncheckedCreateWithoutMensagensInput = {
+  id?: string
+  email: string
+  senha: string
+  tipo: $Enums.TipoUsuario
+  criadoEm?: Date | string
+  agente?: Prisma.AgenteCriativoUncheckedCreateNestedOneWithoutUsuarioInput
+  contratante?: Prisma.ContratanteUncheckedCreateNestedOneWithoutUsuarioInput
+  conversasComoA?: Prisma.ConversaUncheckedCreateNestedManyWithoutUsuarioAInput
+  conversasComoB?: Prisma.ConversaUncheckedCreateNestedManyWithoutUsuarioBInput
+}
+
+export type UsuarioCreateOrConnectWithoutMensagensInput = {
+  where: Prisma.UsuarioWhereUniqueInput
+  create: Prisma.XOR<Prisma.UsuarioCreateWithoutMensagensInput, Prisma.UsuarioUncheckedCreateWithoutMensagensInput>
+}
+
+export type UsuarioUpsertWithoutMensagensInput = {
+  update: Prisma.XOR<Prisma.UsuarioUpdateWithoutMensagensInput, Prisma.UsuarioUncheckedUpdateWithoutMensagensInput>
+  create: Prisma.XOR<Prisma.UsuarioCreateWithoutMensagensInput, Prisma.UsuarioUncheckedCreateWithoutMensagensInput>
+  where?: Prisma.UsuarioWhereInput
+}
+
+export type UsuarioUpdateToOneWithWhereWithoutMensagensInput = {
+  where?: Prisma.UsuarioWhereInput
+  data: Prisma.XOR<Prisma.UsuarioUpdateWithoutMensagensInput, Prisma.UsuarioUncheckedUpdateWithoutMensagensInput>
+}
+
+export type UsuarioUpdateWithoutMensagensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
+  tipo?: Prisma.EnumTipoUsuarioFieldUpdateOperationsInput | $Enums.TipoUsuario
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  agente?: Prisma.AgenteCriativoUpdateOneWithoutUsuarioNestedInput
+  contratante?: Prisma.ContratanteUpdateOneWithoutUsuarioNestedInput
+  conversasComoA?: Prisma.ConversaUpdateManyWithoutUsuarioANestedInput
+  conversasComoB?: Prisma.ConversaUpdateManyWithoutUsuarioBNestedInput
+}
+
+export type UsuarioUncheckedUpdateWithoutMensagensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
+  tipo?: Prisma.EnumTipoUsuarioFieldUpdateOperationsInput | $Enums.TipoUsuario
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  agente?: Prisma.AgenteCriativoUncheckedUpdateOneWithoutUsuarioNestedInput
+  contratante?: Prisma.ContratanteUncheckedUpdateOneWithoutUsuarioNestedInput
+  conversasComoA?: Prisma.ConversaUncheckedUpdateManyWithoutUsuarioANestedInput
+  conversasComoB?: Prisma.ConversaUncheckedUpdateManyWithoutUsuarioBNestedInput
+}
+
+
+/**
+ * Count Type UsuarioCountOutputType
+ */
+
+export type UsuarioCountOutputType = {
+  conversasComoA: number
+  conversasComoB: number
+  mensagens: number
+}
+
+export type UsuarioCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  conversasComoA?: boolean | UsuarioCountOutputTypeCountConversasComoAArgs
+  conversasComoB?: boolean | UsuarioCountOutputTypeCountConversasComoBArgs
+  mensagens?: boolean | UsuarioCountOutputTypeCountMensagensArgs
+}
+
+/**
+ * UsuarioCountOutputType without action
+ */
+export type UsuarioCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UsuarioCountOutputType
+   */
+  select?: Prisma.UsuarioCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * UsuarioCountOutputType without action
+ */
+export type UsuarioCountOutputTypeCountConversasComoAArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ConversaWhereInput
+}
+
+/**
+ * UsuarioCountOutputType without action
+ */
+export type UsuarioCountOutputTypeCountConversasComoBArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ConversaWhereInput
+}
+
+/**
+ * UsuarioCountOutputType without action
+ */
+export type UsuarioCountOutputTypeCountMensagensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MensagemWhereInput
+}
 
 
 export type UsuarioSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -485,6 +811,10 @@ export type UsuarioSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   criadoEm?: boolean
   agente?: boolean | Prisma.Usuario$agenteArgs<ExtArgs>
   contratante?: boolean | Prisma.Usuario$contratanteArgs<ExtArgs>
+  conversasComoA?: boolean | Prisma.Usuario$conversasComoAArgs<ExtArgs>
+  conversasComoB?: boolean | Prisma.Usuario$conversasComoBArgs<ExtArgs>
+  mensagens?: boolean | Prisma.Usuario$mensagensArgs<ExtArgs>
+  _count?: boolean | Prisma.UsuarioCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["usuario"]>
 
 
@@ -501,6 +831,10 @@ export type UsuarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 export type UsuarioInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   agente?: boolean | Prisma.Usuario$agenteArgs<ExtArgs>
   contratante?: boolean | Prisma.Usuario$contratanteArgs<ExtArgs>
+  conversasComoA?: boolean | Prisma.Usuario$conversasComoAArgs<ExtArgs>
+  conversasComoB?: boolean | Prisma.Usuario$conversasComoBArgs<ExtArgs>
+  mensagens?: boolean | Prisma.Usuario$mensagensArgs<ExtArgs>
+  _count?: boolean | Prisma.UsuarioCountOutputTypeDefaultArgs<ExtArgs>
 }
 
 export type $UsuarioPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -508,6 +842,9 @@ export type $UsuarioPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   objects: {
     agente: Prisma.$AgenteCriativoPayload<ExtArgs> | null
     contratante: Prisma.$ContratantePayload<ExtArgs> | null
+    conversasComoA: Prisma.$ConversaPayload<ExtArgs>[]
+    conversasComoB: Prisma.$ConversaPayload<ExtArgs>[]
+    mensagens: Prisma.$MensagemPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -857,6 +1194,9 @@ export interface Prisma__UsuarioClient<T, Null = never, ExtArgs extends runtime.
   readonly [Symbol.toStringTag]: "PrismaPromise"
   agente<T extends Prisma.Usuario$agenteArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Usuario$agenteArgs<ExtArgs>>): Prisma.Prisma__AgenteCriativoClient<runtime.Types.Result.GetResult<Prisma.$AgenteCriativoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   contratante<T extends Prisma.Usuario$contratanteArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Usuario$contratanteArgs<ExtArgs>>): Prisma.Prisma__ContratanteClient<runtime.Types.Result.GetResult<Prisma.$ContratantePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  conversasComoA<T extends Prisma.Usuario$conversasComoAArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Usuario$conversasComoAArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConversaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  conversasComoB<T extends Prisma.Usuario$conversasComoBArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Usuario$conversasComoBArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ConversaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  mensagens<T extends Prisma.Usuario$mensagensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Usuario$mensagensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MensagemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1274,6 +1614,78 @@ export type Usuario$contratanteArgs<ExtArgs extends runtime.Types.Extensions.Int
    */
   include?: Prisma.ContratanteInclude<ExtArgs> | null
   where?: Prisma.ContratanteWhereInput
+}
+
+/**
+ * Usuario.conversasComoA
+ */
+export type Usuario$conversasComoAArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Conversa
+   */
+  select?: Prisma.ConversaSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Conversa
+   */
+  omit?: Prisma.ConversaOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ConversaInclude<ExtArgs> | null
+  where?: Prisma.ConversaWhereInput
+  orderBy?: Prisma.ConversaOrderByWithRelationInput | Prisma.ConversaOrderByWithRelationInput[]
+  cursor?: Prisma.ConversaWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ConversaScalarFieldEnum | Prisma.ConversaScalarFieldEnum[]
+}
+
+/**
+ * Usuario.conversasComoB
+ */
+export type Usuario$conversasComoBArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Conversa
+   */
+  select?: Prisma.ConversaSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Conversa
+   */
+  omit?: Prisma.ConversaOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ConversaInclude<ExtArgs> | null
+  where?: Prisma.ConversaWhereInput
+  orderBy?: Prisma.ConversaOrderByWithRelationInput | Prisma.ConversaOrderByWithRelationInput[]
+  cursor?: Prisma.ConversaWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ConversaScalarFieldEnum | Prisma.ConversaScalarFieldEnum[]
+}
+
+/**
+ * Usuario.mensagens
+ */
+export type Usuario$mensagensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Mensagem
+   */
+  select?: Prisma.MensagemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Mensagem
+   */
+  omit?: Prisma.MensagemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MensagemInclude<ExtArgs> | null
+  where?: Prisma.MensagemWhereInput
+  orderBy?: Prisma.MensagemOrderByWithRelationInput | Prisma.MensagemOrderByWithRelationInput[]
+  cursor?: Prisma.MensagemWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MensagemScalarFieldEnum | Prisma.MensagemScalarFieldEnum[]
 }
 
 /**

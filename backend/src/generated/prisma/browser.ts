@@ -57,3 +57,18 @@ export type Avaliacao = Prisma.AvaliacaoModel
  * 
  */
 export type Evento = Prisma.EventoModel
+/**
+ * Model Conversa
+ * 
+ */
+export type Conversa = Prisma.ConversaModel
+/**
+ * Model Mensagem
+ * 
+ */
+export type Mensagem = Prisma.MensagemModel
+/**
+ * Model SolicitacaoEvento
+ * 
+ */
+export type SolicitacaoEvento = Prisma.SolicitacaoEventoModel

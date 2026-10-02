@@ -324,6 +324,7 @@ export type AgenteCriativoWhereInput = {
   avaliacoes?: Prisma.AvaliacaoListRelationFilter
   candidaturas?: Prisma.CandidaturaListRelationFilter
   portfolio?: Prisma.PortfolioListRelationFilter
+  solicitacoesEvento?: Prisma.SolicitacaoEventoListRelationFilter
 }
 
 export type AgenteCriativoOrderByWithRelationInput = {
@@ -347,6 +348,7 @@ export type AgenteCriativoOrderByWithRelationInput = {
   avaliacoes?: Prisma.AvaliacaoOrderByRelationAggregateInput
   candidaturas?: Prisma.CandidaturaOrderByRelationAggregateInput
   portfolio?: Prisma.PortfolioOrderByRelationAggregateInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoOrderByRelationAggregateInput
   _relevance?: Prisma.AgenteCriativoOrderByRelevanceInput
 }
 
@@ -374,6 +376,7 @@ export type AgenteCriativoWhereUniqueInput = Prisma.AtLeast<{
   avaliacoes?: Prisma.AvaliacaoListRelationFilter
   candidaturas?: Prisma.CandidaturaListRelationFilter
   portfolio?: Prisma.PortfolioListRelationFilter
+  solicitacoesEvento?: Prisma.SolicitacaoEventoListRelationFilter
 }, "id" | "usuarioId">
 
 export type AgenteCriativoOrderByWithAggregationInput = {
@@ -442,6 +445,7 @@ export type AgenteCriativoCreateInput = {
   avaliacoes?: Prisma.AvaliacaoCreateNestedManyWithoutAgenteInput
   candidaturas?: Prisma.CandidaturaCreateNestedManyWithoutAgenteInput
   portfolio?: Prisma.PortfolioCreateNestedManyWithoutAgenteInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoCreateNestedManyWithoutAgenteInput
 }
 
 export type AgenteCriativoUncheckedCreateInput = {
@@ -464,6 +468,7 @@ export type AgenteCriativoUncheckedCreateInput = {
   avaliacoes?: Prisma.AvaliacaoUncheckedCreateNestedManyWithoutAgenteInput
   candidaturas?: Prisma.CandidaturaUncheckedCreateNestedManyWithoutAgenteInput
   portfolio?: Prisma.PortfolioUncheckedCreateNestedManyWithoutAgenteInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUncheckedCreateNestedManyWithoutAgenteInput
 }
 
 export type AgenteCriativoUpdateInput = {
@@ -486,6 +491,7 @@ export type AgenteCriativoUpdateInput = {
   avaliacoes?: Prisma.AvaliacaoUpdateManyWithoutAgenteNestedInput
   candidaturas?: Prisma.CandidaturaUpdateManyWithoutAgenteNestedInput
   portfolio?: Prisma.PortfolioUpdateManyWithoutAgenteNestedInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUpdateManyWithoutAgenteNestedInput
 }
 
 export type AgenteCriativoUncheckedUpdateInput = {
@@ -508,6 +514,7 @@ export type AgenteCriativoUncheckedUpdateInput = {
   avaliacoes?: Prisma.AvaliacaoUncheckedUpdateManyWithoutAgenteNestedInput
   candidaturas?: Prisma.CandidaturaUncheckedUpdateManyWithoutAgenteNestedInput
   portfolio?: Prisma.PortfolioUncheckedUpdateManyWithoutAgenteNestedInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUncheckedUpdateManyWithoutAgenteNestedInput
 }
 
 export type AgenteCriativoCreateManyInput = {
@@ -761,6 +768,20 @@ export type AgenteCriativoUpdateOneRequiredWithoutAvaliacoesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AgenteCriativoUpdateToOneWithWhereWithoutAvaliacoesInput, Prisma.AgenteCriativoUpdateWithoutAvaliacoesInput>, Prisma.AgenteCriativoUncheckedUpdateWithoutAvaliacoesInput>
 }
 
+export type AgenteCriativoCreateNestedOneWithoutSolicitacoesEventoInput = {
+  create?: Prisma.XOR<Prisma.AgenteCriativoCreateWithoutSolicitacoesEventoInput, Prisma.AgenteCriativoUncheckedCreateWithoutSolicitacoesEventoInput>
+  connectOrCreate?: Prisma.AgenteCriativoCreateOrConnectWithoutSolicitacoesEventoInput
+  connect?: Prisma.AgenteCriativoWhereUniqueInput
+}
+
+export type AgenteCriativoUpdateOneRequiredWithoutSolicitacoesEventoNestedInput = {
+  create?: Prisma.XOR<Prisma.AgenteCriativoCreateWithoutSolicitacoesEventoInput, Prisma.AgenteCriativoUncheckedCreateWithoutSolicitacoesEventoInput>
+  connectOrCreate?: Prisma.AgenteCriativoCreateOrConnectWithoutSolicitacoesEventoInput
+  upsert?: Prisma.AgenteCriativoUpsertWithoutSolicitacoesEventoInput
+  connect?: Prisma.AgenteCriativoWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AgenteCriativoUpdateToOneWithWhereWithoutSolicitacoesEventoInput, Prisma.AgenteCriativoUpdateWithoutSolicitacoesEventoInput>, Prisma.AgenteCriativoUncheckedUpdateWithoutSolicitacoesEventoInput>
+}
+
 export type AgenteCriativoCreateWithoutUsuarioInput = {
   id?: string
   nome: string
@@ -780,6 +801,7 @@ export type AgenteCriativoCreateWithoutUsuarioInput = {
   avaliacoes?: Prisma.AvaliacaoCreateNestedManyWithoutAgenteInput
   candidaturas?: Prisma.CandidaturaCreateNestedManyWithoutAgenteInput
   portfolio?: Prisma.PortfolioCreateNestedManyWithoutAgenteInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoCreateNestedManyWithoutAgenteInput
 }
 
 export type AgenteCriativoUncheckedCreateWithoutUsuarioInput = {
@@ -801,6 +823,7 @@ export type AgenteCriativoUncheckedCreateWithoutUsuarioInput = {
   avaliacoes?: Prisma.AvaliacaoUncheckedCreateNestedManyWithoutAgenteInput
   candidaturas?: Prisma.CandidaturaUncheckedCreateNestedManyWithoutAgenteInput
   portfolio?: Prisma.PortfolioUncheckedCreateNestedManyWithoutAgenteInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUncheckedCreateNestedManyWithoutAgenteInput
 }
 
 export type AgenteCriativoCreateOrConnectWithoutUsuarioInput = {
@@ -838,6 +861,7 @@ export type AgenteCriativoUpdateWithoutUsuarioInput = {
   avaliacoes?: Prisma.AvaliacaoUpdateManyWithoutAgenteNestedInput
   candidaturas?: Prisma.CandidaturaUpdateManyWithoutAgenteNestedInput
   portfolio?: Prisma.PortfolioUpdateManyWithoutAgenteNestedInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUpdateManyWithoutAgenteNestedInput
 }
 
 export type AgenteCriativoUncheckedUpdateWithoutUsuarioInput = {
@@ -859,6 +883,7 @@ export type AgenteCriativoUncheckedUpdateWithoutUsuarioInput = {
   avaliacoes?: Prisma.AvaliacaoUncheckedUpdateManyWithoutAgenteNestedInput
   candidaturas?: Prisma.CandidaturaUncheckedUpdateManyWithoutAgenteNestedInput
   portfolio?: Prisma.PortfolioUncheckedUpdateManyWithoutAgenteNestedInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUncheckedUpdateManyWithoutAgenteNestedInput
 }
 
 export type AgenteCriativoCreateWithoutCandidaturasInput = {
@@ -880,6 +905,7 @@ export type AgenteCriativoCreateWithoutCandidaturasInput = {
   usuario: Prisma.UsuarioCreateNestedOneWithoutAgenteInput
   avaliacoes?: Prisma.AvaliacaoCreateNestedManyWithoutAgenteInput
   portfolio?: Prisma.PortfolioCreateNestedManyWithoutAgenteInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoCreateNestedManyWithoutAgenteInput
 }
 
 export type AgenteCriativoUncheckedCreateWithoutCandidaturasInput = {
@@ -901,6 +927,7 @@ export type AgenteCriativoUncheckedCreateWithoutCandidaturasInput = {
   atualizadoEm?: Date | string
   avaliacoes?: Prisma.AvaliacaoUncheckedCreateNestedManyWithoutAgenteInput
   portfolio?: Prisma.PortfolioUncheckedCreateNestedManyWithoutAgenteInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUncheckedCreateNestedManyWithoutAgenteInput
 }
 
 export type AgenteCriativoCreateOrConnectWithoutCandidaturasInput = {
@@ -938,6 +965,7 @@ export type AgenteCriativoUpdateWithoutCandidaturasInput = {
   usuario?: Prisma.UsuarioUpdateOneRequiredWithoutAgenteNestedInput
   avaliacoes?: Prisma.AvaliacaoUpdateManyWithoutAgenteNestedInput
   portfolio?: Prisma.PortfolioUpdateManyWithoutAgenteNestedInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUpdateManyWithoutAgenteNestedInput
 }
 
 export type AgenteCriativoUncheckedUpdateWithoutCandidaturasInput = {
@@ -959,6 +987,7 @@ export type AgenteCriativoUncheckedUpdateWithoutCandidaturasInput = {
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   avaliacoes?: Prisma.AvaliacaoUncheckedUpdateManyWithoutAgenteNestedInput
   portfolio?: Prisma.PortfolioUncheckedUpdateManyWithoutAgenteNestedInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUncheckedUpdateManyWithoutAgenteNestedInput
 }
 
 export type AgenteCriativoCreateWithoutPortfolioInput = {
@@ -980,6 +1009,7 @@ export type AgenteCriativoCreateWithoutPortfolioInput = {
   usuario: Prisma.UsuarioCreateNestedOneWithoutAgenteInput
   avaliacoes?: Prisma.AvaliacaoCreateNestedManyWithoutAgenteInput
   candidaturas?: Prisma.CandidaturaCreateNestedManyWithoutAgenteInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoCreateNestedManyWithoutAgenteInput
 }
 
 export type AgenteCriativoUncheckedCreateWithoutPortfolioInput = {
@@ -1001,6 +1031,7 @@ export type AgenteCriativoUncheckedCreateWithoutPortfolioInput = {
   atualizadoEm?: Date | string
   avaliacoes?: Prisma.AvaliacaoUncheckedCreateNestedManyWithoutAgenteInput
   candidaturas?: Prisma.CandidaturaUncheckedCreateNestedManyWithoutAgenteInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUncheckedCreateNestedManyWithoutAgenteInput
 }
 
 export type AgenteCriativoCreateOrConnectWithoutPortfolioInput = {
@@ -1038,6 +1069,7 @@ export type AgenteCriativoUpdateWithoutPortfolioInput = {
   usuario?: Prisma.UsuarioUpdateOneRequiredWithoutAgenteNestedInput
   avaliacoes?: Prisma.AvaliacaoUpdateManyWithoutAgenteNestedInput
   candidaturas?: Prisma.CandidaturaUpdateManyWithoutAgenteNestedInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUpdateManyWithoutAgenteNestedInput
 }
 
 export type AgenteCriativoUncheckedUpdateWithoutPortfolioInput = {
@@ -1059,6 +1091,7 @@ export type AgenteCriativoUncheckedUpdateWithoutPortfolioInput = {
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   avaliacoes?: Prisma.AvaliacaoUncheckedUpdateManyWithoutAgenteNestedInput
   candidaturas?: Prisma.CandidaturaUncheckedUpdateManyWithoutAgenteNestedInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUncheckedUpdateManyWithoutAgenteNestedInput
 }
 
 export type AgenteCriativoCreateWithoutAvaliacoesInput = {
@@ -1080,6 +1113,7 @@ export type AgenteCriativoCreateWithoutAvaliacoesInput = {
   usuario: Prisma.UsuarioCreateNestedOneWithoutAgenteInput
   candidaturas?: Prisma.CandidaturaCreateNestedManyWithoutAgenteInput
   portfolio?: Prisma.PortfolioCreateNestedManyWithoutAgenteInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoCreateNestedManyWithoutAgenteInput
 }
 
 export type AgenteCriativoUncheckedCreateWithoutAvaliacoesInput = {
@@ -1101,6 +1135,7 @@ export type AgenteCriativoUncheckedCreateWithoutAvaliacoesInput = {
   atualizadoEm?: Date | string
   candidaturas?: Prisma.CandidaturaUncheckedCreateNestedManyWithoutAgenteInput
   portfolio?: Prisma.PortfolioUncheckedCreateNestedManyWithoutAgenteInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUncheckedCreateNestedManyWithoutAgenteInput
 }
 
 export type AgenteCriativoCreateOrConnectWithoutAvaliacoesInput = {
@@ -1138,6 +1173,7 @@ export type AgenteCriativoUpdateWithoutAvaliacoesInput = {
   usuario?: Prisma.UsuarioUpdateOneRequiredWithoutAgenteNestedInput
   candidaturas?: Prisma.CandidaturaUpdateManyWithoutAgenteNestedInput
   portfolio?: Prisma.PortfolioUpdateManyWithoutAgenteNestedInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUpdateManyWithoutAgenteNestedInput
 }
 
 export type AgenteCriativoUncheckedUpdateWithoutAvaliacoesInput = {
@@ -1159,6 +1195,111 @@ export type AgenteCriativoUncheckedUpdateWithoutAvaliacoesInput = {
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   candidaturas?: Prisma.CandidaturaUncheckedUpdateManyWithoutAgenteNestedInput
   portfolio?: Prisma.PortfolioUncheckedUpdateManyWithoutAgenteNestedInput
+  solicitacoesEvento?: Prisma.SolicitacaoEventoUncheckedUpdateManyWithoutAgenteNestedInput
+}
+
+export type AgenteCriativoCreateWithoutSolicitacoesEventoInput = {
+  id?: string
+  nome: string
+  especialidade: string
+  bio?: string | null
+  cidade?: string
+  endereco?: string
+  latitude?: number | null
+  longitude?: number | null
+  visivelMapa?: boolean
+  avatarUrl?: string | null
+  notaMedia?: number
+  totalAvaliacoes?: number
+  totalProjetos?: number
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  usuario: Prisma.UsuarioCreateNestedOneWithoutAgenteInput
+  avaliacoes?: Prisma.AvaliacaoCreateNestedManyWithoutAgenteInput
+  candidaturas?: Prisma.CandidaturaCreateNestedManyWithoutAgenteInput
+  portfolio?: Prisma.PortfolioCreateNestedManyWithoutAgenteInput
+}
+
+export type AgenteCriativoUncheckedCreateWithoutSolicitacoesEventoInput = {
+  id?: string
+  usuarioId: string
+  nome: string
+  especialidade: string
+  bio?: string | null
+  cidade?: string
+  endereco?: string
+  latitude?: number | null
+  longitude?: number | null
+  visivelMapa?: boolean
+  avatarUrl?: string | null
+  notaMedia?: number
+  totalAvaliacoes?: number
+  totalProjetos?: number
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  avaliacoes?: Prisma.AvaliacaoUncheckedCreateNestedManyWithoutAgenteInput
+  candidaturas?: Prisma.CandidaturaUncheckedCreateNestedManyWithoutAgenteInput
+  portfolio?: Prisma.PortfolioUncheckedCreateNestedManyWithoutAgenteInput
+}
+
+export type AgenteCriativoCreateOrConnectWithoutSolicitacoesEventoInput = {
+  where: Prisma.AgenteCriativoWhereUniqueInput
+  create: Prisma.XOR<Prisma.AgenteCriativoCreateWithoutSolicitacoesEventoInput, Prisma.AgenteCriativoUncheckedCreateWithoutSolicitacoesEventoInput>
+}
+
+export type AgenteCriativoUpsertWithoutSolicitacoesEventoInput = {
+  update: Prisma.XOR<Prisma.AgenteCriativoUpdateWithoutSolicitacoesEventoInput, Prisma.AgenteCriativoUncheckedUpdateWithoutSolicitacoesEventoInput>
+  create: Prisma.XOR<Prisma.AgenteCriativoCreateWithoutSolicitacoesEventoInput, Prisma.AgenteCriativoUncheckedCreateWithoutSolicitacoesEventoInput>
+  where?: Prisma.AgenteCriativoWhereInput
+}
+
+export type AgenteCriativoUpdateToOneWithWhereWithoutSolicitacoesEventoInput = {
+  where?: Prisma.AgenteCriativoWhereInput
+  data: Prisma.XOR<Prisma.AgenteCriativoUpdateWithoutSolicitacoesEventoInput, Prisma.AgenteCriativoUncheckedUpdateWithoutSolicitacoesEventoInput>
+}
+
+export type AgenteCriativoUpdateWithoutSolicitacoesEventoInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  nome?: Prisma.StringFieldUpdateOperationsInput | string
+  especialidade?: Prisma.StringFieldUpdateOperationsInput | string
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  endereco?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
+  totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
+  totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  usuario?: Prisma.UsuarioUpdateOneRequiredWithoutAgenteNestedInput
+  avaliacoes?: Prisma.AvaliacaoUpdateManyWithoutAgenteNestedInput
+  candidaturas?: Prisma.CandidaturaUpdateManyWithoutAgenteNestedInput
+  portfolio?: Prisma.PortfolioUpdateManyWithoutAgenteNestedInput
+}
+
+export type AgenteCriativoUncheckedUpdateWithoutSolicitacoesEventoInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  nome?: Prisma.StringFieldUpdateOperationsInput | string
+  especialidade?: Prisma.StringFieldUpdateOperationsInput | string
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  endereco?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
+  totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
+  totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  avaliacoes?: Prisma.AvaliacaoUncheckedUpdateManyWithoutAgenteNestedInput
+  candidaturas?: Prisma.CandidaturaUncheckedUpdateManyWithoutAgenteNestedInput
+  portfolio?: Prisma.PortfolioUncheckedUpdateManyWithoutAgenteNestedInput
 }
 
 
@@ -1170,12 +1311,14 @@ export type AgenteCriativoCountOutputType = {
   avaliacoes: number
   candidaturas: number
   portfolio: number
+  solicitacoesEvento: number
 }
 
 export type AgenteCriativoCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   avaliacoes?: boolean | AgenteCriativoCountOutputTypeCountAvaliacoesArgs
   candidaturas?: boolean | AgenteCriativoCountOutputTypeCountCandidaturasArgs
   portfolio?: boolean | AgenteCriativoCountOutputTypeCountPortfolioArgs
+  solicitacoesEvento?: boolean | AgenteCriativoCountOutputTypeCountSolicitacoesEventoArgs
 }
 
 /**
@@ -1209,6 +1352,13 @@ export type AgenteCriativoCountOutputTypeCountPortfolioArgs<ExtArgs extends runt
   where?: Prisma.PortfolioWhereInput
 }
 
+/**
+ * AgenteCriativoCountOutputType without action
+ */
+export type AgenteCriativoCountOutputTypeCountSolicitacoesEventoArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SolicitacaoEventoWhereInput
+}
+
 
 export type AgenteCriativoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1231,6 +1381,7 @@ export type AgenteCriativoSelect<ExtArgs extends runtime.Types.Extensions.Intern
   avaliacoes?: boolean | Prisma.AgenteCriativo$avaliacoesArgs<ExtArgs>
   candidaturas?: boolean | Prisma.AgenteCriativo$candidaturasArgs<ExtArgs>
   portfolio?: boolean | Prisma.AgenteCriativo$portfolioArgs<ExtArgs>
+  solicitacoesEvento?: boolean | Prisma.AgenteCriativo$solicitacoesEventoArgs<ExtArgs>
   _count?: boolean | Prisma.AgenteCriativoCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["agenteCriativo"]>
 
@@ -1261,6 +1412,7 @@ export type AgenteCriativoInclude<ExtArgs extends runtime.Types.Extensions.Inter
   avaliacoes?: boolean | Prisma.AgenteCriativo$avaliacoesArgs<ExtArgs>
   candidaturas?: boolean | Prisma.AgenteCriativo$candidaturasArgs<ExtArgs>
   portfolio?: boolean | Prisma.AgenteCriativo$portfolioArgs<ExtArgs>
+  solicitacoesEvento?: boolean | Prisma.AgenteCriativo$solicitacoesEventoArgs<ExtArgs>
   _count?: boolean | Prisma.AgenteCriativoCountOutputTypeDefaultArgs<ExtArgs>
 }
 
@@ -1271,6 +1423,7 @@ export type $AgenteCriativoPayload<ExtArgs extends runtime.Types.Extensions.Inte
     avaliacoes: Prisma.$AvaliacaoPayload<ExtArgs>[]
     candidaturas: Prisma.$CandidaturaPayload<ExtArgs>[]
     portfolio: Prisma.$PortfolioPayload<ExtArgs>[]
+    solicitacoesEvento: Prisma.$SolicitacaoEventoPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1633,6 +1786,7 @@ export interface Prisma__AgenteCriativoClient<T, Null = never, ExtArgs extends r
   avaliacoes<T extends Prisma.AgenteCriativo$avaliacoesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgenteCriativo$avaliacoesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AvaliacaoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   candidaturas<T extends Prisma.AgenteCriativo$candidaturasArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgenteCriativo$candidaturasArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CandidaturaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   portfolio<T extends Prisma.AgenteCriativo$portfolioArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgenteCriativo$portfolioArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PortfolioPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  solicitacoesEvento<T extends Prisma.AgenteCriativo$solicitacoesEventoArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AgenteCriativo$solicitacoesEventoArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SolicitacaoEventoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2095,6 +2249,30 @@ export type AgenteCriativo$portfolioArgs<ExtArgs extends runtime.Types.Extension
   take?: number
   skip?: number
   distinct?: Prisma.PortfolioScalarFieldEnum | Prisma.PortfolioScalarFieldEnum[]
+}
+
+/**
+ * AgenteCriativo.solicitacoesEvento
+ */
+export type AgenteCriativo$solicitacoesEventoArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SolicitacaoEvento
+   */
+  select?: Prisma.SolicitacaoEventoSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SolicitacaoEvento
+   */
+  omit?: Prisma.SolicitacaoEventoOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SolicitacaoEventoInclude<ExtArgs> | null
+  where?: Prisma.SolicitacaoEventoWhereInput
+  orderBy?: Prisma.SolicitacaoEventoOrderByWithRelationInput | Prisma.SolicitacaoEventoOrderByWithRelationInput[]
+  cursor?: Prisma.SolicitacaoEventoWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SolicitacaoEventoScalarFieldEnum | Prisma.SolicitacaoEventoScalarFieldEnum[]
 }
 
 /**

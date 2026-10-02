@@ -35,3 +35,12 @@ export const StatusCandidatura = {
 } as const
 
 export type StatusCandidatura = (typeof StatusCandidatura)[keyof typeof StatusCandidatura]
+
+
+export const StatusSolicitacaoEvento = {
+  PENDENTE: 'PENDENTE',
+  ACEITA: 'ACEITA',
+  RECUSADA: 'RECUSADA'
+} as const
+
+export type StatusSolicitacaoEvento = (typeof StatusSolicitacaoEvento)[keyof typeof StatusSolicitacaoEvento]

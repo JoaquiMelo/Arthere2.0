@@ -58,7 +58,10 @@ export const ModelName = {
   Candidatura: 'Candidatura',
   Portfolio: 'Portfolio',
   Avaliacao: 'Avaliacao',
-  Evento: 'Evento'
+  Evento: 'Evento',
+  Conversa: 'Conversa',
+  Mensagem: 'Mensagem',
+  SolicitacaoEvento: 'SolicitacaoEvento'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -205,6 +208,41 @@ export const EventoScalarFieldEnum = {
 export type EventoScalarFieldEnum = (typeof EventoScalarFieldEnum)[keyof typeof EventoScalarFieldEnum]
 
 
+export const ConversaScalarFieldEnum = {
+  id: 'id',
+  usuarioAId: 'usuarioAId',
+  usuarioBId: 'usuarioBId',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm'
+} as const
+
+export type ConversaScalarFieldEnum = (typeof ConversaScalarFieldEnum)[keyof typeof ConversaScalarFieldEnum]
+
+
+export const MensagemScalarFieldEnum = {
+  id: 'id',
+  texto: 'texto',
+  conversaId: 'conversaId',
+  remetenteId: 'remetenteId',
+  criadoEm: 'criadoEm'
+} as const
+
+export type MensagemScalarFieldEnum = (typeof MensagemScalarFieldEnum)[keyof typeof MensagemScalarFieldEnum]
+
+
+export const SolicitacaoEventoScalarFieldEnum = {
+  id: 'id',
+  status: 'status',
+  mensagem: 'mensagem',
+  agenteId: 'agenteId',
+  eventoId: 'eventoId',
+  criadoEm: 'criadoEm',
+  atualizadoEm: 'atualizadoEm'
+} as const
+
+export type SolicitacaoEventoScalarFieldEnum = (typeof SolicitacaoEventoScalarFieldEnum)[keyof typeof SolicitacaoEventoScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -319,4 +357,33 @@ export const EventoOrderByRelevanceFieldEnum = {
 } as const
 
 export type EventoOrderByRelevanceFieldEnum = (typeof EventoOrderByRelevanceFieldEnum)[keyof typeof EventoOrderByRelevanceFieldEnum]
+
+
+export const ConversaOrderByRelevanceFieldEnum = {
+  id: 'id',
+  usuarioAId: 'usuarioAId',
+  usuarioBId: 'usuarioBId'
+} as const
+
+export type ConversaOrderByRelevanceFieldEnum = (typeof ConversaOrderByRelevanceFieldEnum)[keyof typeof ConversaOrderByRelevanceFieldEnum]
+
+
+export const MensagemOrderByRelevanceFieldEnum = {
+  id: 'id',
+  texto: 'texto',
+  conversaId: 'conversaId',
+  remetenteId: 'remetenteId'
+} as const
+
+export type MensagemOrderByRelevanceFieldEnum = (typeof MensagemOrderByRelevanceFieldEnum)[keyof typeof MensagemOrderByRelevanceFieldEnum]
+
+
+export const SolicitacaoEventoOrderByRelevanceFieldEnum = {
+  id: 'id',
+  mensagem: 'mensagem',
+  agenteId: 'agenteId',
+  eventoId: 'eventoId'
+} as const
+
+export type SolicitacaoEventoOrderByRelevanceFieldEnum = (typeof SolicitacaoEventoOrderByRelevanceFieldEnum)[keyof typeof SolicitacaoEventoOrderByRelevanceFieldEnum]
 

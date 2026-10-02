@@ -255,6 +255,7 @@ export type EventoWhereInput = {
   criadoEm?: Prisma.DateTimeFilter<"Evento"> | Date | string
   atualizadoEm?: Prisma.DateTimeFilter<"Evento"> | Date | string
   contratante?: Prisma.XOR<Prisma.ContratanteNullableScalarRelationFilter, Prisma.ContratanteWhereInput> | null
+  solicitacoes?: Prisma.SolicitacaoEventoListRelationFilter
 }
 
 export type EventoOrderByWithRelationInput = {
@@ -273,6 +274,7 @@ export type EventoOrderByWithRelationInput = {
   criadoEm?: Prisma.SortOrder
   atualizadoEm?: Prisma.SortOrder
   contratante?: Prisma.ContratanteOrderByWithRelationInput
+  solicitacoes?: Prisma.SolicitacaoEventoOrderByRelationAggregateInput
   _relevance?: Prisma.EventoOrderByRelevanceInput
 }
 
@@ -295,6 +297,7 @@ export type EventoWhereUniqueInput = Prisma.AtLeast<{
   criadoEm?: Prisma.DateTimeFilter<"Evento"> | Date | string
   atualizadoEm?: Prisma.DateTimeFilter<"Evento"> | Date | string
   contratante?: Prisma.XOR<Prisma.ContratanteNullableScalarRelationFilter, Prisma.ContratanteWhereInput> | null
+  solicitacoes?: Prisma.SolicitacaoEventoListRelationFilter
 }, "id">
 
 export type EventoOrderByWithAggregationInput = {
@@ -352,6 +355,7 @@ export type EventoCreateInput = {
   criadoEm?: Date | string
   atualizadoEm?: Date | string
   contratante?: Prisma.ContratanteCreateNestedOneWithoutEventosInput
+  solicitacoes?: Prisma.SolicitacaoEventoCreateNestedManyWithoutEventoInput
 }
 
 export type EventoUncheckedCreateInput = {
@@ -369,6 +373,7 @@ export type EventoUncheckedCreateInput = {
   contratanteId?: string | null
   criadoEm?: Date | string
   atualizadoEm?: Date | string
+  solicitacoes?: Prisma.SolicitacaoEventoUncheckedCreateNestedManyWithoutEventoInput
 }
 
 export type EventoUpdateInput = {
@@ -386,6 +391,7 @@ export type EventoUpdateInput = {
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contratante?: Prisma.ContratanteUpdateOneWithoutEventosNestedInput
+  solicitacoes?: Prisma.SolicitacaoEventoUpdateManyWithoutEventoNestedInput
 }
 
 export type EventoUncheckedUpdateInput = {
@@ -403,6 +409,7 @@ export type EventoUncheckedUpdateInput = {
   contratanteId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  solicitacoes?: Prisma.SolicitacaoEventoUncheckedUpdateManyWithoutEventoNestedInput
 }
 
 export type EventoCreateManyInput = {
@@ -522,6 +529,11 @@ export type EventoMinOrderByAggregateInput = {
   atualizadoEm?: Prisma.SortOrder
 }
 
+export type EventoScalarRelationFilter = {
+  is?: Prisma.EventoWhereInput
+  isNot?: Prisma.EventoWhereInput
+}
+
 export type EventoCreateNestedManyWithoutContratanteInput = {
   create?: Prisma.XOR<Prisma.EventoCreateWithoutContratanteInput, Prisma.EventoUncheckedCreateWithoutContratanteInput> | Prisma.EventoCreateWithoutContratanteInput[] | Prisma.EventoUncheckedCreateWithoutContratanteInput[]
   connectOrCreate?: Prisma.EventoCreateOrConnectWithoutContratanteInput | Prisma.EventoCreateOrConnectWithoutContratanteInput[]
@@ -564,6 +576,20 @@ export type EventoUncheckedUpdateManyWithoutContratanteNestedInput = {
   deleteMany?: Prisma.EventoScalarWhereInput | Prisma.EventoScalarWhereInput[]
 }
 
+export type EventoCreateNestedOneWithoutSolicitacoesInput = {
+  create?: Prisma.XOR<Prisma.EventoCreateWithoutSolicitacoesInput, Prisma.EventoUncheckedCreateWithoutSolicitacoesInput>
+  connectOrCreate?: Prisma.EventoCreateOrConnectWithoutSolicitacoesInput
+  connect?: Prisma.EventoWhereUniqueInput
+}
+
+export type EventoUpdateOneRequiredWithoutSolicitacoesNestedInput = {
+  create?: Prisma.XOR<Prisma.EventoCreateWithoutSolicitacoesInput, Prisma.EventoUncheckedCreateWithoutSolicitacoesInput>
+  connectOrCreate?: Prisma.EventoCreateOrConnectWithoutSolicitacoesInput
+  upsert?: Prisma.EventoUpsertWithoutSolicitacoesInput
+  connect?: Prisma.EventoWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EventoUpdateToOneWithWhereWithoutSolicitacoesInput, Prisma.EventoUpdateWithoutSolicitacoesInput>, Prisma.EventoUncheckedUpdateWithoutSolicitacoesInput>
+}
+
 export type EventoCreateWithoutContratanteInput = {
   id?: string
   titulo: string
@@ -578,6 +604,7 @@ export type EventoCreateWithoutContratanteInput = {
   fixado?: boolean
   criadoEm?: Date | string
   atualizadoEm?: Date | string
+  solicitacoes?: Prisma.SolicitacaoEventoCreateNestedManyWithoutEventoInput
 }
 
 export type EventoUncheckedCreateWithoutContratanteInput = {
@@ -594,6 +621,7 @@ export type EventoUncheckedCreateWithoutContratanteInput = {
   fixado?: boolean
   criadoEm?: Date | string
   atualizadoEm?: Date | string
+  solicitacoes?: Prisma.SolicitacaoEventoUncheckedCreateNestedManyWithoutEventoInput
 }
 
 export type EventoCreateOrConnectWithoutContratanteInput = {
@@ -642,6 +670,90 @@ export type EventoScalarWhereInput = {
   atualizadoEm?: Prisma.DateTimeFilter<"Evento"> | Date | string
 }
 
+export type EventoCreateWithoutSolicitacoesInput = {
+  id?: string
+  titulo: string
+  descricao: string
+  categoria: string
+  local: string
+  cidade: string
+  dataEvento: Date | string
+  horario?: string | null
+  organizador?: string | null
+  premium?: boolean
+  fixado?: boolean
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  contratante?: Prisma.ContratanteCreateNestedOneWithoutEventosInput
+}
+
+export type EventoUncheckedCreateWithoutSolicitacoesInput = {
+  id?: string
+  titulo: string
+  descricao: string
+  categoria: string
+  local: string
+  cidade: string
+  dataEvento: Date | string
+  horario?: string | null
+  organizador?: string | null
+  premium?: boolean
+  fixado?: boolean
+  contratanteId?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+}
+
+export type EventoCreateOrConnectWithoutSolicitacoesInput = {
+  where: Prisma.EventoWhereUniqueInput
+  create: Prisma.XOR<Prisma.EventoCreateWithoutSolicitacoesInput, Prisma.EventoUncheckedCreateWithoutSolicitacoesInput>
+}
+
+export type EventoUpsertWithoutSolicitacoesInput = {
+  update: Prisma.XOR<Prisma.EventoUpdateWithoutSolicitacoesInput, Prisma.EventoUncheckedUpdateWithoutSolicitacoesInput>
+  create: Prisma.XOR<Prisma.EventoCreateWithoutSolicitacoesInput, Prisma.EventoUncheckedCreateWithoutSolicitacoesInput>
+  where?: Prisma.EventoWhereInput
+}
+
+export type EventoUpdateToOneWithWhereWithoutSolicitacoesInput = {
+  where?: Prisma.EventoWhereInput
+  data: Prisma.XOR<Prisma.EventoUpdateWithoutSolicitacoesInput, Prisma.EventoUncheckedUpdateWithoutSolicitacoesInput>
+}
+
+export type EventoUpdateWithoutSolicitacoesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  titulo?: Prisma.StringFieldUpdateOperationsInput | string
+  descricao?: Prisma.StringFieldUpdateOperationsInput | string
+  categoria?: Prisma.StringFieldUpdateOperationsInput | string
+  local?: Prisma.StringFieldUpdateOperationsInput | string
+  cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  contratante?: Prisma.ContratanteUpdateOneWithoutEventosNestedInput
+}
+
+export type EventoUncheckedUpdateWithoutSolicitacoesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  titulo?: Prisma.StringFieldUpdateOperationsInput | string
+  descricao?: Prisma.StringFieldUpdateOperationsInput | string
+  categoria?: Prisma.StringFieldUpdateOperationsInput | string
+  local?: Prisma.StringFieldUpdateOperationsInput | string
+  cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contratanteId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type EventoCreateManyContratanteInput = {
   id?: string
   titulo: string
@@ -672,6 +784,7 @@ export type EventoUpdateWithoutContratanteInput = {
   fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  solicitacoes?: Prisma.SolicitacaoEventoUpdateManyWithoutEventoNestedInput
 }
 
 export type EventoUncheckedUpdateWithoutContratanteInput = {
@@ -688,6 +801,7 @@ export type EventoUncheckedUpdateWithoutContratanteInput = {
   fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  solicitacoes?: Prisma.SolicitacaoEventoUncheckedUpdateManyWithoutEventoNestedInput
 }
 
 export type EventoUncheckedUpdateManyWithoutContratanteInput = {
@@ -707,6 +821,35 @@ export type EventoUncheckedUpdateManyWithoutContratanteInput = {
 }
 
 
+/**
+ * Count Type EventoCountOutputType
+ */
+
+export type EventoCountOutputType = {
+  solicitacoes: number
+}
+
+export type EventoCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  solicitacoes?: boolean | EventoCountOutputTypeCountSolicitacoesArgs
+}
+
+/**
+ * EventoCountOutputType without action
+ */
+export type EventoCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EventoCountOutputType
+   */
+  select?: Prisma.EventoCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * EventoCountOutputType without action
+ */
+export type EventoCountOutputTypeCountSolicitacoesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SolicitacaoEventoWhereInput
+}
+
 
 export type EventoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -724,6 +867,8 @@ export type EventoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   criadoEm?: boolean
   atualizadoEm?: boolean
   contratante?: boolean | Prisma.Evento$contratanteArgs<ExtArgs>
+  solicitacoes?: boolean | Prisma.Evento$solicitacoesArgs<ExtArgs>
+  _count?: boolean | Prisma.EventoCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["evento"]>
 
 
@@ -748,12 +893,15 @@ export type EventoSelectScalar = {
 export type EventoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "titulo" | "descricao" | "categoria" | "local" | "cidade" | "dataEvento" | "horario" | "organizador" | "premium" | "fixado" | "contratanteId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["evento"]>
 export type EventoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   contratante?: boolean | Prisma.Evento$contratanteArgs<ExtArgs>
+  solicitacoes?: boolean | Prisma.Evento$solicitacoesArgs<ExtArgs>
+  _count?: boolean | Prisma.EventoCountOutputTypeDefaultArgs<ExtArgs>
 }
 
 export type $EventoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Evento"
   objects: {
     contratante: Prisma.$ContratantePayload<ExtArgs> | null
+    solicitacoes: Prisma.$SolicitacaoEventoPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1111,6 +1259,7 @@ readonly fields: EventoFieldRefs;
 export interface Prisma__EventoClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   contratante<T extends Prisma.Evento$contratanteArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Evento$contratanteArgs<ExtArgs>>): Prisma.Prisma__ContratanteClient<runtime.Types.Result.GetResult<Prisma.$ContratantePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  solicitacoes<T extends Prisma.Evento$solicitacoesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Evento$solicitacoesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SolicitacaoEventoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1518,6 +1667,30 @@ export type Evento$contratanteArgs<ExtArgs extends runtime.Types.Extensions.Inte
    */
   include?: Prisma.ContratanteInclude<ExtArgs> | null
   where?: Prisma.ContratanteWhereInput
+}
+
+/**
+ * Evento.solicitacoes
+ */
+export type Evento$solicitacoesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SolicitacaoEvento
+   */
+  select?: Prisma.SolicitacaoEventoSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SolicitacaoEvento
+   */
+  omit?: Prisma.SolicitacaoEventoOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SolicitacaoEventoInclude<ExtArgs> | null
+  where?: Prisma.SolicitacaoEventoWhereInput
+  orderBy?: Prisma.SolicitacaoEventoOrderByWithRelationInput | Prisma.SolicitacaoEventoOrderByWithRelationInput[]
+  cursor?: Prisma.SolicitacaoEventoWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SolicitacaoEventoScalarFieldEnum | Prisma.SolicitacaoEventoScalarFieldEnum[]
 }
 
 /**

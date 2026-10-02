@@ -280,6 +280,23 @@ export type EnumStatusCandidaturaWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumStatusCandidaturaFilter<$PrismaModel>
 }
 
+export type EnumStatusSolicitacaoEventoFilter<$PrismaModel = never> = {
+  equals?: $Enums.StatusSolicitacaoEvento | Prisma.EnumStatusSolicitacaoEventoFieldRefInput<$PrismaModel>
+  in?: $Enums.StatusSolicitacaoEvento[]
+  notIn?: $Enums.StatusSolicitacaoEvento[]
+  not?: Prisma.NestedEnumStatusSolicitacaoEventoFilter<$PrismaModel> | $Enums.StatusSolicitacaoEvento
+}
+
+export type EnumStatusSolicitacaoEventoWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.StatusSolicitacaoEvento | Prisma.EnumStatusSolicitacaoEventoFieldRefInput<$PrismaModel>
+  in?: $Enums.StatusSolicitacaoEvento[]
+  notIn?: $Enums.StatusSolicitacaoEvento[]
+  not?: Prisma.NestedEnumStatusSolicitacaoEventoWithAggregatesFilter<$PrismaModel> | $Enums.StatusSolicitacaoEvento
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumStatusSolicitacaoEventoFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumStatusSolicitacaoEventoFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[]
@@ -550,6 +567,23 @@ export type NestedEnumStatusCandidaturaWithAggregatesFilter<$PrismaModel = never
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumStatusCandidaturaFilter<$PrismaModel>
   _max?: Prisma.NestedEnumStatusCandidaturaFilter<$PrismaModel>
+}
+
+export type NestedEnumStatusSolicitacaoEventoFilter<$PrismaModel = never> = {
+  equals?: $Enums.StatusSolicitacaoEvento | Prisma.EnumStatusSolicitacaoEventoFieldRefInput<$PrismaModel>
+  in?: $Enums.StatusSolicitacaoEvento[]
+  notIn?: $Enums.StatusSolicitacaoEvento[]
+  not?: Prisma.NestedEnumStatusSolicitacaoEventoFilter<$PrismaModel> | $Enums.StatusSolicitacaoEvento
+}
+
+export type NestedEnumStatusSolicitacaoEventoWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.StatusSolicitacaoEvento | Prisma.EnumStatusSolicitacaoEventoFieldRefInput<$PrismaModel>
+  in?: $Enums.StatusSolicitacaoEvento[]
+  notIn?: $Enums.StatusSolicitacaoEvento[]
+  not?: Prisma.NestedEnumStatusSolicitacaoEventoWithAggregatesFilter<$PrismaModel> | $Enums.StatusSolicitacaoEvento
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumStatusSolicitacaoEventoFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumStatusSolicitacaoEventoFilter<$PrismaModel>
 }
 
 
