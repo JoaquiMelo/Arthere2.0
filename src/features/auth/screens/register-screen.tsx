@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useUser } from '@/providers/user-provider';
 import { ARTHERE_LOGO } from '@/shared/assets/artHere-logo';
+import { buscarCidades, CidadeBR, ESTADOS_BR } from '@/shared/config/brazil-location';
 
 type TipoUsuario = 'AGENTE' | 'CONTRATANTE';
 
@@ -24,17 +25,31 @@ export default function RegisterScreen() {
   const [categoria, setCategoria] = useState('');
   const [telefone, setTelefone] = useState('');
   const [site, setSite] = useState('');
+  const [estado, setEstado] = useState('');
   const [cidade, setCidade] = useState('');
+  const [cidades, setCidades] = useState<CidadeBR[]>([]);
+  const [modalLocal, setModalLocal] = useState<'estado' | 'cidade' | null>(null);
+  const [carregandoCidades, setCarregandoCidades] = useState(false);
   const [endereco, setEndereco] = useState('');
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
   const emailValido = (valor: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(valor.trim());
 
+  const selecionarEstado = async (uf: string) => {
+    setEstado(uf);
+    setCidade('');
+    setModalLocal(null);
+    setCarregandoCidades(true);
+    try { setCidades(await buscarCidades(uf)); setModalLocal('cidade'); }
+    catch { Alert.alert('Cidades indisponíveis', 'Não foi possível carregar as cidades deste estado. Tente novamente.'); }
+    finally { setCarregandoCidades(false); }
+  };
+
   const handleRegister = async () => {
     const emailNormalizado = email.trim().toLowerCase();
-    if (!nome.trim() || !emailNormalizado || !senha || !confirmarSenha || !cidade.trim()) {
-      Alert.alert('Atenção', 'Preencha nome, e-mail, senha, cidade e todos os campos obrigatórios.');
+    if (!nome.trim() || !emailNormalizado || !senha || !confirmarSenha || !estado.trim() || !cidade.trim()) {
+      Alert.alert('Atenção', 'Preencha nome, estado, cidade, e-mail, senha e todos os campos obrigatórios.');
       return;
     }
     if (!emailValido(emailNormalizado)) {
@@ -81,6 +96,7 @@ export default function RegisterScreen() {
         telefone: telefone.trim() || undefined,
         descricao: bio.trim() || undefined,
         site: site.trim() || undefined,
+        estado: estado.trim(),
         cidade: cidade.trim(),
         endereco: endereco.trim() || undefined,
         categoria: categoria.trim() || undefined,
@@ -168,9 +184,36 @@ export default function RegisterScreen() {
           {tipoUsuario === 'AGENTE' && renderInput('ÁREA DE ATUAÇÃO', especialidade, setEspecialidade, 'Ex.: fotografia, design, música', 'sparkles-outline', { autoCapitalize: 'sentences' })}
           {renderInput('E-MAIL', email, setEmail, 'seu@email.com', 'mail-outline', { keyboardType: 'email-address', autoCapitalize: 'none', autoCorrect: false })}
           {renderInput('TELEFONE / WHATSAPP', telefone, setTelefone, '(13) 99999-9999', 'call-outline', { keyboardType: 'phone-pad' })}
-          {renderInput('CIDADE', cidade, setCidade, 'Ex.: Santos - SP', 'location-outline', { autoCapitalize: 'words' })}
+          <Text style={styles.label}>ESTADO</Text>
+          <TouchableOpacity style={styles.selectWrap} onPress={() => setModalLocal('estado')}>
+            <Ionicons name="map-outline" size={21} color="#77716d" />
+            <Text style={[styles.selectText, !estado && styles.selectPlaceholder]}>{estado ? ESTADOS_BR.find((item) => item.sigla === estado)?.nome : 'Selecione seu estado'}</Text>
+            <Ionicons name="chevron-down" size={19} color="#77716d" />
+          </TouchableOpacity>
+          <Text style={styles.label}>CIDADE</Text>
+          <TouchableOpacity style={[styles.selectWrap, !estado && styles.selectDisabled]} disabled={!estado} onPress={() => setModalLocal('cidade')}>
+            <Ionicons name="location-outline" size={21} color="#77716d" />
+            <Text style={[styles.selectText, !cidade && styles.selectPlaceholder]}>{carregandoCidades ? 'Carregando cidades...' : cidade || (estado ? 'Selecione sua cidade' : 'Selecione o estado primeiro')}</Text>
+            <Ionicons name="chevron-down" size={19} color="#77716d" />
+          </TouchableOpacity>
           {renderInput('ENDEREÇO', endereco, setEndereco, 'Rua, número e bairro (opcional)', 'navigate-outline', { autoCapitalize: 'sentences' })}
           {tipoUsuario === 'CONTRATANTE' && renderInput('SITE', site, setSite, 'https://suaempresa.com.br', 'globe-outline', { keyboardType: 'url', autoCapitalize: 'none', autoCorrect: false })}
+          <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalCard}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>{modalLocal === 'estado' ? 'Selecione seu estado' : 'Selecione sua cidade'}</Text>
+                  <TouchableOpacity onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color="#302a31" /></TouchableOpacity>
+                </View>
+                {modalLocal === 'estado' ? (
+                  <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({ item }) => <TouchableOpacity style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} />
+                ) : (
+                  <FlatList data={cidades} keyExtractor={(item) => String(item.id)} renderItem={({ item }) => <TouchableOpacity style={styles.option} onPress={() => { setCidade(item.nome); setModalLocal(null); }}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} />
+                )}
+              </View>
+            </View>
+          </Modal>
+
           {tipoUsuario === 'AGENTE' && renderInput('SOBRE VOCÊ', bio, setBio, 'Apresente seu trabalho em poucas palavras', 'document-text-outline', { multiline: true, numberOfLines: 3, textAlignVertical: 'top' })}
 
           <Text style={styles.sectionTitle}>SEGURANÇA</Text>
@@ -232,6 +275,18 @@ const styles = StyleSheet.create({
   roleSub: { color: '#77716d', fontSize: 12, marginTop: 4 },
   inputWrap: { minHeight: 56, backgroundColor: '#fbf8f2', borderWidth: 1, borderColor: '#d5cec4', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, marginBottom: 18, borderRadius: 16 },
   input: { flex: 1, color: '#302a31', fontSize: 16, marginLeft: 11, paddingVertical: 12, minHeight: 54 },
+  selectWrap: { minHeight: 56, backgroundColor: '#fbf8f2', borderWidth: 1, borderColor: '#d5cec4', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, marginBottom: 18, borderRadius: 16 },
+  selectText: { flex: 1, color: '#302a31', fontSize: 16, marginLeft: 11 },
+  selectPlaceholder: { color: '#77716d' },
+  selectDisabled: { opacity: 0.55 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(40,35,43,0.45)', justifyContent: 'flex-end' },
+  modalCard: { maxHeight: '78%', backgroundColor: '#f7f2e9', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  modalTitle: { color: '#302a31', fontSize: 20, fontWeight: '900' },
+  option: { minHeight: 52, borderBottomWidth: 1, borderBottomColor: '#e2dbd1', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  optionText: { color: '#302a31', fontSize: 15, fontWeight: '700' },
+  optionUf: { color: '#f25b43', fontSize: 12, fontWeight: '900' },
+  emptyText: { textAlign: 'center', color: '#77716d', paddingVertical: 30 },
   termsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2, marginBottom: 22, gap: 11 },
   checkbox: { width: 24, height: 24, borderWidth: 2, borderColor: '#aaa19a', alignItems: 'center', justifyContent: 'center', borderRadius: 16 },
   checkboxActive: { backgroundColor: '#28232b', borderColor: '#28232b' },
