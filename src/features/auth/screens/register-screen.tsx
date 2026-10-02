@@ -35,7 +35,7 @@ export default function RegisterScreen() {
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
-  const emailValido = (valor: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(valor.trim());
+  const emailValido = (valor: string) => /^[^\s@]+@[^\s@]+$/i.test(valor.trim());
 
   const selecionarEstado = async (uf: string) => {
     setEstado(uf);
