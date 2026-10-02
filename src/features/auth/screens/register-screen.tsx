@@ -30,6 +30,7 @@ export default function RegisterScreen() {
   const [cidades, setCidades] = useState<CidadeBR[]>([]);
   const [modalLocal, setModalLocal] = useState<'estado' | 'cidade' | null>(null);
   const [carregandoCidades, setCarregandoCidades] = useState(false);
+  const [buscaCidade, setBuscaCidade] = useState('');
   const [endereco, setEndereco] = useState('');
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [carregando, setCarregando] = useState(false);
@@ -39,6 +40,7 @@ export default function RegisterScreen() {
   const selecionarEstado = async (uf: string) => {
     setEstado(uf);
     setCidade('');
+    setBuscaCidade('');
     setModalLocal(null);
     setCarregandoCidades(true);
     try { setCidades(await buscarCidades(uf)); setModalLocal('cidade'); }
@@ -208,7 +210,7 @@ export default function RegisterScreen() {
                 {modalLocal === 'estado' ? (
                   <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({ item }) => <TouchableOpacity style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} />
                 ) : (
-                  <FlatList data={cidades} keyExtractor={(item) => String(item.id)} renderItem={({ item }) => <TouchableOpacity style={styles.option} onPress={() => { setCidade(item.nome); setModalLocal(null); }}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} />
+                  <View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color="#77716d" /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." placeholderTextColor="#77716d" autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({ item }) => <TouchableOpacity style={styles.option} onPress={() => { setCidade(item.nome); setBuscaCidade(''); setModalLocal(null); }}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} />
                 )}
               </View>
             </View>
@@ -287,6 +289,8 @@ const styles = StyleSheet.create({
   optionText: { color: '#302a31', fontSize: 15, fontWeight: '700' },
   optionUf: { color: '#f25b43', fontSize: 12, fontWeight: '900' },
   emptyText: { textAlign: 'center', color: '#77716d', paddingVertical: 30 },
+  citySearchWrap: { minHeight: 48, borderWidth: 1, borderColor: '#d5cec4', borderRadius: 14, backgroundColor: '#fbf8f2', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, marginBottom: 10 },
+  citySearchInput: { flex: 1, color: '#302a31', fontSize: 15, marginLeft: 9, paddingVertical: 9 },
   termsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2, marginBottom: 22, gap: 11 },
   checkbox: { width: 24, height: 24, borderWidth: 2, borderColor: '#aaa19a', alignItems: 'center', justifyContent: 'center', borderRadius: 16 },
   checkboxActive: { backgroundColor: '#28232b', borderColor: '#28232b' },
