@@ -17,6 +17,7 @@ export class AuthService {
     const senha = String(dto.senha ?? '');
 
     if (!email || !nome) throw new ConflictException('Nome e e-mail são obrigatórios.');
+    if (!this.emailValido(email)) throw new ConflictException('Informe um e-mail válido.');
     if (senha.length < 8) throw new ConflictException('A senha deve ter pelo menos 8 caracteres.');
 
     const existente = await this.prisma.usuario.findUnique({ where: { email } });
@@ -42,6 +43,7 @@ export class AuthService {
                   nome,
                   especialidade: dto.especialidade?.trim() ?? '',
                   bio: dto.descricao?.trim() || undefined,
+                  estado: dto.estado?.trim() ?? '',
                   cidade: dto.cidade?.trim() ?? '',
                   endereco: dto.endereco?.trim() ?? '',
                 },
@@ -58,6 +60,7 @@ export class AuthService {
                   telefone: dto.telefone?.trim() || undefined,
                   descricao: dto.descricao?.trim() || undefined,
                   site: dto.site?.trim() || undefined,
+                  estado: dto.estado?.trim() || undefined,
                   cidade: dto.cidade?.trim() || undefined,
                   endereco: dto.endereco?.trim() || undefined,
                   categoria: dto.categoria?.trim() || undefined,
@@ -73,6 +76,7 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const email = String(dto.email ?? '').trim().toLowerCase();
+    if (!this.emailValido(email)) throw new UnauthorizedException('Informe um e-mail válido.');
     const usuario = await this.prisma.usuario.findUnique({
       where: { email },
       include: { agente: true, contratante: true },
@@ -83,6 +87,10 @@ export class AuthService {
     }
 
     return this.token(usuario);
+  }
+
+  private emailValido(email: string) {
+    return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/i.test(email);
   }
 
   private token(usuario: any) {

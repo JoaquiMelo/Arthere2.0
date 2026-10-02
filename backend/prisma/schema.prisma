@@ -29,6 +29,7 @@ model AgenteCriativo {
   nome            String
   especialidade   String
   bio             String?       @db.Text
+  estado          String        @default("")
   cidade          String        @default("")
   endereco        String        @default("")
   latitude        Float?
@@ -63,6 +64,7 @@ model Contratante {
   telefone     String?
   descricao    String?     @db.Text
   site         String?
+  estado       String?
   cidade       String?
   endereco     String?
   categoria    String?

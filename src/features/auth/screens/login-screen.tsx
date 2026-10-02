@@ -13,14 +13,21 @@ export default function LoginScreen() {
   const [carregando, setCarregando] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
+  const emailValido = (valor: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(valor.trim());
+
   const handleLogin = async () => {
-    if (!email.trim() || !senha) {
+    const emailNormalizado = email.trim().toLowerCase();
+    if (!emailNormalizado || !senha) {
       Alert.alert('Atenção', 'Informe o e-mail e a senha.');
+      return;
+    }
+    if (!emailValido(emailNormalizado)) {
+      Alert.alert('E-mail inválido', 'Digite um e-mail válido, como seu@email.com.');
       return;
     }
     try {
       setCarregando(true);
-      if (login) await login(email.trim(), senha);
+      if (login) await login(emailNormalizado, senha);
       navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
     } catch {
       Alert.alert('Erro', 'E-mail ou senha inválidos. Verifique seus dados e tente novamente.');
@@ -60,10 +67,12 @@ export default function LoginScreen() {
             placeholder="seu@email.com"
             placeholderTextColor="#77716d"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(value) => setEmail(value.replace(/\s/g, '').toLowerCase())}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            autoComplete="email"
+            textContentType="emailAddress"
           />
         </View>
 

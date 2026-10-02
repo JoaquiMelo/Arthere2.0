@@ -1,0 +1,2 @@
+ALTER TABLE `agente_criativo` ADD COLUMN `estado` VARCHAR(191) NOT NULL DEFAULT '';
+ALTER TABLE `contratante` ADD COLUMN `estado` VARCHAR(191) NULL;

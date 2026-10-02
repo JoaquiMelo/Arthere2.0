@@ -18,6 +18,7 @@ export interface LocalUser {
   email: string;
   tipo: TipoUsuario;
   especialidade?: string;
+  estado?: string;
   cidade?: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -62,6 +63,7 @@ function mapUsuario(usuario: any): LocalUser {
     tipo: usuario.tipo,
     documento: perfil.cpfCnpj ?? undefined,
     especialidade: perfil.especialidade ?? undefined,
+    estado: perfil.estado ?? undefined,
     cidade: perfil.cidade ?? undefined,
     latitude: perfil.latitude ?? null,
     longitude: perfil.longitude ?? null,

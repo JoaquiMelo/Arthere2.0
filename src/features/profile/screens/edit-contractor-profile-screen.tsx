@@ -5,8 +5,10 @@ import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -19,6 +21,7 @@ import {
 
 import { useUser } from "@/providers/user-provider";
 import { colors } from "@/shared/theme/colors";
+import { buscarCidades, CidadeBR, ESTADOS_BR } from "@/shared/config/brazil-location";
 
 const AVATAR_PADRAO = "https://i.pravatar.cc/300?img=68";
 
@@ -39,7 +42,11 @@ export default function EditContractorProfileScreen() {
   const [empresa, setEmpresa] = useState(user?.empresa || "");
   const [telefone, setTelefone] = useState(user?.telefone || "");
   const [categoria, setCategoria] = useState(user?.categoria || "");
+  const [estado, setEstado] = useState(user?.estado || "");
   const [cidade, setCidade] = useState(user?.cidade || "");
+  const [cidades, setCidades] = useState<CidadeBR[]>([]);
+  const [modalLocal, setModalLocal] = useState<"estado" | "cidade" | null>(null);
+  const [carregandoCidades, setCarregandoCidades] = useState(false);
   const [endereco, setEndereco] = useState(user?.endereco || "");
   const [site, setSite] = useState(user?.site || "");
   const [descricao, setDescricao] = useState(user?.descricao || "");
@@ -66,9 +73,18 @@ export default function EditContractorProfileScreen() {
     }
   };
 
+  const selecionarEstado = async (uf: string) => {
+    setEstado(uf); setCidade(""); setModalLocal(null); setCarregandoCidades(true);
+    try { setCidades(await buscarCidades(uf)); setModalLocal("cidade"); } catch { Alert.alert("Cidades indisponíveis", "Não foi possível carregar as cidades deste estado."); } finally { setCarregandoCidades(false); }
+  };
+
   const salvar = async () => {
     if (!nome.trim() || !empresa.trim()) {
       Alert.alert("Campos obrigatórios", "Informe seu nome e sua empresa.");
+      return;
+    }
+    if (!estado || !cidade.trim()) {
+      Alert.alert("Localização obrigatória", "Selecione seu estado e sua cidade.");
       return;
     }
 
@@ -83,6 +99,7 @@ export default function EditContractorProfileScreen() {
         empresa: empresa.trim(),
         telefone: telefone.trim(),
         categoria: categoria.trim(),
+        estado: estado.trim(),
         cidade: cidade.trim(),
         endereco: endereco.trim(),
         site: site.trim(),
@@ -151,6 +168,7 @@ export default function EditContractorProfileScreen() {
           </Text>
 
           {/* Formulário */}
+          <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View style={styles.modalCard}><View style={styles.modalHeader}><Text style={styles.modalTitle}>{modalLocal === "estado" ? "Selecione seu estado" : "Selecione sua cidade"}</Text><TouchableOpacity onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={colors.text} /></TouchableOpacity></View>{modalLocal === "estado" ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <FlatList data={cidades} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => {setCidade(item.nome); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} />}</View></View></Modal>
           <View style={styles.form}>
             <Field
               label="CPF ou CNPJ"
@@ -198,13 +216,10 @@ export default function EditContractorProfileScreen() {
               keyboardType="phone-pad"
               icon="call-outline"
             />
-            <Field
-              label="Cidade"
-              value={cidade}
-              onChangeText={setCidade}
-              placeholder="Ex.: Santos - SP"
-              icon="location-outline"
-            />
+            <Text style={styles.label}>Estado</Text>
+            <TouchableOpacity style={styles.locationSelect} onPress={() => setModalLocal("estado")}><Ionicons name="map-outline" size={18} color={colors.primaryDark} /><Text style={styles.locationSelectText}>{ESTADOS_BR.find((item) => item.sigla === estado)?.nome || "Selecione seu estado"}</Text><Ionicons name="chevron-down" size={18} color={colors.muted} /></TouchableOpacity>
+            <Text style={styles.label}>Cidade</Text>
+            <TouchableOpacity style={[styles.locationSelect, !estado && styles.locationDisabled]} disabled={!estado} onPress={() => setModalLocal("cidade")}><Ionicons name="location-outline" size={18} color={colors.primaryDark} /><Text style={styles.locationSelectText}>{carregandoCidades ? "Carregando cidades..." : cidade || "Selecione sua cidade"}</Text><Ionicons name="chevron-down" size={18} color={colors.muted} /></TouchableOpacity>
             <Field
               label="Endereço"
               value={endereco}
@@ -336,6 +351,16 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   form: { gap: 15 },
+  locationSelect: { minHeight: 49, borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.white, flexDirection: "row", alignItems: "center", paddingHorizontal: 13, gap: 9 },
+  locationSelectText: { flex: 1, color: colors.text, fontSize: 14 },
+  locationDisabled: { opacity: 0.55 },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(41,36,43,0.45)", justifyContent: "flex-end" },
+  modalCard: { maxHeight: "78%", backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
+  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  modalTitle: { color: colors.text, fontSize: 20, fontWeight: "900" },
+  option: { minHeight: 52, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  optionText: { color: colors.text, fontSize: 15, fontWeight: "700" },
+  optionUf: { color: colors.primary, fontSize: 12, fontWeight: "900" },
   field: { gap: 6 },
   label: { fontSize: 13, fontWeight: "800", color: colors.text },
   singleInputWrapper: {
