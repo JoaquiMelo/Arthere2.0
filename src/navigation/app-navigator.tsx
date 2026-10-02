@@ -75,19 +75,19 @@ function RootStack(){
       <Stack.Screen name="CreatePortfolio" component={CreatePortfolioScreen}/>
       <Stack.Screen name="CustomizeProfile" component={CustomizeProfileScreen}/>
       <Stack.Screen name="Tabs" component={AppTabs}/>
+      <Stack.Screen name="EditProfile" component={EditProfileScreen}/>
+      <Stack.Screen name="SelectLocation" component={SelectLocationScreen}/>
+      <Stack.Screen name="EditContractorProfile" component={EditContractorProfileScreen}/>
+      <Stack.Screen name="PortfolioCreation" component={PortfolioCreationScreen}/>
+      <Stack.Screen name="Settings" component={SettingsScreen}/>
+      <Stack.Screen name="ChatConversation" component={ChatConversationScreen}/>
+      <Stack.Screen name="ManageOpportunities" component={ManageOpportunitiesScreen}/>
+      <Stack.Screen name="Opportunities" component={OpportunitiesScreen}/>
+      <Stack.Screen name="Events" component={EventsScreen}/>
+      <Stack.Screen name="EventDetails" component={EventDetailsScreen}/>
+      <Stack.Screen name="CreateEvent" component={CreateEventScreen}/>
     </>
   )}
-  <Stack.Screen name="EditProfile" component={EditProfileScreen}/>
-  <Stack.Screen name="SelectLocation" component={SelectLocationScreen}/>
-  <Stack.Screen name="EditContractorProfile" component={EditContractorProfileScreen}/>
-  <Stack.Screen name="PortfolioCreation" component={PortfolioCreationScreen}/>
-  <Stack.Screen name="Settings" component={SettingsScreen}/>
-  <Stack.Screen name="ChatConversation" component={ChatConversationScreen}/>
-  <Stack.Screen name="ManageOpportunities" component={ManageOpportunitiesScreen}/>
-  <Stack.Screen name="Opportunities" component={OpportunitiesScreen}/>
-  <Stack.Screen name="Events" component={EventsScreen}/>
-  <Stack.Screen name="EventDetails" component={EventDetailsScreen}/>
-  <Stack.Screen name="CreateEvent" component={CreateEventScreen}/>
  </Stack.Navigator>;
 }
 
