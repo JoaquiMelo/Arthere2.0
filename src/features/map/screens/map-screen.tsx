@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Image,
@@ -75,7 +75,7 @@ export function MapScreen() {
   const [selecionado, setSelecionado] = useState<AgenteCriativo | null>(null);
   const [agentesBaixadaSantista, setAgentesBaixadaSantista] = useState<AgenteCriativo[]>([]);
 
-  useEffect(() => {
+  const carregarAgentes = useCallback(() => {
     let ativo = true;
     agents()
       .then((lista) => {
@@ -101,6 +101,12 @@ export function MapScreen() {
       .catch(() => { if (ativo) setAgentesBaixadaSantista([]); });
     return () => { ativo = false; };
   }, []);
+
+  useEffect(() => carregarAgentes(), [carregarAgentes]);
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => carregarAgentes());
+    return unsubscribe;
+  }, [navigation, carregarAgentes]);
 
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
