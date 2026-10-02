@@ -47,6 +47,7 @@ export default function EditContractorProfileScreen() {
   const [cidades, setCidades] = useState<CidadeBR[]>([]);
   const [modalLocal, setModalLocal] = useState<"estado" | "cidade" | null>(null);
   const [carregandoCidades, setCarregandoCidades] = useState(false);
+  const [buscaCidade, setBuscaCidade] = useState('');
   const [endereco, setEndereco] = useState(user?.endereco || "");
   const [site, setSite] = useState(user?.site || "");
   const [descricao, setDescricao] = useState(user?.descricao || "");
@@ -74,7 +75,7 @@ export default function EditContractorProfileScreen() {
   };
 
   const selecionarEstado = async (uf: string) => {
-    setEstado(uf); setCidade(""); setModalLocal(null); setCarregandoCidades(true);
+    setEstado(uf); setCidade(""); setBuscaCidade(""); setModalLocal(null); setCarregandoCidades(true);
     try { setCidades(await buscarCidades(uf)); setModalLocal("cidade"); } catch { Alert.alert("Cidades indisponíveis", "Não foi possível carregar as cidades deste estado."); } finally { setCarregandoCidades(false); }
   };
 
@@ -168,7 +169,7 @@ export default function EditContractorProfileScreen() {
           </Text>
 
           {/* Formulário */}
-          <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View style={styles.modalCard}><View style={styles.modalHeader}><Text style={styles.modalTitle}>{modalLocal === "estado" ? "Selecione seu estado" : "Selecione sua cidade"}</Text><TouchableOpacity onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={colors.text} /></TouchableOpacity></View>{modalLocal === "estado" ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <FlatList data={cidades} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => {setCidade(item.nome); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} />}</View></View></Modal>
+          <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View style={styles.modalCard}><View style={styles.modalHeader}><Text style={styles.modalTitle}>{modalLocal === "estado" ? "Selecione seu estado" : "Selecione sua cidade"}</Text><TouchableOpacity onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={colors.text} /></TouchableOpacity></View>{modalLocal === "estado" ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color={colors.muted} /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." placeholderTextColor={colors.muted} autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => {setCidade(item.nome); setBuscaCidade(''); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>}</View></View></Modal>
           <View style={styles.form}>
             <Field
               label="CPF ou CNPJ"
@@ -360,6 +361,9 @@ const styles = StyleSheet.create({
   modalTitle: { color: colors.text, fontSize: 20, fontWeight: "900" },
   option: { minHeight: 52, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   optionText: { color: colors.text, fontSize: 15, fontWeight: "700" },
+  citySearchWrap: { minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.white, flexDirection: "row", alignItems: "center", paddingHorizontal: 13, marginBottom: 10 },
+  citySearchInput: { flex: 1, color: colors.text, fontSize: 15, marginLeft: 9, paddingVertical: 9 },
+  emptyText: { textAlign: "center", color: colors.muted, paddingVertical: 30 },
   optionUf: { color: colors.primary, fontSize: 12, fontWeight: "900" },
   field: { gap: 6 },
   label: { fontSize: 13, fontWeight: "800", color: colors.text },
