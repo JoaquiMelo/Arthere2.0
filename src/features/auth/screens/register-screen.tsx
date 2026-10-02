@@ -29,9 +29,16 @@ export default function RegisterScreen() {
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
+  const emailValido = (valor: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(valor.trim());
+
   const handleRegister = async () => {
-    if (!nome.trim() || !email.trim() || !senha || !confirmarSenha || !cidade.trim()) {
+    const emailNormalizado = email.trim().toLowerCase();
+    if (!nome.trim() || !emailNormalizado || !senha || !confirmarSenha || !cidade.trim()) {
       Alert.alert('Atenção', 'Preencha nome, e-mail, senha, cidade e todos os campos obrigatórios.');
+      return;
+    }
+    if (!emailValido(emailNormalizado)) {
+      Alert.alert('E-mail inválido', 'Digite um e-mail válido, como seu@email.com.');
       return;
     }
     if (senha.length < 8) {
@@ -66,7 +73,7 @@ export default function RegisterScreen() {
         nomeSocial: nomeSocial.trim() || undefined,
         pronomes: pronomes.trim() || undefined,
         cpfCnpj: cpfCnpj.trim() || undefined,
-        email: email.trim().toLowerCase(),
+        email: emailNormalizado,
         senha,
         tipo: tipoUsuario,
         especialidade: especialidade.trim() || undefined,
@@ -103,7 +110,7 @@ export default function RegisterScreen() {
           placeholder={placeholder}
           placeholderTextColor="#77716d"
           value={value}
-          onChangeText={onChangeText}
+          onChangeText={(value) => onChangeText(options.keyboardType === 'email-address' ? value.replace(/\s/g, '').toLowerCase() : value)}
           editable={true}
           autoComplete="off"
           importantForAutofill="no"
