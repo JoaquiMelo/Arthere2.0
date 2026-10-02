@@ -65,11 +65,18 @@ function RootStack(){
  const{user,loading}=useUser();
  if(loading)return <View style={{flex:1,alignItems:'center',justifyContent:'center'}}><ActivityIndicator/></View>;
  return <Stack.Navigator initialRouteName={user?'Tabs':'Login'} screenOptions={{headerShown:false}}>
-  <Stack.Screen name="Login" component={LoginScreen}/>
-  <Stack.Screen name="Register" component={RegisterScreen}/>
-  <Stack.Screen name="CreatePortfolio" component={CreatePortfolioScreen}/>
-  <Stack.Screen name="CustomizeProfile" component={CustomizeProfileScreen}/>
-  <Stack.Screen name="Tabs" component={AppTabs}/>
+  {!user ? (
+    <>
+      <Stack.Screen name="Login" component={LoginScreen}/>
+      <Stack.Screen name="Register" component={RegisterScreen}/>
+    </>
+  ) : (
+    <>
+      <Stack.Screen name="CreatePortfolio" component={CreatePortfolioScreen}/>
+      <Stack.Screen name="CustomizeProfile" component={CustomizeProfileScreen}/>
+      <Stack.Screen name="Tabs" component={AppTabs}/>
+    </>
+  )}
   <Stack.Screen name="EditProfile" component={EditProfileScreen}/>
   <Stack.Screen name="SelectLocation" component={SelectLocationScreen}/>
   <Stack.Screen name="EditContractorProfile" component={EditContractorProfileScreen}/>
