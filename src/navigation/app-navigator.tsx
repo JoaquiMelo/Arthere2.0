@@ -18,6 +18,7 @@ import ManageOpportunitiesScreen from '@/features/opportunities/screens/manage-o
 import OpportunitiesScreen from '@/features/opportunities/screens/opportunities-screen';
 import EditContractorProfileScreen from '@/features/profile/screens/edit-contractor-profile-screen';
 import EditProfileScreen from '@/features/profile/screens/edit-profile-screen';
+import SelectLocationScreen from '@/features/profile/screens/select-location-screen';
 import PortfolioCreationScreen from '@/features/profile/screens/portfolio-creation-screen';
 import ProfileScreen from '@/features/profile/screens/profile-screen';
 import SettingsScreen from '@/features/profile/screens/settings-screen';
@@ -26,7 +27,7 @@ import { useUser } from '@/providers/user-provider';
 
 export type RootStackParamList={
  Login:undefined; Register:undefined; CreatePortfolio:undefined; CustomizeProfile:undefined; Tabs:undefined;
- EditProfile?:{agente?:unknown}; EditContractorProfile:undefined; PortfolioCreation?:{portfolio?:unknown[]};
+ EditProfile?:{agente?:unknown; localSelecionado?:{latitude:number;longitude:number;endereco:string;cidade:string}}; SelectLocation:{latitude?:number|null;longitude?:number|null}; EditContractorProfile:undefined; PortfolioCreation?:{portfolio?:unknown[]};
  Settings:undefined; ChatConversation:{conversationId:string}; ManageOpportunities:undefined;
  Opportunities:undefined; Events:undefined; EventDetails:{eventId:string}; CreateEvent:undefined;
 };
@@ -70,6 +71,7 @@ function RootStack(){
   <Stack.Screen name="CustomizeProfile" component={CustomizeProfileScreen}/>
   <Stack.Screen name="Tabs" component={AppTabs}/>
   <Stack.Screen name="EditProfile" component={EditProfileScreen}/>
+  <Stack.Screen name="SelectLocation" component={SelectLocationScreen}/>
   <Stack.Screen name="EditContractorProfile" component={EditContractorProfileScreen}/>
   <Stack.Screen name="PortfolioCreation" component={PortfolioCreationScreen}/>
   <Stack.Screen name="Settings" component={SettingsScreen}/>
