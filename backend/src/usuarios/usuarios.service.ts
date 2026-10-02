@@ -22,7 +22,7 @@ export class UsuariosService {
     return this.prisma.agenteCriativo.findMany({
       where: {
         visivelMapa: true,
-        usuario: { isNot: null },
+        usuario: { is: {} },
         ...(filtros.cidade ? { cidade: { contains: filtros.cidade.trim() } } : {}),
         ...(filtros.especialidade ? { especialidade: { contains: filtros.especialidade.trim() } } : {}),
         ...(busca ? { OR: [
