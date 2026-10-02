@@ -6,6 +6,7 @@ import { ActivityIndicator, View } from 'react-native';
 
 import CreatePortfolioScreen from '@/features/auth/screens/create-portfolio-screen';
 import CustomizeProfileScreen from '@/features/auth/screens/customize-profile-screen';
+import HomeScreen from '@/features/auth/screens/home-screen';
 import LoginScreen from '@/features/auth/screens/login-screen';
 import RegisterScreen from '@/features/auth/screens/register-screen';
 import ChatConversationScreen from '@/features/chat/screens/chat-conversation-screen';
@@ -26,7 +27,7 @@ import { useTheme } from '@/providers/theme-provider';
 import { useUser } from '@/providers/user-provider';
 
 export type RootStackParamList={
- Login:undefined; Register:undefined; CreatePortfolio:undefined; CustomizeProfile:undefined; Tabs:undefined;
+ Home:undefined; Login:undefined; Register:undefined; CreatePortfolio:undefined; CustomizeProfile:undefined; Tabs:undefined;
  EditProfile?:{agente?:unknown; localSelecionado?:{latitude:number;longitude:number;endereco:string;cidade:string}}; SelectLocation:{latitude?:number|null;longitude?:number|null}; EditContractorProfile:undefined; PortfolioCreation?:{portfolio?:unknown[]};
  Settings:undefined; ChatConversation:{conversationId:string}; ManageOpportunities:undefined;
  Opportunities:undefined; Events:undefined; EventDetails:{eventId:string}; CreateEvent:undefined;
@@ -64,9 +65,10 @@ function AppTabs(){
 function RootStack(){
  const{user,loading}=useUser();
  if(loading)return <View style={{flex:1,alignItems:'center',justifyContent:'center'}}><ActivityIndicator/></View>;
- return <Stack.Navigator initialRouteName={user?'Tabs':'Login'} screenOptions={{headerShown:false}}>
+ return <Stack.Navigator initialRouteName={user?'Tabs':'Home'} screenOptions={{headerShown:false}}>
   {!user ? (
     <>
+      <Stack.Screen name="Home" component={HomeScreen}/>
       <Stack.Screen name="Login" component={LoginScreen}/>
       <Stack.Screen name="Register" component={RegisterScreen}/>
     </>
