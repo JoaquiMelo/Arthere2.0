@@ -18,6 +18,7 @@ import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import type { AgenteCriativo } from '@/features/agents/types/agent';
 import { agents } from '@/services/api';
 import { useChat } from '@/providers/chat-provider';
+import { useUser } from '@/providers/user-provider';
 import { colors } from '@/shared/theme/colors';
 import { AgentProfileCard } from '../../../features/agents/components/agent-profile-card';
 import { CATEGORIAS } from '../../../shared/config/categories';
@@ -70,6 +71,7 @@ export function MapScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const { startConversation } = useChat();
+  const { user } = useUser();
   const [busca, setBusca] = useState('');
   const [categoria, setCategoria] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState<AgenteCriativo | null>(null);
@@ -155,26 +157,28 @@ export function MapScreen() {
             </View>
             <Text style={styles.headerLink}>MAPA</Text>
           </View>
-          <View style={styles.headerActions}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Entrar"
-              hitSlop={6}
-              style={({ pressed }) => [styles.loginButton, pressed && styles.buttonPressed]}
-              onPress={() => navigation.navigate('Login')}
-            >
-              <Text style={styles.loginButtonText}>ENTRAR</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Criar perfil"
-              hitSlop={6}
-              style={({ pressed }) => [styles.profileButton, pressed && styles.buttonPressed]}
-              onPress={() => navigation.navigate('Register')}
-            >
-              <Text style={styles.profileButtonText}>CRIAR PERFIL</Text>
-            </Pressable>
-          </View>
+          {!user ? (
+            <View style={styles.headerActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Entrar"
+                hitSlop={6}
+                style={({ pressed }) => [styles.loginButton, pressed && styles.buttonPressed]}
+                onPress={() => navigation.navigate('Login')}
+              >
+                <Text style={styles.loginButtonText}>ENTRAR</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Criar perfil"
+                hitSlop={6}
+                style={({ pressed }) => [styles.profileButton, pressed && styles.buttonPressed]}
+                onPress={() => navigation.navigate('Register')}
+              >
+                <Text style={styles.profileButtonText}>CRIAR PERFIL</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.hero}>
