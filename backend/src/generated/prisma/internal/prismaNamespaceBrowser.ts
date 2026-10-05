@@ -97,6 +97,7 @@ export const AgenteCriativoScalarFieldEnum = {
   nome: 'nome',
   especialidade: 'especialidade',
   bio: 'bio',
+  estado: 'estado',
   cidade: 'cidade',
   endereco: 'endereco',
   latitude: 'latitude',
@@ -125,6 +126,7 @@ export const ContratanteScalarFieldEnum = {
   telefone: 'telefone',
   descricao: 'descricao',
   site: 'site',
+  estado: 'estado',
   cidade: 'cidade',
   endereco: 'endereco',
   categoria: 'categoria',
@@ -274,6 +276,7 @@ export const AgenteCriativoOrderByRelevanceFieldEnum = {
   nome: 'nome',
   especialidade: 'especialidade',
   bio: 'bio',
+  estado: 'estado',
   cidade: 'cidade',
   endereco: 'endereco',
   avatarUrl: 'avatarUrl'
@@ -294,6 +297,7 @@ export const ContratanteOrderByRelevanceFieldEnum = {
   telefone: 'telefone',
   descricao: 'descricao',
   site: 'site',
+  estado: 'estado',
   cidade: 'cidade',
   endereco: 'endereco',
   categoria: 'categoria'

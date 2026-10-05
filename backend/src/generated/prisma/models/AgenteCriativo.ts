@@ -48,6 +48,7 @@ export type AgenteCriativoMinAggregateOutputType = {
   nome: string | null
   especialidade: string | null
   bio: string | null
+  estado: string | null
   cidade: string | null
   endereco: string | null
   latitude: number | null
@@ -67,6 +68,7 @@ export type AgenteCriativoMaxAggregateOutputType = {
   nome: string | null
   especialidade: string | null
   bio: string | null
+  estado: string | null
   cidade: string | null
   endereco: string | null
   latitude: number | null
@@ -86,6 +88,7 @@ export type AgenteCriativoCountAggregateOutputType = {
   nome: number
   especialidade: number
   bio: number
+  estado: number
   cidade: number
   endereco: number
   latitude: number
@@ -123,6 +126,7 @@ export type AgenteCriativoMinAggregateInputType = {
   nome?: true
   especialidade?: true
   bio?: true
+  estado?: true
   cidade?: true
   endereco?: true
   latitude?: true
@@ -142,6 +146,7 @@ export type AgenteCriativoMaxAggregateInputType = {
   nome?: true
   especialidade?: true
   bio?: true
+  estado?: true
   cidade?: true
   endereco?: true
   latitude?: true
@@ -161,6 +166,7 @@ export type AgenteCriativoCountAggregateInputType = {
   nome?: true
   especialidade?: true
   bio?: true
+  estado?: true
   cidade?: true
   endereco?: true
   latitude?: true
@@ -267,6 +273,7 @@ export type AgenteCriativoGroupByOutputType = {
   nome: string
   especialidade: string
   bio: string | null
+  estado: string
   cidade: string
   endereco: string
   latitude: number | null
@@ -309,6 +316,7 @@ export type AgenteCriativoWhereInput = {
   nome?: Prisma.StringFilter<"AgenteCriativo"> | string
   especialidade?: Prisma.StringFilter<"AgenteCriativo"> | string
   bio?: Prisma.StringNullableFilter<"AgenteCriativo"> | string | null
+  estado?: Prisma.StringFilter<"AgenteCriativo"> | string
   cidade?: Prisma.StringFilter<"AgenteCriativo"> | string
   endereco?: Prisma.StringFilter<"AgenteCriativo"> | string
   latitude?: Prisma.FloatNullableFilter<"AgenteCriativo"> | number | null
@@ -333,6 +341,7 @@ export type AgenteCriativoOrderByWithRelationInput = {
   nome?: Prisma.SortOrder
   especialidade?: Prisma.SortOrder
   bio?: Prisma.SortOrderInput | Prisma.SortOrder
+  estado?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
   endereco?: Prisma.SortOrder
   latitude?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -361,6 +370,7 @@ export type AgenteCriativoWhereUniqueInput = Prisma.AtLeast<{
   nome?: Prisma.StringFilter<"AgenteCriativo"> | string
   especialidade?: Prisma.StringFilter<"AgenteCriativo"> | string
   bio?: Prisma.StringNullableFilter<"AgenteCriativo"> | string | null
+  estado?: Prisma.StringFilter<"AgenteCriativo"> | string
   cidade?: Prisma.StringFilter<"AgenteCriativo"> | string
   endereco?: Prisma.StringFilter<"AgenteCriativo"> | string
   latitude?: Prisma.FloatNullableFilter<"AgenteCriativo"> | number | null
@@ -385,6 +395,7 @@ export type AgenteCriativoOrderByWithAggregationInput = {
   nome?: Prisma.SortOrder
   especialidade?: Prisma.SortOrder
   bio?: Prisma.SortOrderInput | Prisma.SortOrder
+  estado?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
   endereco?: Prisma.SortOrder
   latitude?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -412,6 +423,7 @@ export type AgenteCriativoScalarWhereWithAggregatesInput = {
   nome?: Prisma.StringWithAggregatesFilter<"AgenteCriativo"> | string
   especialidade?: Prisma.StringWithAggregatesFilter<"AgenteCriativo"> | string
   bio?: Prisma.StringNullableWithAggregatesFilter<"AgenteCriativo"> | string | null
+  estado?: Prisma.StringWithAggregatesFilter<"AgenteCriativo"> | string
   cidade?: Prisma.StringWithAggregatesFilter<"AgenteCriativo"> | string
   endereco?: Prisma.StringWithAggregatesFilter<"AgenteCriativo"> | string
   latitude?: Prisma.FloatNullableWithAggregatesFilter<"AgenteCriativo"> | number | null
@@ -430,6 +442,7 @@ export type AgenteCriativoCreateInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -454,6 +467,7 @@ export type AgenteCriativoUncheckedCreateInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -476,6 +490,7 @@ export type AgenteCriativoUpdateInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -500,6 +515,7 @@ export type AgenteCriativoUncheckedUpdateInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -523,6 +539,7 @@ export type AgenteCriativoCreateManyInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -541,6 +558,7 @@ export type AgenteCriativoUpdateManyMutationInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -560,6 +578,7 @@ export type AgenteCriativoUncheckedUpdateManyInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -590,6 +609,7 @@ export type AgenteCriativoCountOrderByAggregateInput = {
   nome?: Prisma.SortOrder
   especialidade?: Prisma.SortOrder
   bio?: Prisma.SortOrder
+  estado?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
   endereco?: Prisma.SortOrder
   latitude?: Prisma.SortOrder
@@ -617,6 +637,7 @@ export type AgenteCriativoMaxOrderByAggregateInput = {
   nome?: Prisma.SortOrder
   especialidade?: Prisma.SortOrder
   bio?: Prisma.SortOrder
+  estado?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
   endereco?: Prisma.SortOrder
   latitude?: Prisma.SortOrder
@@ -636,6 +657,7 @@ export type AgenteCriativoMinOrderByAggregateInput = {
   nome?: Prisma.SortOrder
   especialidade?: Prisma.SortOrder
   bio?: Prisma.SortOrder
+  estado?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
   endereco?: Prisma.SortOrder
   latitude?: Prisma.SortOrder
@@ -787,6 +809,7 @@ export type AgenteCriativoCreateWithoutUsuarioInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -809,6 +832,7 @@ export type AgenteCriativoUncheckedCreateWithoutUsuarioInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -847,6 +871,7 @@ export type AgenteCriativoUpdateWithoutUsuarioInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -869,6 +894,7 @@ export type AgenteCriativoUncheckedUpdateWithoutUsuarioInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -891,6 +917,7 @@ export type AgenteCriativoCreateWithoutCandidaturasInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -914,6 +941,7 @@ export type AgenteCriativoUncheckedCreateWithoutCandidaturasInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -951,6 +979,7 @@ export type AgenteCriativoUpdateWithoutCandidaturasInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -974,6 +1003,7 @@ export type AgenteCriativoUncheckedUpdateWithoutCandidaturasInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -995,6 +1025,7 @@ export type AgenteCriativoCreateWithoutPortfolioInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -1018,6 +1049,7 @@ export type AgenteCriativoUncheckedCreateWithoutPortfolioInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -1055,6 +1087,7 @@ export type AgenteCriativoUpdateWithoutPortfolioInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1078,6 +1111,7 @@ export type AgenteCriativoUncheckedUpdateWithoutPortfolioInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1099,6 +1133,7 @@ export type AgenteCriativoCreateWithoutAvaliacoesInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -1122,6 +1157,7 @@ export type AgenteCriativoUncheckedCreateWithoutAvaliacoesInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -1159,6 +1195,7 @@ export type AgenteCriativoUpdateWithoutAvaliacoesInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1182,6 +1219,7 @@ export type AgenteCriativoUncheckedUpdateWithoutAvaliacoesInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1203,6 +1241,7 @@ export type AgenteCriativoCreateWithoutSolicitacoesEventoInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -1226,6 +1265,7 @@ export type AgenteCriativoUncheckedCreateWithoutSolicitacoesEventoInput = {
   nome: string
   especialidade: string
   bio?: string | null
+  estado?: string
   cidade?: string
   endereco?: string
   latitude?: number | null
@@ -1263,6 +1303,7 @@ export type AgenteCriativoUpdateWithoutSolicitacoesEventoInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1286,6 +1327,7 @@ export type AgenteCriativoUncheckedUpdateWithoutSolicitacoesEventoInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   especialidade?: Prisma.StringFieldUpdateOperationsInput | string
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
   endereco?: Prisma.StringFieldUpdateOperationsInput | string
   latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
@@ -1366,6 +1408,7 @@ export type AgenteCriativoSelect<ExtArgs extends runtime.Types.Extensions.Intern
   nome?: boolean
   especialidade?: boolean
   bio?: boolean
+  estado?: boolean
   cidade?: boolean
   endereco?: boolean
   latitude?: boolean
@@ -1393,6 +1436,7 @@ export type AgenteCriativoSelectScalar = {
   nome?: boolean
   especialidade?: boolean
   bio?: boolean
+  estado?: boolean
   cidade?: boolean
   endereco?: boolean
   latitude?: boolean
@@ -1406,7 +1450,7 @@ export type AgenteCriativoSelectScalar = {
   atualizadoEm?: boolean
 }
 
-export type AgenteCriativoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "nome" | "especialidade" | "bio" | "cidade" | "endereco" | "latitude" | "longitude" | "visivelMapa" | "avatarUrl" | "notaMedia" | "totalAvaliacoes" | "totalProjetos" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["agenteCriativo"]>
+export type AgenteCriativoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "nome" | "especialidade" | "bio" | "estado" | "cidade" | "endereco" | "latitude" | "longitude" | "visivelMapa" | "avatarUrl" | "notaMedia" | "totalAvaliacoes" | "totalProjetos" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["agenteCriativo"]>
 export type AgenteCriativoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
   avaliacoes?: boolean | Prisma.AgenteCriativo$avaliacoesArgs<ExtArgs>
@@ -1431,6 +1475,7 @@ export type $AgenteCriativoPayload<ExtArgs extends runtime.Types.Extensions.Inte
     nome: string
     especialidade: string
     bio: string | null
+    estado: string
     cidade: string
     endereco: string
     latitude: number | null
@@ -1821,6 +1866,7 @@ export interface AgenteCriativoFieldRefs {
   readonly nome: Prisma.FieldRef<"AgenteCriativo", 'String'>
   readonly especialidade: Prisma.FieldRef<"AgenteCriativo", 'String'>
   readonly bio: Prisma.FieldRef<"AgenteCriativo", 'String'>
+  readonly estado: Prisma.FieldRef<"AgenteCriativo", 'String'>
   readonly cidade: Prisma.FieldRef<"AgenteCriativo", 'String'>
   readonly endereco: Prisma.FieldRef<"AgenteCriativo", 'String'>
   readonly latitude: Prisma.FieldRef<"AgenteCriativo", 'Float'>

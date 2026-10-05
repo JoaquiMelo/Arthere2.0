@@ -36,6 +36,7 @@ export type ContratanteMinAggregateOutputType = {
   telefone: string | null
   descricao: string | null
   site: string | null
+  estado: string | null
   cidade: string | null
   endereco: string | null
   categoria: string | null
@@ -55,6 +56,7 @@ export type ContratanteMaxAggregateOutputType = {
   telefone: string | null
   descricao: string | null
   site: string | null
+  estado: string | null
   cidade: string | null
   endereco: string | null
   categoria: string | null
@@ -74,6 +76,7 @@ export type ContratanteCountAggregateOutputType = {
   telefone: number
   descricao: number
   site: number
+  estado: number
   cidade: number
   endereco: number
   categoria: number
@@ -95,6 +98,7 @@ export type ContratanteMinAggregateInputType = {
   telefone?: true
   descricao?: true
   site?: true
+  estado?: true
   cidade?: true
   endereco?: true
   categoria?: true
@@ -114,6 +118,7 @@ export type ContratanteMaxAggregateInputType = {
   telefone?: true
   descricao?: true
   site?: true
+  estado?: true
   cidade?: true
   endereco?: true
   categoria?: true
@@ -133,6 +138,7 @@ export type ContratanteCountAggregateInputType = {
   telefone?: true
   descricao?: true
   site?: true
+  estado?: true
   cidade?: true
   endereco?: true
   categoria?: true
@@ -225,6 +231,7 @@ export type ContratanteGroupByOutputType = {
   telefone: string | null
   descricao: string | null
   site: string | null
+  estado: string | null
   cidade: string | null
   endereco: string | null
   categoria: string | null
@@ -265,6 +272,7 @@ export type ContratanteWhereInput = {
   telefone?: Prisma.StringNullableFilter<"Contratante"> | string | null
   descricao?: Prisma.StringNullableFilter<"Contratante"> | string | null
   site?: Prisma.StringNullableFilter<"Contratante"> | string | null
+  estado?: Prisma.StringNullableFilter<"Contratante"> | string | null
   cidade?: Prisma.StringNullableFilter<"Contratante"> | string | null
   endereco?: Prisma.StringNullableFilter<"Contratante"> | string | null
   categoria?: Prisma.StringNullableFilter<"Contratante"> | string | null
@@ -288,6 +296,7 @@ export type ContratanteOrderByWithRelationInput = {
   telefone?: Prisma.SortOrderInput | Prisma.SortOrder
   descricao?: Prisma.SortOrderInput | Prisma.SortOrder
   site?: Prisma.SortOrderInput | Prisma.SortOrder
+  estado?: Prisma.SortOrderInput | Prisma.SortOrder
   cidade?: Prisma.SortOrderInput | Prisma.SortOrder
   endereco?: Prisma.SortOrderInput | Prisma.SortOrder
   categoria?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -315,6 +324,7 @@ export type ContratanteWhereUniqueInput = Prisma.AtLeast<{
   telefone?: Prisma.StringNullableFilter<"Contratante"> | string | null
   descricao?: Prisma.StringNullableFilter<"Contratante"> | string | null
   site?: Prisma.StringNullableFilter<"Contratante"> | string | null
+  estado?: Prisma.StringNullableFilter<"Contratante"> | string | null
   cidade?: Prisma.StringNullableFilter<"Contratante"> | string | null
   endereco?: Prisma.StringNullableFilter<"Contratante"> | string | null
   categoria?: Prisma.StringNullableFilter<"Contratante"> | string | null
@@ -338,6 +348,7 @@ export type ContratanteOrderByWithAggregationInput = {
   telefone?: Prisma.SortOrderInput | Prisma.SortOrder
   descricao?: Prisma.SortOrderInput | Prisma.SortOrder
   site?: Prisma.SortOrderInput | Prisma.SortOrder
+  estado?: Prisma.SortOrderInput | Prisma.SortOrder
   cidade?: Prisma.SortOrderInput | Prisma.SortOrder
   endereco?: Prisma.SortOrderInput | Prisma.SortOrder
   categoria?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -363,6 +374,7 @@ export type ContratanteScalarWhereWithAggregatesInput = {
   telefone?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
   descricao?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
   site?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
+  estado?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
   cidade?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
   endereco?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
   categoria?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
@@ -381,6 +393,7 @@ export type ContratanteCreateInput = {
   telefone?: string | null
   descricao?: string | null
   site?: string | null
+  estado?: string | null
   cidade?: string | null
   endereco?: string | null
   categoria?: string | null
@@ -404,6 +417,7 @@ export type ContratanteUncheckedCreateInput = {
   telefone?: string | null
   descricao?: string | null
   site?: string | null
+  estado?: string | null
   cidade?: string | null
   endereco?: string | null
   categoria?: string | null
@@ -425,6 +439,7 @@ export type ContratanteUpdateInput = {
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -448,6 +463,7 @@ export type ContratanteUncheckedUpdateInput = {
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -470,6 +486,7 @@ export type ContratanteCreateManyInput = {
   telefone?: string | null
   descricao?: string | null
   site?: string | null
+  estado?: string | null
   cidade?: string | null
   endereco?: string | null
   categoria?: string | null
@@ -488,6 +505,7 @@ export type ContratanteUpdateManyMutationInput = {
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -507,6 +525,7 @@ export type ContratanteUncheckedUpdateManyInput = {
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -537,6 +556,7 @@ export type ContratanteCountOrderByAggregateInput = {
   telefone?: Prisma.SortOrder
   descricao?: Prisma.SortOrder
   site?: Prisma.SortOrder
+  estado?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
   endereco?: Prisma.SortOrder
   categoria?: Prisma.SortOrder
@@ -556,6 +576,7 @@ export type ContratanteMaxOrderByAggregateInput = {
   telefone?: Prisma.SortOrder
   descricao?: Prisma.SortOrder
   site?: Prisma.SortOrder
+  estado?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
   endereco?: Prisma.SortOrder
   categoria?: Prisma.SortOrder
@@ -575,6 +596,7 @@ export type ContratanteMinOrderByAggregateInput = {
   telefone?: Prisma.SortOrder
   descricao?: Prisma.SortOrder
   site?: Prisma.SortOrder
+  estado?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
   endereco?: Prisma.SortOrder
   categoria?: Prisma.SortOrder
@@ -674,6 +696,7 @@ export type ContratanteCreateWithoutUsuarioInput = {
   telefone?: string | null
   descricao?: string | null
   site?: string | null
+  estado?: string | null
   cidade?: string | null
   endereco?: string | null
   categoria?: string | null
@@ -695,6 +718,7 @@ export type ContratanteUncheckedCreateWithoutUsuarioInput = {
   telefone?: string | null
   descricao?: string | null
   site?: string | null
+  estado?: string | null
   cidade?: string | null
   endereco?: string | null
   categoria?: string | null
@@ -732,6 +756,7 @@ export type ContratanteUpdateWithoutUsuarioInput = {
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -753,6 +778,7 @@ export type ContratanteUncheckedUpdateWithoutUsuarioInput = {
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -774,6 +800,7 @@ export type ContratanteCreateWithoutProjetosInput = {
   telefone?: string | null
   descricao?: string | null
   site?: string | null
+  estado?: string | null
   cidade?: string | null
   endereco?: string | null
   categoria?: string | null
@@ -796,6 +823,7 @@ export type ContratanteUncheckedCreateWithoutProjetosInput = {
   telefone?: string | null
   descricao?: string | null
   site?: string | null
+  estado?: string | null
   cidade?: string | null
   endereco?: string | null
   categoria?: string | null
@@ -832,6 +860,7 @@ export type ContratanteUpdateWithoutProjetosInput = {
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -854,6 +883,7 @@ export type ContratanteUncheckedUpdateWithoutProjetosInput = {
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -874,6 +904,7 @@ export type ContratanteCreateWithoutAvaliacoesInput = {
   telefone?: string | null
   descricao?: string | null
   site?: string | null
+  estado?: string | null
   cidade?: string | null
   endereco?: string | null
   categoria?: string | null
@@ -896,6 +927,7 @@ export type ContratanteUncheckedCreateWithoutAvaliacoesInput = {
   telefone?: string | null
   descricao?: string | null
   site?: string | null
+  estado?: string | null
   cidade?: string | null
   endereco?: string | null
   categoria?: string | null
@@ -932,6 +964,7 @@ export type ContratanteUpdateWithoutAvaliacoesInput = {
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -954,6 +987,7 @@ export type ContratanteUncheckedUpdateWithoutAvaliacoesInput = {
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -974,6 +1008,7 @@ export type ContratanteCreateWithoutEventosInput = {
   telefone?: string | null
   descricao?: string | null
   site?: string | null
+  estado?: string | null
   cidade?: string | null
   endereco?: string | null
   categoria?: string | null
@@ -996,6 +1031,7 @@ export type ContratanteUncheckedCreateWithoutEventosInput = {
   telefone?: string | null
   descricao?: string | null
   site?: string | null
+  estado?: string | null
   cidade?: string | null
   endereco?: string | null
   categoria?: string | null
@@ -1032,6 +1068,7 @@ export type ContratanteUpdateWithoutEventosInput = {
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1054,6 +1091,7 @@ export type ContratanteUncheckedUpdateWithoutEventosInput = {
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1124,6 +1162,7 @@ export type ContratanteSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   telefone?: boolean
   descricao?: boolean
   site?: boolean
+  estado?: boolean
   cidade?: boolean
   endereco?: boolean
   categoria?: boolean
@@ -1150,6 +1189,7 @@ export type ContratanteSelectScalar = {
   telefone?: boolean
   descricao?: boolean
   site?: boolean
+  estado?: boolean
   cidade?: boolean
   endereco?: boolean
   categoria?: boolean
@@ -1157,7 +1197,7 @@ export type ContratanteSelectScalar = {
   atualizadoEm?: boolean
 }
 
-export type ContratanteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "nome" | "nomeSocial" | "pronomes" | "cpfCnpj" | "empresa" | "avatarUrl" | "telefone" | "descricao" | "site" | "cidade" | "endereco" | "categoria" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["contratante"]>
+export type ContratanteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "nome" | "nomeSocial" | "pronomes" | "cpfCnpj" | "empresa" | "avatarUrl" | "telefone" | "descricao" | "site" | "estado" | "cidade" | "endereco" | "categoria" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["contratante"]>
 export type ContratanteInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   avaliacoes?: boolean | Prisma.Contratante$avaliacoesArgs<ExtArgs>
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
@@ -1186,6 +1226,7 @@ export type $ContratantePayload<ExtArgs extends runtime.Types.Extensions.Interna
     telefone: string | null
     descricao: string | null
     site: string | null
+    estado: string | null
     cidade: string | null
     endereco: string | null
     categoria: string | null
@@ -1575,6 +1616,7 @@ export interface ContratanteFieldRefs {
   readonly telefone: Prisma.FieldRef<"Contratante", 'String'>
   readonly descricao: Prisma.FieldRef<"Contratante", 'String'>
   readonly site: Prisma.FieldRef<"Contratante", 'String'>
+  readonly estado: Prisma.FieldRef<"Contratante", 'String'>
   readonly cidade: Prisma.FieldRef<"Contratante", 'String'>
   readonly endereco: Prisma.FieldRef<"Contratante", 'String'>
   readonly categoria: Prisma.FieldRef<"Contratante", 'String'>
