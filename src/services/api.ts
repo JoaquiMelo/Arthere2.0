@@ -1,40 +1,93 @@
 import * as SecureStore from 'expo-secure-store';
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+// URL do backend NestJS
+export const API_URL = 'http://2.24.65.149:3006';
 
-export type AuthResponse = { access_token: string; usuario: any };
-export type ContratanteResumo={id:string;nome:string;nomeSocial?:string|null;empresa?:string|null;avatarUrl?:string|null;cidade?:string|null};
-export type Projeto={id:string;titulo:string;descricao:string;categoria:string;status:string;orcamento:number|null;dataEvento:string|null;contratante:ContratanteResumo};
+console.log('🔗 API_URL:', API_URL);
 
-export type Sessao = { accessToken: string; usuario: any };
+export type AuthResponse = {
+  access_token: string;
+  usuario: any;
+};
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers ?? {}),
-    },
-  });
+export type ContratanteResumo = {
+  id: string;
+  nome: string;
+  nomeSocial?: string | null;
+  empresa?: string | null;
+  avatarUrl?: string | null;
+  cidade?: string | null;
+};
 
-  const body = await response.json().catch(() => null);
+export type Projeto = {
+  id: string;
+  titulo: string;
+  descricao: string;
+  categoria: string;
+  status: string;
+  orcamento: number | null;
+  dataEvento: string | null;
+  contratante: ContratanteResumo;
+};
 
-  if (!response.ok) {
-    const message = Array.isArray(body?.message)
-      ? body.message.join(', ')
-      : body?.message ?? 'Não foi possível concluir a operação.';
-    throw new Error(message);
+export type Sessao = {
+  accessToken: string;
+  usuario: any;
+};
+
+/**
+ * Função principal para comunicação com o backend.
+ */
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const url = `${API_URL}${path}`;
+
+  console.log('➡️ Requisição:', options.method ?? 'GET', url);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers ?? {}),
+      },
+    });
+
+    console.log('⬅️ Status:', response.status);
+
+    const body = await response.json().catch(() => null);
+
+    console.log('📦 Resposta:', body);
+
+    if (!response.ok) {
+      const message = Array.isArray(body?.message)
+        ? body.message.join(', ')
+        : body?.message ?? 'Não foi possível concluir a operação.';
+
+      throw new Error(message);
+    }
+
+    return body as T;
+  } catch (error) {
+    console.error('❌ Erro na requisição:', error);
+    throw error;
   }
-
-  return body as T;
 }
 
+/**
+ * Requisição autenticada.
+ */
 async function requestAutenticado<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
   const sessao = await obterSessao();
-  if (!sessao) throw new Error('Sua sessão expirou. Entre novamente.');
+
+  if (!sessao) {
+    throw new Error('Sua sessão expirou. Entre novamente.');
+  }
 
   return request<T>(path, {
     ...options,
@@ -45,11 +98,24 @@ async function requestAutenticado<T>(
   });
 }
 
+/**
+ * Salva a sessão do usuário.
+ */
 async function salvarSessao(result: AuthResponse) {
-  await SecureStore.setItemAsync('access_token', result.access_token);
-  await SecureStore.setItemAsync('usuario', JSON.stringify(result.usuario));
+  await SecureStore.setItemAsync(
+    'access_token',
+    result.access_token,
+  );
+
+  await SecureStore.setItemAsync(
+    'usuario',
+    JSON.stringify(result.usuario),
+  );
 }
 
+/**
+ * Recupera a sessão salva.
+ */
 export async function obterSessao(): Promise<Sessao | null> {
   try {
     const [accessToken, usuario] = await Promise.all([
@@ -57,9 +123,14 @@ export async function obterSessao(): Promise<Sessao | null> {
       SecureStore.getItemAsync('usuario'),
     ]);
 
-    if (!accessToken || !usuario) return null;
+    if (!accessToken || !usuario) {
+      return null;
+    }
 
-    return { accessToken, usuario: JSON.parse(usuario) };
+    return {
+      accessToken,
+      usuario: JSON.parse(usuario),
+    };
   } catch {
     return null;
   }
@@ -67,11 +138,18 @@ export async function obterSessao(): Promise<Sessao | null> {
 
 export async function session() {
   const sessao = await obterSessao();
+
   return sessao
-    ? { token: sessao.accessToken, user: sessao.usuario }
+    ? {
+        token: sessao.accessToken,
+        user: sessao.usuario,
+      }
     : null;
 }
 
+/**
+ * Logout.
+ */
 export async function encerrarSessao() {
   await Promise.all([
     SecureStore.deleteItemAsync('access_token'),
@@ -83,94 +161,172 @@ export async function logout() {
   return encerrarSessao();
 }
 
-export async function login(email: string, senha: string) {
-  const result = await request<AuthResponse>('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, senha }),
-  });
+/**
+ * Login.
+ */
+export async function login(
+  email: string,
+  senha: string,
+) {
+  const result = await request<AuthResponse>(
+    '/auth/login',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        senha,
+      }),
+    },
+  );
+
   await salvarSessao(result);
+
   return result;
 }
 
-export async function register(data: Record<string, unknown>) {
-  const result = await request<AuthResponse>('/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+/**
+ * Cadastro.
+ */
+export async function register(
+  data: Record<string, unknown>,
+) {
+  console.log('📝 Dados enviados no cadastro:', data);
+
+  const result = await request<AuthResponse>(
+    '/auth/register',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+  );
+
   await salvarSessao(result);
+
   return result;
 }
 
+/**
+ * Usuário logado.
+ */
 export async function me() {
-  return requestAutenticado<any>('/usuarios/me');
+  return requestAutenticado<any>(
+    '/usuarios/me',
+  );
 }
 
 export async function obterMeuPerfil() {
   return me();
 }
 
-export async function updateProfile(data: Record<string, unknown>) {
-  return requestAutenticado<any>('/usuarios/me', {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  });
+/**
+ * Atualizar perfil.
+ */
+export async function updateProfile(
+  data: Record<string, unknown>,
+) {
+  return requestAutenticado<any>(
+    '/usuarios/me',
+    {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    },
+  );
 }
 
-export async function atualizarMeuPerfil(data: Record<string, unknown>) {
+export async function atualizarMeuPerfil(
+  data: Record<string, unknown>,
+) {
   return updateProfile(data);
 }
 
-function queryString(params: Record<string, unknown>) {
+/**
+ * Query string.
+ */
+function queryString(
+  params: Record<string, unknown>,
+) {
   const query = new URLSearchParams();
 
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      query.set(key, String(value));
-    }
-  });
+  Object.entries(params).forEach(
+    ([key, value]) => {
+      if (
+        value !== undefined &&
+        value !== null &&
+        value !== ''
+      ) {
+        query.set(key, String(value));
+      }
+    },
+  );
 
   const value = query.toString();
+
   return value ? `?${value}` : '';
 }
 
-export async function agents(params: {
-  cidade?: string;
-  especialidade?: string;
-  busca?: string;
-} = {}) {
-  return request<any[]>(`/usuarios/agentes${queryString(params)}`);
+/**
+ * Agentes.
+ */
+export async function agents(
+  params: {
+    cidade?: string;
+    especialidade?: string;
+    busca?: string;
+  } = {},
+) {
+  return request<any[]>(
+    `/usuarios/agentes${queryString(params)}`,
+  );
 }
 
-export async function projects(params: {
-  categoria?: string;
-  cidade?: string;
-  busca?: string;
-  status?: string;
-} = {}) {
-  return request<any[]>(`/projetos${queryString(params)}`);
+/**
+ * Projetos.
+ */
+export async function projects(
+  params: {
+    categoria?: string;
+    cidade?: string;
+    busca?: string;
+    status?: string;
+  } = {},
+) {
+  return request<any[]>(
+    `/projetos${queryString(params)}`,
+  );
 }
 
-export async function listarProjetos(params: {
-  categoria?: string;
-  cidade?: string;
-  busca?: string;
-  status?: string;
-} = {}) {
+export async function listarProjetos(
+  params: {
+    categoria?: string;
+    cidade?: string;
+    busca?: string;
+    status?: string;
+  } = {},
+) {
   return projects(params);
 }
 
 export async function project(id: string) {
-  return request<any>(`/projetos/${id}`);
+  return request<any>(
+    `/projetos/${id}`,
+  );
 }
 
-export async function createProject(data: Record<string, unknown>) {
-  return requestAutenticado<any>('/projetos', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+export async function createProject(
+  data: Record<string, unknown>,
+) {
+  return requestAutenticado<any>(
+    '/projetos',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+  );
 }
 
-export async function criarProjeto(data: Record<string, unknown>) {
+export async function criarProjeto(
+  data: Record<string, unknown>,
+) {
   return createProject(data);
 }
 
@@ -178,165 +334,302 @@ export async function updateProject(
   id: string,
   data: Record<string, unknown>,
 ) {
-  return requestAutenticado<any>(`/projetos/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  });
+  return requestAutenticado<any>(
+    `/projetos/${id}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    },
+  );
 }
 
-export async function applyToProject(id: string, mensagem?: string) {
-  return requestAutenticado<any>(`/projetos/${id}/candidaturas`, {
-    method: 'POST',
-    body: JSON.stringify({ mensagem }),
-  });
+export async function applyToProject(
+  id: string,
+  mensagem?: string,
+) {
+  return requestAutenticado<any>(
+    `/projetos/${id}/candidaturas`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        mensagem,
+      }),
+    },
+  );
 }
 
-export async function candidatarProjeto(id: string, mensagem?: string) {
+export async function candidatarProjeto(
+  id: string,
+  mensagem?: string,
+) {
   return applyToProject(id, mensagem);
 }
 
 export async function meusProjetos() {
-  return requestAutenticado<any[]>('/projetos/minhas');
+  return requestAutenticado<any[]>(
+    '/projetos/minhas',
+  );
 }
 
 export async function myApplications() {
-  return requestAutenticado<any[]>('/projetos/minhas/candidaturas');
+  return requestAutenticado<any[]>(
+    '/projetos/minhas/candidaturas',
+  );
 }
 
-export async function projectApplications(id: string) {
-  return requestAutenticado<any[]>(`/projetos/${id}/candidaturas`);
+export async function projectApplications(
+  id: string,
+) {
+  return requestAutenticado<any[]>(
+    `/projetos/${id}/candidaturas`,
+  );
 }
 
 export async function updateApplication(
   id: string,
   status: 'ACEITA' | 'RECUSADA',
 ) {
-  return requestAutenticado<any>(`/projetos/candidaturas/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ status }),
-  });
+  return requestAutenticado<any>(
+    `/projetos/candidaturas/${id}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({
+        status,
+      }),
+    },
+  );
 }
 
-export async function events(params: {
-  cidade?: string;
-  categoria?: string;
-  busca?: string;
-} = {}) {
-  return request<any[]>(`/eventos${queryString(params)}`);
+/**
+ * Eventos.
+ */
+export async function events(
+  params: {
+    cidade?: string;
+    categoria?: string;
+    busca?: string;
+  } = {},
+) {
+  return request<any[]>(
+    `/eventos${queryString(params)}`,
+  );
 }
 
-export async function listarEventos(cidade?: string) {
-  return events(cidade ? { cidade } : {});
+export async function listarEventos(
+  cidade?: string,
+) {
+  return events(
+    cidade
+      ? { cidade }
+      : {},
+  );
 }
 
 export async function event(id: string) {
-  return request<any>(`/eventos/${id}`);
+  return request<any>(
+    `/eventos/${id}`,
+  );
 }
 
-export async function createEvent(data: Record<string, unknown>) {
-  return requestAutenticado<any>('/eventos', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+export async function createEvent(
+  data: Record<string, unknown>,
+) {
+  return requestAutenticado<any>(
+    '/eventos',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+  );
 }
 
 export async function updateEvent(
   id: string,
   data: Record<string, unknown>,
 ) {
-  return requestAutenticado<any>(`/eventos/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  });
+  return requestAutenticado<any>(
+    `/eventos/${id}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    },
+  );
 }
 
-export async function deleteEvent(id: string) {
-  return requestAutenticado<any>(`/eventos/${id}`, {
-    method: 'DELETE',
-  });
+export async function deleteEvent(
+  id: string,
+) {
+  return requestAutenticado<any>(
+    `/eventos/${id}`,
+    {
+      method: 'DELETE',
+    },
+  );
 }
 
+/**
+ * Chat.
+ */
 export async function listarConversas() {
-  return requestAutenticado<any[]>('/chat/conversas');
+  return requestAutenticado<any[]>(
+    '/chat/conversas',
+  );
 }
 
-export async function iniciarChatComAgente(agenteId: string) {
-  return requestAutenticado<any>('/chat/agentes/' + agenteId + '/conversa', { method: 'POST' });
+export async function iniciarChatComAgente(
+  agenteId: string,
+) {
+  return requestAutenticado<any>(
+    `/chat/agentes/${agenteId}/conversa`,
+    {
+      method: 'POST',
+    },
+  );
 }
 
-export async function criarConversa(usuarioId: string) {
-  return requestAutenticado<any>('/chat/conversas', {
-    method: 'POST',
-    body: JSON.stringify({ usuarioId }),
-  });
+export async function criarConversa(
+  usuarioId: string,
+) {
+  return requestAutenticado<any>(
+    '/chat/conversas',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        usuarioId,
+      }),
+    },
+  );
 }
 
-export async function mensagensDaConversa(conversaId: string) {
-  return requestAutenticado<any[]>('/chat/conversas/' + conversaId + '/mensagens');
+export async function mensagensDaConversa(
+  conversaId: string,
+) {
+  return requestAutenticado<any[]>(
+    `/chat/conversas/${conversaId}/mensagens`,
+  );
 }
 
-export async function enviarMensagem(conversaId: string, texto: string) {
-  return requestAutenticado<any>('/chat/conversas/' + conversaId + '/mensagens', {
-    method: 'POST',
-    body: JSON.stringify({ texto }),
-  });
+export async function enviarMensagem(
+  conversaId: string,
+  texto: string,
+) {
+  return requestAutenticado<any>(
+    `/chat/conversas/${conversaId}/mensagens`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        texto,
+      }),
+    },
+  );
 }
 
+/**
+ * Solicitações de eventos.
+ */
 export async function minhasSolicitacoesEvento() {
-  return requestAutenticado<any[]>('/eventos/minhas/solicitacoes');
+  return requestAutenticado<any[]>(
+    '/eventos/minhas/solicitacoes',
+  );
 }
 
-export async function solicitarParticipacaoEvento(eventoId: string, mensagem?: string) {
-  return requestAutenticado<any>('/eventos/' + eventoId + '/solicitacoes', {
-    method: 'POST',
-    body: JSON.stringify({ mensagem }),
-  });
+export async function solicitarParticipacaoEvento(
+  eventoId: string,
+  mensagem?: string,
+) {
+  return requestAutenticado<any>(
+    `/eventos/${eventoId}/solicitacoes`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        mensagem,
+      }),
+    },
+  );
 }
 
-export async function responderSolicitacaoEvento(id: string, status: 'ACEITA' | 'RECUSADA') {
-  return requestAutenticado<any>('/eventos/solicitacoes/' + id, {
-    method: 'PATCH',
-    body: JSON.stringify({ status }),
-  });
+export async function responderSolicitacaoEvento(
+  id: string,
+  status: 'ACEITA' | 'RECUSADA',
+) {
+  return requestAutenticado<any>(
+    `/eventos/solicitacoes/${id}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({
+        status,
+      }),
+    },
+  );
 }
 
-export async function portfolio(agenteId: string) {
-  return request<any[]>(`/portfolio/${agenteId}`);
+/**
+ * Portfólio.
+ */
+export async function portfolio(
+  agenteId: string,
+) {
+  return request<any[]>(
+    `/portfolio/${agenteId}`,
+  );
 }
 
-export async function addPortfolio(data: Record<string, unknown>) {
-  return requestAutenticado<any>('/portfolio', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+export async function addPortfolio(
+  data: Record<string, unknown>,
+) {
+  return requestAutenticado<any>(
+    '/portfolio',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+  );
 }
 
 export async function updatePortfolio(
   id: string,
   data: Record<string, unknown>,
 ) {
-  return requestAutenticado<any>(`/portfolio/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  });
+  return requestAutenticado<any>(
+    `/portfolio/${id}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    },
+  );
 }
 
-export async function deletePortfolio(id: string) {
-  return requestAutenticado<any>(`/portfolio/${id}`, {
-    method: 'DELETE',
-  });
+export async function deletePortfolio(
+  id: string,
+) {
+  return requestAutenticado<any>(
+    `/portfolio/${id}`,
+    {
+      method: 'DELETE',
+    },
+  );
 }
 
-export async function ratings(agenteId: string) {
-  return request<any[]>(`/avaliacoes/agente/${agenteId}`);
+/**
+ * Avaliações.
+ */
+export async function ratings(
+  agenteId: string,
+) {
+  return request<any[]>(
+    `/avaliacoes/agente/${agenteId}`,
+  );
 }
 
 export async function rateAgent(
   agenteId: string,
   data: Record<string, unknown>,
 ) {
-  return requestAutenticado<any>(`/avaliacoes/agente/${agenteId}`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+  return requestAutenticado<any>(
+    `/avaliacoes/agente/${agenteId}`,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+  );
 }
