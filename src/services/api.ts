@@ -1,7 +1,22 @@
 import * as SecureStore from 'expo-secure-store';
 
-// URL do backend NestJS
-export const API_URL = 'http://2.24.65.149:3006';
+// URL do backend NestJS.
+// O valor pode ser sobrescrito por EXPO_PUBLIC_API_URL no .env do app.
+const configuracaoApi = process.env.EXPO_PUBLIC_API_URL?.trim();
+
+function normalizarApiUrl(valor: string) {
+  let url = valor.replace(/^['"]|['"]$/g, '').trim();
+
+  // Corrige configurações acidentalmente salvas como http://http://...
+  url = url.replace(/^(https?:\/\/)(https?:\/\/)+/i, '$1');
+
+  // Remove barras finais para evitar URLs como ...:3006//usuarios.
+  return url.replace(/\/+$/, '');
+}
+
+export const API_URL = normalizarApiUrl(
+  configuracaoApi || 'http://2.24.65.149:3006',
+);
 
 console.log('🔗 API_URL:', API_URL);
 
