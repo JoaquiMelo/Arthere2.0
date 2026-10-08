@@ -1,8 +1,8 @@
-import React,{useEffect,useState} from 'react';
+import React,{useCallback,useEffect,useState} from 'react';
 import {ActivityIndicator,Alert,Image,KeyboardAvoidingView,Platform,SafeAreaView,ScrollView,StyleSheet,Text,TextInput,TouchableOpacity,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect,useNavigation} from '@react-navigation/native';
 import {useUser} from '@/providers/user-provider';
 import {addPortfolio,deletePortfolio,portfolio as fetchPortfolio,updatePortfolio} from '@/services/api';
 import {colors} from '@/shared/theme/colors';
@@ -15,7 +15,24 @@ export default function PortfolioCreationScreen(){
  const [itens,setItens]=useState<Item[]>([]); const [novaUrl,setNovaUrl]=useState(''); const [novoTitulo,setNovoTitulo]=useState(''); const [novaDescricao,setNovaDescricao]=useState('');
  const [preview,setPreview]=useState<string|null>(null); const [carregando,setCarregando]=useState(true); const [salvando,setSalvando]=useState(false);
 
- useEffect(()=>{let ativo=true; if(!user?.id){setCarregando(false);return;} fetchPortfolio(user.id).then(lista=>{if(ativo)setItens((lista??[]).map((x:any)=>({id:x.id,imageUrl:x.imageUrl,titulo:x.titulo,descricao:x.descricao})));}).catch(e=>Alert.alert('Portfólio',e instanceof Error?e.message:'Não foi possível carregar o portfólio.')).finally(()=>{if(ativo)setCarregando(false);});return()=>{ativo=false;};},[user?.id]);
+ const carregarPortfolio=useCallback(async()=>{
+  if(!user?.id){setCarregando(false);return;}
+  setCarregando(true);
+  try{
+   const lista=await fetchPortfolio(user.id);
+   setItens((lista??[]).map((x:any)=>({id:x.id,imageUrl:x.imageUrl,titulo:x.titulo,descricao:x.descricao})));
+  }catch(e){
+   Alert.alert('Portfólio',e instanceof Error?e.message:'Não foi possível carregar o portfólio.');
+  }finally{
+   setCarregando(false);
+  }
+ },[user?.id]);
+
+ useEffect(()=>{void carregarPortfolio();},[carregarPortfolio]);
+
+ useFocusEffect(
+  useCallback(()=>{void carregarPortfolio();},[carregarPortfolio]),
+ );
 
  const escolherImagem=async()=>{const p=await ImagePicker.requestMediaLibraryPermissionsAsync();if(!p.granted){Alert.alert('Permissão necessária','Autorize o acesso à galeria para selecionar uma imagem.');return;}const r=await ImagePicker.launchImageLibraryAsync({mediaTypes:['images'],allowsEditing:true,aspect:[1,1],quality:.8});if(!r.canceled&&r.assets?.[0]){setPreview(r.assets[0].uri);Alert.alert('Imagem selecionada','Para que a imagem fique acessível em outros dispositivos, informe também uma URL pública.');}};
  const adicionar=async()=>{const image=(novaUrl.trim()||preview||'').trim();if(!image){Alert.alert('Escolha uma imagem','Informe uma URL pública ou selecione uma imagem.');return;}if(!/^https?:\/\//i.test(image)){Alert.alert('URL necessária','A imagem selecionada no aparelho é apenas uma pré-visualização. Para persistir no banco, informe uma URL pública começando com http:// ou https://.');return;}if(!user?.id)return;setSalvando(true);try{const criado=await addPortfolio({agenteId:user.id,imageUrl:image,titulo:novoTitulo.trim()||undefined,descricao:novaDescricao.trim()||undefined});setItens(current=>[{id:criado.id,imageUrl:criado.imageUrl,titulo:criado.titulo,descricao:criado.descricao},...current]);setNovaUrl('');setNovoTitulo('');setNovaDescricao('');setPreview(null);}catch(e){Alert.alert('Não foi possível adicionar',e instanceof Error?e.message:'Tente novamente.');}finally{setSalvando(false);}};
