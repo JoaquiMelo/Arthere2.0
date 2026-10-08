@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
   Pressable,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
@@ -76,6 +77,7 @@ export function MapScreen() {
   const [categoria, setCategoria] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState<AgenteCriativo | null>(null);
   const [agentesBaixadaSantista, setAgentesBaixadaSantista] = useState<AgenteCriativo[]>([]);
+  const [atualizando, setAtualizando] = useState(false);
 
   const carregarAgentes = useCallback(() => {
     let ativo = true;
@@ -109,6 +111,12 @@ export function MapScreen() {
     const unsubscribe = navigation.addListener('focus', () => carregarAgentes());
     return unsubscribe;
   }, [navigation, carregarAgentes]);
+
+  const recarregar = useCallback(() => {
+    setAtualizando(true);
+    carregarAgentes();
+    setTimeout(() => setAtualizando(false), 700);
+  }, [carregarAgentes]);
 
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -148,7 +156,8 @@ export function MapScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="none"
         stickyHeaderIndices={[0]}
-      >
+      
+        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} />}>
         <View style={styles.header}>
           <View style={[styles.headerInner, { paddingTop: insets.top + 8 }]}>
             <View style={styles.brandLine}>
