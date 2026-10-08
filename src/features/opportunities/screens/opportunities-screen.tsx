@@ -15,6 +15,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 
 import { candidatarProjeto, criarProjeto, listarProjetos, obterSessao, Projeto } from '@/services/api';
@@ -24,6 +25,7 @@ export default function OpportunitiesScreen() {
   const navigation = useNavigation<any>();
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [atualizando, setAtualizando] = useState(false);
   const [tipo, setTipo] = useState<string | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [titulo, setTitulo] = useState('');
@@ -54,6 +56,15 @@ export default function OpportunitiesScreen() {
       void carregar();
     }, []),
   );
+
+  const recarregar = useCallback(async () => {
+    setAtualizando(true);
+    try {
+      await carregar();
+    } finally {
+      setAtualizando(false);
+    }
+  }, []);
 
   const candidatar = async (projeto: Projeto) => {
     try {
@@ -199,7 +210,8 @@ export default function OpportunitiesScreen() {
             <Text style={styles.modalKicker}>PUBLICAR PROJETO</Text>
             <Text style={styles.modalTitle}>Nova oportunidade</Text>
 
-            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} />}>
               <FieldLabel label="Título da vaga *" />
               <TextInput
                 style={styles.input}
