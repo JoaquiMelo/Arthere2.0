@@ -1,5 +1,5 @@
 import React,{useCallback,useState} from 'react';
-import {ActivityIndicator,Alert,Image,KeyboardAvoidingView,Platform,SafeAreaView,ScrollView,StyleSheet,Text,TextInput,TouchableOpacity,View} from 'react-native';
+import {ActivityIndicator,Alert,Image,KeyboardAvoidingView,Platform,SafeAreaView,ScrollView,StyleSheet,Text,TextInput,TouchableOpacity,View,RefreshControl} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import {useFocusEffect,useNavigation} from '@react-navigation/native';
@@ -39,7 +39,7 @@ export default function PortfolioCreationScreen(){
 
  return <SafeAreaView style={styles.container}>
   <View style={styles.header}><TouchableOpacity style={styles.back} onPress={()=>navigation.goBack()}><Ionicons name="chevron-back" size={24} color={colors.brandInk}/></TouchableOpacity><View style={styles.headerCopy}><Text style={styles.kicker}>PORTFÓLIO</Text><Text style={styles.title}>Seus trabalhos</Text></View><View style={styles.count}><Text style={styles.countText}>{itens.length}</Text></View></View>
-  <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS==='ios'?'padding':undefined}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+  <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS==='ios'?'padding':undefined}><ScrollView refreshControl={<RefreshControl refreshing={carregando} onRefresh={carregarPortfolio} />} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
    <View style={styles.intro}><Text style={styles.introTitle}>Mostre o que você cria</Text><Text style={styles.introText}>Os trabalhos ficam vinculados ao seu perfil e são lidos diretamente do banco.</Text></View>
    <View style={styles.addCard}><Text style={styles.cardKicker}>NOVO TRABALHO</Text><Text style={styles.cardTitle}>Adicionar ao portfólio</Text>
     <TouchableOpacity style={styles.imagePicker} onPress={escolherImagem}>{preview?<Image source={{uri:preview}} style={styles.newImage}/>:<><View style={styles.addIcon}><Ionicons name="image-outline" size={25} color={colors.primaryDark}/></View><Text style={styles.imageTitle}>Selecionar imagem</Text><Text style={styles.imageHint}>A seleção local é usada como prévia</Text></>}</TouchableOpacity>
