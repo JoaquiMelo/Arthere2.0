@@ -1,4 +1,4 @@
-import React,{useCallback,useEffect,useState} from 'react';
+import React,{useCallback,useState} from 'react';
 import {ActivityIndicator,Alert,Image,KeyboardAvoidingView,Platform,SafeAreaView,ScrollView,StyleSheet,Text,TextInput,TouchableOpacity,View} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,8 +27,6 @@ export default function PortfolioCreationScreen(){
    setCarregando(false);
   }
  },[user?.id]);
-
- useEffect(()=>{void carregarPortfolio();},[carregarPortfolio]);
 
  useFocusEffect(
   useCallback(()=>{void carregarPortfolio();},[carregarPortfolio]),
