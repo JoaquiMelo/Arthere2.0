@@ -1,7 +1,7 @@
 import { colors } from '@/shared/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
 import {
   Dimensions,
   Image,
@@ -15,6 +15,7 @@ import {
 
 import { ReviewList } from '@/features/reviews/components/review-list';
 import { useReviews } from '@/providers/reviews-provider';
+import { useManagement } from '@/providers/management-provider';
 import { useUser } from '@/providers/user-provider';
 import ContratanteProfileScreen from './contratante-profile-screen';
 
@@ -42,7 +43,19 @@ export interface AgentePerfil {
 }
 
 export default function ProfileScreen() {
-  const { user } = useUser();
+  const { user, refresh: refreshUser } = useUser();
+  const { refresh: refreshManagement } = useManagement();
+
+  // Perfil, portfólio e dados do contratante são reconsultados ao voltar para a tela.
+  useFocusEffect(
+    useCallback(() => {
+      void Promise.all([refreshUser(), refreshManagement()]);
+    }, [refreshUser, refreshManagement]),
+  );
+
+  if (!user) {
+    return null;
+  }
 
   if (user.tipo === 'CONTRATANTE') {
     return <ContratanteProfileScreen />;
