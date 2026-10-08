@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -88,7 +89,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<LocalUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     try {
       const sessao = await api.obterSessao();
 
@@ -103,11 +104,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       await api.encerrarSessao();
       setUser(null);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void refresh().finally(() => setLoading(false));
-  }, []);
+  }, [refresh]);
 
   const value: UserContextType = {
     user,
