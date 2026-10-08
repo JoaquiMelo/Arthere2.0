@@ -10,7 +10,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
+  RefreshControl,
+} from 'react-native';
 
 import { useManagement } from "@/providers/management-provider";
 import { useTheme } from "@/providers/theme-provider";
@@ -68,6 +69,7 @@ export default function EventsScreen() {
     useNavigation<NativeStackNavigationProp<RootStackParamList, "Events">>();
   const { palette } = useTheme();
   const { eventos, refresh } = useManagement();
+  const [atualizando, setAtualizando] = useState(false);
 
   // Reconsulta eventos toda vez que a tela recebe foco.
   useFocusEffect(
@@ -75,6 +77,15 @@ export default function EventsScreen() {
       void refresh();
     }, [refresh]),
   );
+
+  const recarregar = useCallback(async () => {
+    setAtualizando(true);
+    try {
+      await refresh();
+    } finally {
+      setAtualizando(false);
+    }
+  }, [refresh]);
 
   const primeiroEvento = eventos[0];
   const dataInicial = primeiroEvento ? dataDoEvento(primeiroEvento.data) : new Date();
@@ -190,7 +201,8 @@ export default function EventsScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="none"
-      >
+      
+        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} />}>
         <View
           style={[styles.miniHeader, { borderBottomColor: palette.border }]}
         >
