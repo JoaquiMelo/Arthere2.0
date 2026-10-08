@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -67,7 +67,14 @@ export default function EventsScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList, "Events">>();
   const { palette } = useTheme();
-  const { eventos } = useManagement();
+  const { eventos, refresh } = useManagement();
+
+  // Reconsulta eventos toda vez que a tela recebe foco.
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
 
   const primeiroEvento = eventos[0];
   const dataInicial = primeiroEvento ? dataDoEvento(primeiroEvento.data) : new Date();
