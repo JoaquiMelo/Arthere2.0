@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -47,12 +47,13 @@ export default function OpportunitiesScreen() {
     }
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
+  // Sempre que a tela recebe foco, consulta novamente a API.
+  // Isso mantém a lista atualizada mesmo quando os dados mudam fora do app.
+  useFocusEffect(
+    useCallback(() => {
       void carregar();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
+    }, []),
+  );
 
   const candidatar = async (projeto: Projeto) => {
     try {
