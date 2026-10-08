@@ -11,6 +11,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 
 import { ReviewList } from '@/features/reviews/components/review-list';
@@ -66,7 +67,17 @@ export default function ProfileScreen() {
 
 function AgenteProfileScreenContent() {
   const navigation = useNavigation<any>();
-  const { user } = useUser();
+  const { user, refresh: refreshUser } = useUser();
+  const { refresh: refreshManagement } = useManagement();
+  const [atualizando, setAtualizando] = useState(false);
+  const recarregar = useCallback(async () => {
+    setAtualizando(true);
+    try {
+      await Promise.all([refreshUser(), refreshManagement()]);
+    } finally {
+      setAtualizando(false);
+    }
+  }, [refreshUser, refreshManagement]);
   const [abaAtiva, setAbaAtiva] = useState<'portfolio' | 'sobre' | 'avaliacoes'>('portfolio');
   const agente: AgentePerfil = {
     id: user.id,
@@ -96,7 +107,8 @@ function AgenteProfileScreenContent() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} />}>
         <View style={styles.coverContainer}>
           <Image
             source={{
