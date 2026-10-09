@@ -62,7 +62,7 @@ export default function OpportunityDetailsScreen() {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back}><Ionicons name="arrow-back" size={21} color={colors.brandInk} /></TouchableOpacity>
           <View style={styles.shape} />
           <Text style={styles.kicker}>OPORTUNIDADE CRIATIVA</Text>
-          <Text style={styles.title}>{projeto.titulo}</Text>
+          <Text style={styles.heroTitle}>{projeto.titulo}</Text>
           <View style={styles.categoryPill}><Text style={styles.category}>{projeto.categoria}</Text></View>
         </View>
 
