@@ -170,8 +170,8 @@ export default function RegisterScreen() {
               <Text style={styles.roleTitle}>AGENTE CRIATIVO</Text>
               <Text style={styles.roleSub}>Artista ou profissional</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.role, tipoUsuario === 'CONTRATANTE' && styles.roleActive]} onPress={() => setTipoUsuario('CONTRATANTE')}>
-              <Ionicons name="briefcase-outline" size={25} color={tipoUsuario === 'CONTRATANTE' ? '#28232b' : '#77716d'} />
+            <TouchableOpacity style={[styles.role, tipoUsuario === 'CONTRATANTE_EVENTOS' && styles.roleActive]} onPress={() => setTipoUsuario('CONTRATANTE')}>
+              <Ionicons name="briefcase-outline" size={25} color={tipoUsuario === 'CONTRATANTE_EVENTOS' ? '#28232b' : '#77716d'} />
               <Text style={styles.roleTitle}>CONTRATANTE DE EVENTOS</Text>
               <Text style={styles.roleSub}>Organize e divulgue eventos</Text>
             </TouchableOpacity>
@@ -186,8 +186,8 @@ export default function RegisterScreen() {
           {renderInput('NOME SOCIAL (OPCIONAL)', nomeSocial, setNomeSocial, 'Nome social', 'person-outline', { autoCapitalize: 'words' })}
           {renderInput('PRONOMES (OPCIONAL)', pronomes, setPronomes, 'Ex.: ela/dela, ele/dele', 'people-outline')}
           {tipoUsuario !== 'AGENTE' && renderInput('CPF OU CNPJ', cpfCnpj, setCpfCnpj, 'Digite CPF ou CNPJ', 'card-outline', { keyboardType: 'numeric' })}
-          {tipoUsuario === 'CONTRATANTE' && renderInput('EMPRESA / ORGANIZAÇÃO', empresa, setEmpresa, 'Nome da empresa ou organização', 'business-outline', { autoCapitalize: 'words' })}
-          {tipoUsuario === 'CONTRATANTE' && renderInput('SEGMENTO', categoria, setCategoria, 'Ex.: eventos, publicidade, cultura', 'briefcase-outline', { autoCapitalize: 'sentences' })}
+          {tipoUsuario !== 'AGENTE' && renderInput('EMPRESA / ORGANIZAÇÃO', empresa, setEmpresa, 'Nome da empresa ou organização', 'business-outline', { autoCapitalize: 'words' })}
+          {tipoUsuario !== 'AGENTE' && renderInput('SEGMENTO', categoria, setCategoria, 'Ex.: eventos, publicidade, cultura', 'briefcase-outline', { autoCapitalize: 'sentences' })}
           {tipoUsuario === 'AGENTE' && renderInput('ÁREA DE ATUAÇÃO', especialidade, setEspecialidade, 'Ex.: fotografia, design, música', 'sparkles-outline', { autoCapitalize: 'sentences' })}
           {renderInput('E-MAIL', email, setEmail, 'seu@email.com', 'mail-outline', { keyboardType: 'email-address', autoCapitalize: 'none', autoCorrect: false })}
           {renderInput('TELEFONE / WHATSAPP', telefone, setTelefone, '(13) 99999-9999', 'call-outline', { keyboardType: 'phone-pad' })}
@@ -204,7 +204,7 @@ export default function RegisterScreen() {
             <Ionicons name="chevron-down" size={19} color="#77716d" />
           </TouchableOpacity>
           {renderInput('ENDEREÇO', endereco, setEndereco, 'Rua, número e bairro (opcional)', 'navigate-outline', { autoCapitalize: 'sentences' })}
-          {tipoUsuario === 'CONTRATANTE' && renderInput('SITE', site, setSite, 'https://suaempresa.com.br', 'globe-outline', { keyboardType: 'url', autoCapitalize: 'none', autoCorrect: false })}
+          {tipoUsuario !== 'AGENTE' && renderInput('SITE', site, setSite, 'https://suaempresa.com.br', 'globe-outline', { keyboardType: 'url', autoCapitalize: 'none', autoCorrect: false })}
           <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}>
             <View style={styles.modalOverlay}>
               <View style={styles.modalCard}>
