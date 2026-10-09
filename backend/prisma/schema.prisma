@@ -219,7 +219,8 @@ model SolicitacaoEvento {
 
 enum TipoUsuario {
   AGENTE
-  CONTRATANTE
+  CONTRATANTE_EVENTOS
+  CONTRATANTE_OPORTUNIDADES
   ADMIN
 }
 
