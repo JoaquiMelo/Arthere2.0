@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import {
+    Alert,
     Image,
     KeyboardAvoidingView,
     Modal,
