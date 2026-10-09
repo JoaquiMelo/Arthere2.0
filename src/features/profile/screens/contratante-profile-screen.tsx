@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import {
+    Alert,
     Image,
     KeyboardAvoidingView,
     Modal,
@@ -79,7 +80,7 @@ export default function ContratanteProfileScreen() {
           <View style={styles.coverOverlay} />
 
           <View style={styles.coverLabel}>
-            <Text style={styles.coverLabelText}>PERFIL · CONTRATANTE</Text>
+            <Text style={styles.coverLabelText}>{user?.tipo === "CONTRATANTE_EVENTOS" ? "PERFIL · CONTRATANTE DE EVENTOS" : "PERFIL · CONTRATANTE DE OPORTUNIDADES"}</Text>
           </View>
 
           <TouchableOpacity
@@ -125,39 +126,27 @@ export default function ContratanteProfileScreen() {
             </View>
           ) : null}
 
-          <View style={styles.statsCard}>
-            <View style={styles.stat}>
-              <Text style={styles.statNumber}>{vagas.length}</Text>
-              <Text style={styles.statLabel}>VAGAS</Text>
+          {user?.tipo === "CONTRATANTE_OPORTUNIDADES" ? (
+            <View style={styles.statsCard}>
+              <View style={styles.stat}><Text style={styles.statNumber}>{vagas.length}</Text><Text style={styles.statLabel}>VAGAS</Text></View>
+              <View style={styles.statDivider} />
+              <View style={styles.stat}><Text style={styles.statNumber}>{emAndamento}</Text><Text style={styles.statLabel}>EM ANDAMENTO</Text></View>
+              <View style={styles.statDivider} />
+              <View style={styles.stat}><Text style={styles.statNumber}>{concluidas}</Text><Text style={styles.statLabel}>CONCLUÍDAS</Text></View>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text style={styles.statNumber}>{emAndamento}</Text>
-              <Text style={styles.statLabel}>EM ANDAMENTO</Text>
+          ) : (
+            <View style={styles.statsCard}>
+              <View style={styles.stat}><Text style={styles.statNumber}>{eventos.length}</Text><Text style={styles.statLabel}>EVENTOS PUBLICADOS</Text></View>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text style={styles.statNumber}>{concluidas}</Text>
-              <Text style={styles.statLabel}>CONCLUÍDAS</Text>
-            </View>
-          </View>
+          )}
 
           <View style={styles.actionButtonsRow}>
-            <TouchableOpacity
-              style={styles.manageButton}
-              onPress={() => navigation.navigate("ManageOpportunities")}
-              activeOpacity={0.85}
-            >
-              <Ionicons
-                name="people-outline"
-                size={16}
-                color={colors.brandPaper}
-              />
-              <Text style={styles.manageButtonText}>
-                CANDIDATURAS
-                {totalCandidaturas > 0 ? ` · ${totalCandidaturas}` : ""}
-              </Text>
-            </TouchableOpacity>
+            {user?.tipo === "CONTRATANTE_OPORTUNIDADES" ? (
+              <TouchableOpacity style={styles.manageButton} onPress={() => navigation.navigate("ManageOpportunities")} activeOpacity={0.85}>
+                <Ionicons name="people-outline" size={16} color={colors.brandPaper} />
+                <Text style={styles.manageButtonText}>CANDIDATURAS{totalCandidaturas > 0 ? ` · ${totalCandidaturas}` : ""}</Text>
+              </TouchableOpacity>
+            ) : null}
 
             <TouchableOpacity
               style={styles.editProfileButton}
@@ -174,7 +163,7 @@ export default function ContratanteProfileScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
+        {user?.tipo === "CONTRATANTE_EVENTOS" ? <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
               <Text style={styles.sectionKicker}>PORTFÓLIO DE EVENTOS</Text>
@@ -216,12 +205,12 @@ export default function ContratanteProfileScreen() {
               <Text style={styles.addEventText}>ADICIONAR EVENTO</Text>
             </TouchableOpacity>
           </ScrollView>
-        </View>
+        </View> : null}
 
-        <View style={styles.section}>
+        {user?.tipo === "CONTRATANTE_OPORTUNIDADES" ? <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.sectionKicker}>PROJETOS PUBLICADOS</Text>
+              <Text style={styles.sectionKicker}>VAGAS PUBLICADAS</Text>
               <Text style={styles.sectionTitle}>Minhas vagas</Text>
             </View>
           </View>
@@ -271,7 +260,7 @@ export default function ContratanteProfileScreen() {
               </TouchableOpacity>
             ))
           )}
-        </View>
+        </View> : null}
       </ScrollView>
 
       <Modal

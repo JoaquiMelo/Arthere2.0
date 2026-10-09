@@ -58,7 +58,7 @@ export default function ProfileScreen() {
     return null;
   }
 
-  if (user.tipo === 'CONTRATANTE') {
+  if (user.tipo === 'CONTRATANTE_EVENTOS' || user.tipo === 'CONTRATANTE_OPORTUNIDADES') {
     return <ContratanteProfileScreen />;
   }
 

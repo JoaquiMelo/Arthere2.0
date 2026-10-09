@@ -33,6 +33,7 @@ export class EventosService {
   }
 
   async criar(uid: string, dados: any) {
+    await this.exigirTipo(uid);
     const contratante = await this.prisma.contratante.findUnique({ where: { usuarioId: uid } });
     if (!contratante) throw new ForbiddenException('Somente contratantes podem cadastrar eventos.');
     this.validar(dados);
@@ -54,6 +55,7 @@ export class EventosService {
   }
 
   async atualizar(uid: string, id: string, dados: any) {
+    await this.exigirTipo(uid);
     const contratante = await this.prisma.contratante.findUnique({ where: { usuarioId: uid } });
     if (!contratante) throw new ForbiddenException('Somente contratantes podem editar eventos.');
     const evento = await this.prisma.evento.findUnique({ where: { id } });
@@ -78,6 +80,7 @@ export class EventosService {
   }
 
   async remover(uid: string, id: string) {
+    await this.exigirTipo(uid);
     const contratante = await this.prisma.contratante.findUnique({ where: { usuarioId: uid } });
     if (!contratante) throw new ForbiddenException('Somente contratantes podem remover eventos.');
     const evento = await this.prisma.evento.findUnique({ where: { id } });
@@ -127,7 +130,7 @@ export class EventosService {
       });
     }
 
-    if (usuario.contratante) {
+    if (usuario.contratante && usuario.tipo === 'CONTRATANTE_EVENTOS') {
       return this.prisma.solicitacaoEvento.findMany({
         where: { evento: { contratanteId: usuario.contratante.id } },
         include: { evento: true, agente: { include: { portfolio: true } } },
@@ -139,6 +142,7 @@ export class EventosService {
   }
 
   async atualizarSolicitacao(uid: string, solicitacaoId: string, status: 'ACEITA' | 'RECUSADA') {
+    await this.exigirTipo(uid);
     const contratante = await this.prisma.contratante.findUnique({ where: { usuarioId: uid } });
     if (!contratante) throw new ForbiddenException('Somente contratantes podem responder solicitações.');
     if (!['ACEITA', 'RECUSADA'].includes(status)) throw new ConflictException('Status de solicitação inválido.');
@@ -155,6 +159,11 @@ export class EventosService {
       data: { status },
       include: { evento: true, agente: true },
     });
+  }
+
+  private async exigirTipo(uid: string) {
+    const usuario = await this.prisma.usuario.findUnique({ where: { id: uid }, select: { tipo: true } });
+    if (!usuario || usuario.tipo !== 'CONTRATANTE_EVENTOS') throw new ForbiddenException('Esta função está disponível apenas para contratantes de eventos.');
   }
 
   private validar(dados: any) {

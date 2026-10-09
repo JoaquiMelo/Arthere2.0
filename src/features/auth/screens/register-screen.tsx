@@ -6,7 +6,7 @@ import { useUser } from '@/providers/user-provider';
 import { ARTHERE_LOGO } from '@/shared/assets/artHere-logo';
 import { buscarCidades, CidadeBR, ESTADOS_BR } from '@/shared/config/brazil-location';
 
-type TipoUsuario = 'AGENTE' | 'CONTRATANTE';
+type TipoUsuario = 'AGENTE' | 'CONTRATANTE_EVENTOS' | 'CONTRATANTE_OPORTUNIDADES';
 
 export default function RegisterScreen() {
   const navigation = useNavigation<any>();
@@ -74,11 +74,11 @@ export default function RegisterScreen() {
       Alert.alert('Atenção', 'Informe sua área de atuação.');
       return;
     }
-    if (tipoUsuario === 'CONTRATANTE' && !cpfCnpj.trim()) {
+    if (tipoUsuario !== 'AGENTE' && !cpfCnpj.trim()) {
       Alert.alert('CPF/CNPJ obrigatório', 'Informe o CPF ou CNPJ do contratante.');
       return;
     }
-    if (tipoUsuario === 'CONTRATANTE' && (!empresa.trim() || !categoria.trim())) {
+    if (tipoUsuario !== 'AGENTE' && (!empresa.trim() || !categoria.trim())) {
       Alert.alert('Atenção', 'Informe a empresa e a categoria da organização.');
       return;
     }
@@ -170,19 +170,24 @@ export default function RegisterScreen() {
               <Text style={styles.roleTitle}>AGENTE CRIATIVO</Text>
               <Text style={styles.roleSub}>Artista ou profissional</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.role, tipoUsuario === 'CONTRATANTE' && styles.roleActive]} onPress={() => setTipoUsuario('CONTRATANTE')}>
-              <Ionicons name="briefcase-outline" size={25} color={tipoUsuario === 'CONTRATANTE' ? '#28232b' : '#77716d'} />
-              <Text style={styles.roleTitle}>CONTRATANTE</Text>
-              <Text style={styles.roleSub}>Empresa ou organização</Text>
+            <TouchableOpacity style={[styles.role, tipoUsuario === 'CONTRATANTE_EVENTOS' && styles.roleActive]} onPress={() => setTipoUsuario('CONTRATANTE_EVENTOS')}>
+              <Ionicons name="briefcase-outline" size={25} color={tipoUsuario === 'CONTRATANTE_EVENTOS' ? '#28232b' : '#77716d'} />
+              <Text style={styles.roleTitle}>CONTRATANTE DE EVENTOS</Text>
+              <Text style={styles.roleSub}>Organize e divulgue eventos</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.role, tipoUsuario === 'CONTRATANTE_OPORTUNIDADES' && styles.roleActive]} onPress={() => setTipoUsuario('CONTRATANTE_OPORTUNIDADES')}>
+              <Ionicons name="briefcase-outline" size={25} color={tipoUsuario === 'CONTRATANTE_OPORTUNIDADES' ? '#28232b' : '#77716d'} />
+              <Text style={styles.roleTitle}>CONTRATANTE DE OPORTUNIDADES</Text>
+              <Text style={styles.roleSub}>Publique vagas e avalie candidaturas</Text>
             </TouchableOpacity>
           </View>
 
           {renderInput('NOME COMPLETO', nome, setNome, 'Seu nome completo', 'person-outline', { autoCapitalize: 'words' })}
           {renderInput('NOME SOCIAL (OPCIONAL)', nomeSocial, setNomeSocial, 'Nome social', 'person-outline', { autoCapitalize: 'words' })}
           {renderInput('PRONOMES (OPCIONAL)', pronomes, setPronomes, 'Ex.: ela/dela, ele/dele', 'people-outline')}
-          {tipoUsuario === 'CONTRATANTE' && renderInput('CPF OU CNPJ', cpfCnpj, setCpfCnpj, 'Digite CPF ou CNPJ', 'card-outline', { keyboardType: 'numeric' })}
-          {tipoUsuario === 'CONTRATANTE' && renderInput('EMPRESA / ORGANIZAÇÃO', empresa, setEmpresa, 'Nome da empresa ou organização', 'business-outline', { autoCapitalize: 'words' })}
-          {tipoUsuario === 'CONTRATANTE' && renderInput('SEGMENTO', categoria, setCategoria, 'Ex.: eventos, publicidade, cultura', 'briefcase-outline', { autoCapitalize: 'sentences' })}
+          {tipoUsuario !== 'AGENTE' && renderInput('CPF OU CNPJ', cpfCnpj, setCpfCnpj, 'Digite CPF ou CNPJ', 'card-outline', { keyboardType: 'numeric' })}
+          {tipoUsuario !== 'AGENTE' && renderInput('EMPRESA / ORGANIZAÇÃO', empresa, setEmpresa, 'Nome da empresa ou organização', 'business-outline', { autoCapitalize: 'words' })}
+          {tipoUsuario !== 'AGENTE' && renderInput('SEGMENTO', categoria, setCategoria, 'Ex.: eventos, publicidade, cultura', 'briefcase-outline', { autoCapitalize: 'sentences' })}
           {tipoUsuario === 'AGENTE' && renderInput('ÁREA DE ATUAÇÃO', especialidade, setEspecialidade, 'Ex.: fotografia, design, música', 'sparkles-outline', { autoCapitalize: 'sentences' })}
           {renderInput('E-MAIL', email, setEmail, 'seu@email.com', 'mail-outline', { keyboardType: 'email-address', autoCapitalize: 'none', autoCorrect: false })}
           {renderInput('TELEFONE / WHATSAPP', telefone, setTelefone, '(13) 99999-9999', 'call-outline', { keyboardType: 'phone-pad' })}
@@ -199,7 +204,7 @@ export default function RegisterScreen() {
             <Ionicons name="chevron-down" size={19} color="#77716d" />
           </TouchableOpacity>
           {renderInput('ENDEREÇO', endereco, setEndereco, 'Rua, número e bairro (opcional)', 'navigate-outline', { autoCapitalize: 'sentences' })}
-          {tipoUsuario === 'CONTRATANTE' && renderInput('SITE', site, setSite, 'https://suaempresa.com.br', 'globe-outline', { keyboardType: 'url', autoCapitalize: 'none', autoCorrect: false })}
+          {tipoUsuario !== 'AGENTE' && renderInput('SITE', site, setSite, 'https://suaempresa.com.br', 'globe-outline', { keyboardType: 'url', autoCapitalize: 'none', autoCorrect: false })}
           <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}>
             <View style={styles.modalOverlay}>
               <View style={styles.modalCard}>
@@ -270,8 +275,8 @@ const styles = StyleSheet.create({
   subtitle: { color: '#77716d', fontSize: 15, lineHeight: 21, marginBottom: 26 },
   sectionTitle: { color: '#514b4a', fontSize: 11, fontWeight: '900', letterSpacing: 1.5, marginTop: 5, marginBottom: 12 },
   label: { color: '#514b4a', fontSize: 11, fontWeight: '900', letterSpacing: 1.2, marginBottom: 8, marginTop: 2 },
-  roles: { flexDirection: 'row', gap: 10, marginBottom: 22 },
-  role: { flex: 1, minHeight: 110, backgroundColor: '#fbf8f2', borderWidth: 1, borderColor: '#d5cec4', padding: 14, justifyContent: 'center', borderRadius: 18 },
+  roles: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 22 },
+  role: { flexGrow: 1, flexBasis: '45%', minHeight: 110, backgroundColor: '#fbf8f2', borderWidth: 1, borderColor: '#d5cec4', padding: 14, justifyContent: 'center', borderRadius: 18 },
   roleActive: { borderColor: '#28232b', backgroundColor: '#eee8dd', borderWidth: 2, borderRadius: 18 },
   roleTitle: { color: '#302a31', fontSize: 12, fontWeight: '900', letterSpacing: 0.7, marginTop: 8 },
   roleSub: { color: '#77716d', fontSize: 12, marginTop: 4 },
