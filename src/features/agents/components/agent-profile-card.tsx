@@ -21,6 +21,7 @@ interface Props {
   onClose: () => void;
   onAgendar: (agente: AgenteCriativo) => void;
   onChat: (agente: AgenteCriativo) => void;
+  onVerPerfil: (agente: AgenteCriativo) => void;
 }
 
 export function AgentProfileCard({
@@ -29,6 +30,7 @@ export function AgentProfileCard({
   onClose,
   onAgendar,
   onChat,
+  onVerPerfil,
 }: Props) {
   const { avaliacoesPorAgente, mediaPorAgente } = useReviews();
 
@@ -137,6 +139,10 @@ export function AgentProfileCard({
         ) : null}
 
         <View style={styles.acoes}>
+          <TouchableOpacity style={styles.chat} onPress={() => onVerPerfil(agente)}>
+            <Ionicons name="person-circle-outline" size={18} color={colors.brandInk} />
+            <Text style={styles.chatText}>VER PERFIL</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.agendar} onPress={() => onAgendar(agente)}>
             <Text style={styles.agendarTexto}>AGENDAR</Text>
             <Ionicons name="arrow-forward" size={15} color={colors.brandPaper} />
