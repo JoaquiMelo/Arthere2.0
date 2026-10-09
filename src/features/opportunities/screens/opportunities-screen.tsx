@@ -115,7 +115,7 @@ export default function OpportunitiesScreen() {
           <Text style={styles.subtitle}>Encontre ou publique novos projetos.</Text>
         </View>
 
-        {tipo === 'CONTRATANTE' ? (
+        {tipo === 'CONTRATANTE_OPORTUNIDADES' ? (
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.manage}
