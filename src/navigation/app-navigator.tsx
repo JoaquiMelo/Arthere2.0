@@ -16,11 +16,13 @@ import EventsScreen from '@/features/events/screens/events-screen';
 import { MapScreen } from '@/features/map/screens/map-screen';
 import ManageOpportunitiesScreen from '@/features/opportunities/screens/manage-opportunities-screen';
 import OpportunitiesScreen from '@/features/opportunities/screens/opportunities-screen';
+import OpportunityDetailsScreen from '@/features/opportunities/screens/opportunity-details-screen';
 import EditContractorProfileScreen from '@/features/profile/screens/edit-contractor-profile-screen';
 import EditProfileScreen from '@/features/profile/screens/edit-profile-screen';
 import SelectLocationScreen from '@/features/profile/screens/select-location-screen';
 import PortfolioCreationScreen from '@/features/profile/screens/portfolio-creation-screen';
 import ProfileScreen from '@/features/profile/screens/profile-screen';
+import PublicProfileScreen from '@/features/profile/screens/public-profile-screen';
 import SettingsScreen from '@/features/profile/screens/settings-screen';
 import { useTheme } from '@/providers/theme-provider';
 import { useUser } from '@/providers/user-provider';
@@ -29,7 +31,7 @@ export type RootStackParamList={
  Map:undefined; Login:undefined; Register:undefined; CreatePortfolio:undefined; CustomizeProfile:undefined; Tabs:undefined;
  EditProfile?:{agente?:unknown; localSelecionado?:{latitude:number;longitude:number;endereco:string;cidade:string}}; SelectLocation:{latitude?:number|null;longitude?:number|null}; EditContractorProfile:undefined; PortfolioCreation?:{portfolio?:unknown[]};
  Settings:undefined; ChatConversation:{conversationId:string}; ManageOpportunities:undefined;
- Opportunities:undefined; Events:undefined; EventDetails:{eventId:string}; CreateEvent:undefined;
+ Opportunities:undefined; OpportunityDetails:{opportunityId:string}; PublicProfile:{profileType:'AGENTE'|'CONTRATANTE';profileId:string}; Events:undefined; EventDetails:{eventId:string}; CreateEvent:undefined;
 };
 
 export type TabParamList={Map:undefined;Profile:undefined;Opportunities:undefined;Events:undefined;Chat:undefined;Settings:undefined};
@@ -70,6 +72,8 @@ function RootStack(){
       <Stack.Screen name="Map" component={MapScreen}/>
       <Stack.Screen name="Login" component={LoginScreen}/>
       <Stack.Screen name="Register" component={RegisterScreen}/>
+      <Stack.Screen name="PublicProfile" component={PublicProfileScreen}/>
+      <Stack.Screen name="OpportunityDetails" component={OpportunityDetailsScreen}/>
     </>
   ) : (
     <>
@@ -84,6 +88,8 @@ function RootStack(){
       <Stack.Screen name="ChatConversation" component={ChatConversationScreen}/>
       <Stack.Screen name="ManageOpportunities" component={ManageOpportunitiesScreen}/>
       <Stack.Screen name="Opportunities" component={OpportunitiesScreen}/>
+      <Stack.Screen name="OpportunityDetails" component={OpportunityDetailsScreen}/>
+      <Stack.Screen name="PublicProfile" component={PublicProfileScreen}/>
       <Stack.Screen name="Events" component={EventsScreen}/>
       <Stack.Screen name="EventDetails" component={EventDetailsScreen}/>
       <Stack.Screen name="CreateEvent" component={CreateEventScreen}/>
