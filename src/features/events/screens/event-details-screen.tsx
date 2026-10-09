@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -8,6 +8,7 @@ import type { RouteProp } from '@react-navigation/native';
 import { useTheme } from '@/providers/theme-provider';
 import { useUser } from '@/providers/user-provider';
 import { useManagement } from '@/providers/management-provider';
+import { event as buscarEvento } from '@/services/api';
 import type { RootStackParamList } from '../../../navigation/app-navigator';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList, 'EventDetails'>;
@@ -20,8 +21,33 @@ export default function EventDetailsScreen() {
   const { user } = useUser();
   const { eventos, solicitacoesEvento, enviarSolicitacaoEvento } = useManagement();
   const [enviando, setEnviando] = useState(false);
+  const [eventoApi, setEventoApi] = useState<any>(null);
 
-  const evento = eventos.find((item) => item.id === route.params.eventId);
+  useEffect(() => {
+    if (eventos.some((item) => item.id === route.params.eventId)) return;
+    let ativo = true;
+    buscarEvento(route.params.eventId).then((dados) => {
+      if (!ativo) return;
+      const dataEvento = new Date(dados.dataEvento);
+      setEventoApi({
+        id: dados.id,
+        titulo: dados.titulo,
+        categoria: dados.categoria,
+        descricao: dados.descricao,
+        local: dados.local,
+        cidade: dados.cidade,
+        data: Number.isNaN(dataEvento.getTime()) ? String(dados.dataEvento).slice(0, 10) : dataEvento.toISOString().slice(0, 10),
+        horario: dados.horario ?? '',
+        organizador: dados.organizador ?? dados.contratante?.nome ?? '',
+        contratanteId: dados.contratanteId ?? dados.contratante?.id,
+        premium: Boolean(dados.premium),
+        destaque: Boolean(dados.fixado),
+      });
+    }).catch(() => { if (ativo) setEventoApi(null); });
+    return () => { ativo = false; };
+  }, [eventos, route.params.eventId]);
+
+  const evento = eventos.find((item) => item.id === route.params.eventId) ?? eventoApi;
 
   if (!evento) {
     return (
@@ -40,8 +66,8 @@ export default function EventDetailsScreen() {
   const dia = String(data.getDate()).padStart(2, '0');
   const mes = new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(data);
   const semana = new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(data);
-  const isAgente = user.tipo === 'AGENTE';
-  const solicitacao = solicitacoesEvento.find((item) => item.eventId === evento.id && item.agenteId === user.id);
+  const isAgente = user?.tipo === 'AGENTE';
+  const solicitacao = solicitacoesEvento.find((item) => item.eventId === evento.id && item.agenteId === user?.id);
   const statusSolicitacao = solicitacao?.status;
 
   const solicitarParticipacao = () => {
