@@ -284,6 +284,10 @@ export function MapScreen() {
                   Alert.alert(`Solicitação de agenda para ${agente.nome}`);
                 }}
                 onChat={abrirChat}
+                onVerPerfil={(agente) => {
+                  setSelecionado(null);
+                  navigation.navigate('PublicProfile', { profileType: 'AGENTE', profileId: agente.id });
+                }}
               />
             </View>
           ) : null}
