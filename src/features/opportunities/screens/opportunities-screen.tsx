@@ -158,7 +158,13 @@ export default function OpportunitiesScreen() {
             </View>
           }
           renderItem={({ item }) => (
-            <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.card}
+              activeOpacity={0.82}
+              onPress={() => navigation.navigate('OpportunityDetails', { opportunityId: item.id })}
+              accessibilityRole="button"
+              accessibilityLabel={`Ver detalhes da oportunidade ${item.titulo}`}
+            >
               <View style={styles.cardTop}>
                 <Text style={styles.category}>{item.categoria}</Text>
                 <Ionicons name="arrow-up-outline" size={17} color={colors.brandCoral} />
@@ -189,7 +195,7 @@ export default function OpportunitiesScreen() {
                   </TouchableOpacity>
                 ) : null}
               </View>
-            </View>
+            </TouchableOpacity>
           )}
         />
       )}
