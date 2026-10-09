@@ -294,6 +294,16 @@ export async function agents(
   );
 }
 
+/** Consulta o perfil público de um agente criativo. */
+export async function publicAgent(id: string) {
+  return request<any>(`/usuarios/agentes/${encodeURIComponent(id)}`);
+}
+
+/** Consulta o perfil público de um contratante, sem expor dados privados. */
+export async function publicContractor(id: string) {
+  return request<any>(`/usuarios/contratantes/${encodeURIComponent(id)}`);
+}
+
 /**
  * Projetos.
  */
