@@ -74,6 +74,7 @@ function RootStack(){
       <Stack.Screen name="Register" component={RegisterScreen}/>
       <Stack.Screen name="PublicProfile" component={PublicProfileScreen}/>
       <Stack.Screen name="OpportunityDetails" component={OpportunityDetailsScreen}/>
+      <Stack.Screen name="EventDetails" component={EventDetailsScreen}/>
     </>
   ) : (
     <>
