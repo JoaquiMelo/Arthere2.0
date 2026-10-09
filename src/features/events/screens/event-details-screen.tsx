@@ -129,7 +129,13 @@ export default function EventDetailsScreen() {
             </View>
             <View style={styles.infoCopy}>
               <Text style={[styles.infoLabel, { color: palette.muted }]}>ORGANIZAÇÃO</Text>
-              <Text style={[styles.infoValue, { color: palette.brandInk }]}>{evento.organizador}</Text>
+              {evento.contratanteId ? (
+                <TouchableOpacity onPress={() => navigation.navigate('PublicProfile', { profileType: 'CONTRATANTE', profileId: evento.contratanteId! })} accessibilityRole="button">
+                  <Text style={[styles.infoValue, { color: palette.brandCoral }]}>{evento.organizador || 'Ver perfil do organizador'} ↗</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={[styles.infoValue, { color: palette.brandInk }]}>{evento.organizador}</Text>
+              )}
             </View>
           </View>
         </View>
