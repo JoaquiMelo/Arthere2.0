@@ -90,7 +90,7 @@ export class AuthService {
   }
 
   private emailValido(email: string) {
-    return /^[^\\s@]+@[^\\s@]+$/i.test(email);
+    return /^[^\s@]+@[^\s@]+$/i.test(email);
   }
 
   private token(usuario: any) {
