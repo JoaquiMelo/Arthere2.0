@@ -10,7 +10,7 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const tipo = dto.tipo;
-    if (tipo !== 'AGENTE' && tipo !== 'CONTRATANTE') throw new ConflictException('Tipo de usuário inválido.');
+    if (tipo !== 'AGENTE' && tipo !== 'CONTRATANTE_EVENTOS' && tipo !== 'CONTRATANTE_OPORTUNIDADES') throw new ConflictException('Tipo de usuário inválido.');
 
     const email = String(dto.email ?? '').trim().toLowerCase();
     const nome = String(dto.nome ?? '').trim();
@@ -23,7 +23,7 @@ export class AuthService {
     const existente = await this.prisma.usuario.findUnique({ where: { email } });
     if (existente) throw new ConflictException('E-mail já cadastrado.');
 
-    if (tipo === 'CONTRATANTE' && dto.cpfCnpj) {
+    if (tipo !== 'AGENTE' && dto.cpfCnpj) {
       const documento = dto.cpfCnpj.trim();
       const porDocumento = await this.prisma.contratante.findUnique({ where: { cpfCnpj: documento } });
       if (porDocumento) throw new ConflictException('CPF/CNPJ já cadastrado.');
