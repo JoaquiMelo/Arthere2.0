@@ -170,7 +170,7 @@ export default function RegisterScreen() {
               <Text style={styles.roleTitle}>AGENTE CRIATIVO</Text>
               <Text style={styles.roleSub}>Artista ou profissional</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.role, tipoUsuario === 'CONTRATANTE_EVENTOS' && styles.roleActive]} onPress={() => setTipoUsuario('CONTRATANTE')}>
+            <TouchableOpacity style={[styles.role, tipoUsuario === 'CONTRATANTE_EVENTOS' && styles.roleActive]} onPress={() => setTipoUsuario('CONTRATANTE_EVENTOS')}>
               <Ionicons name="briefcase-outline" size={25} color={tipoUsuario === 'CONTRATANTE_EVENTOS' ? '#28232b' : '#77716d'} />
               <Text style={styles.roleTitle}>CONTRATANTE DE EVENTOS</Text>
               <Text style={styles.roleSub}>Organize e divulgue eventos</Text>
