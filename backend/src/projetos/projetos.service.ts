@@ -5,6 +5,11 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ProjetosService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async exigirTipo(uid: string) {
+    const usuario = await this.prisma.usuario.findUnique({ where: { id: uid }, select: { tipo: true } });
+    if (!usuario || usuario.tipo !== 'CONTRATANTE_OPORTUNIDADES') throw new ForbiddenException('Esta função está disponível apenas para contratantes de oportunidades.');
+  }
+
   async listar(filtros: { categoria?: string; cidade?: string; busca?: string; status?: string }) {
     const busca = filtros.busca?.trim();
     return this.prisma.projeto.findMany({
@@ -26,6 +31,7 @@ export class ProjetosService {
   }
 
   async meus(uid: string) {
+    await this.exigirTipo(uid);
     const contratante = await this.prisma.contratante.findUnique({ where: { usuarioId: uid } });
     if (!contratante) throw new ForbiddenException('Somente contratantes possuem projetos publicados.');
 
@@ -52,6 +58,7 @@ export class ProjetosService {
   }
 
   async criar(uid: string, dados: any) {
+    await this.exigirTipo(uid);
     const contratante = await this.prisma.contratante.findUnique({ where: { usuarioId: uid } });
     if (!contratante) throw new ForbiddenException('Somente contratantes podem publicar oportunidades.');
     if (!dados.titulo || !dados.descricao || !dados.categoria) throw new ConflictException('Título, descrição e categoria são obrigatórios.');
@@ -70,6 +77,7 @@ export class ProjetosService {
   }
 
   async atualizar(uid: string, id: string, dados: any) {
+    await this.exigirTipo(uid);
     const contratante = await this.prisma.contratante.findUnique({ where: { usuarioId: uid } });
     if (!contratante) throw new ForbiddenException('Somente contratantes podem editar projetos.');
     const projeto = await this.prisma.projeto.findUnique({ where: { id } });
@@ -118,6 +126,7 @@ export class ProjetosService {
   }
 
   async candidaturasDoProjeto(uid: string, projetoId: string) {
+    await this.exigirTipo(uid);
     const contratante = await this.prisma.contratante.findUnique({ where: { usuarioId: uid } });
     if (!contratante) throw new ForbiddenException('Somente contratantes podem visualizar candidaturas.');
     const projeto = await this.prisma.projeto.findUnique({ where: { id: projetoId } });
@@ -132,6 +141,7 @@ export class ProjetosService {
   }
 
   async atualizarCandidatura(uid: string, candidaturaId: string, status: 'ACEITA' | 'RECUSADA') {
+    await this.exigirTipo(uid);
     const contratante = await this.prisma.contratante.findUnique({ where: { usuarioId: uid } });
     if (!contratante) throw new ForbiddenException('Somente contratantes podem avaliar candidaturas.');
     if (status !== 'ACEITA' && status !== 'RECUSADA') throw new ConflictException('Status de candidatura inválido.');
