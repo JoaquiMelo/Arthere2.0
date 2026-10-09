@@ -37,6 +37,39 @@ export class UsuariosService {
     });
   }
 
+  async obterAgentePublico(id: string) {
+    const agente = await this.prisma.agenteCriativo.findFirst({
+      where: { id, usuario: { is: {} } },
+      include: { portfolio: { orderBy: { criadoEm: 'desc' } } },
+    });
+    if (!agente) throw new NotFoundException('Perfil de agente não encontrado.');
+    return agente;
+  }
+
+  async obterContratantePublico(id: string) {
+    const perfil = await this.prisma.contratante.findUnique({
+      where: { id },
+      select: {
+        id: true, nome: true, nomeSocial: true, pronomes: true,
+        empresa: true, avatarUrl: true, telefone: true, descricao: true,
+        site: true, estado: true, cidade: true, categoria: true,
+        criadoEm: true, atualizadoEm: true,
+        usuario: { select: { tipo: true } },
+        eventos: { orderBy: { dataEvento: 'asc' }, select: {
+          id: true, titulo: true, descricao: true, categoria: true,
+          local: true, cidade: true, dataEvento: true, horario: true,
+          organizador: true, premium: true, fixado: true,
+        } },
+        projetos: { where: { status: 'ABERTO' }, orderBy: { criadoEm: 'desc' }, select: {
+          id: true, titulo: true, descricao: true, categoria: true,
+          status: true, orcamento: true, dataEvento: true, criadoEm: true,
+        } },
+      },
+    });
+    if (!perfil) throw new NotFoundException('Perfil de contratante não encontrado.');
+    return perfil;
+  }
+
   async atualizarMeuPerfil(id: string, tipo: string, dados: any) {
     if (tipo === 'AGENTE') {
       const coordenada = (valor: unknown, limite: number, nome: string) => {
