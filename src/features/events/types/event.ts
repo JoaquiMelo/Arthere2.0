@@ -11,4 +11,5 @@ export type Evento = {
   premium: boolean;
   destaque?: boolean;
   imagemUrl?: string;
+  contratanteId?: string;
 };
