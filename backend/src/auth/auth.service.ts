@@ -23,7 +23,9 @@ export class AuthService {
     const existente = await this.prisma.usuario.findUnique({ where: { email } });
     if (existente) throw new ConflictException('E-mail já cadastrado.');
 
-    if (tipo !== 'AGENTE' && dto.cpfCnpj) {
+    // O perfil de oportunidades é de pessoa física e não exige vínculo empresarial.
+    // CPF/CNPJ é validado apenas para contratantes que representam organizações em eventos.
+    if (tipo === 'CONTRATANTE_EVENTOS' && dto.cpfCnpj) {
       const documento = dto.cpfCnpj.trim();
       const porDocumento = await this.prisma.contratante.findUnique({ where: { cpfCnpj: documento } });
       if (porDocumento) throw new ConflictException('CPF/CNPJ já cadastrado.');
@@ -55,11 +57,11 @@ export class AuthService {
                   nome,
                   nomeSocial: dto.nomeSocial?.trim() || undefined,
                   pronomes: dto.pronomes?.trim() || undefined,
-                  cpfCnpj: dto.cpfCnpj?.trim() || undefined,
-                  empresa: dto.empresa?.trim() || undefined,
+                  cpfCnpj: tipo === 'CONTRATANTE_EVENTOS' ? dto.cpfCnpj?.trim() || undefined : undefined,
+                  empresa: tipo === 'CONTRATANTE_EVENTOS' ? dto.empresa?.trim() || undefined : undefined,
                   telefone: dto.telefone?.trim() || undefined,
                   descricao: dto.descricao?.trim() || undefined,
-                  site: dto.site?.trim() || undefined,
+                  site: tipo === 'CONTRATANTE_EVENTOS' ? dto.site?.trim() || undefined : undefined,
                   estado: dto.estado?.trim() || undefined,
                   cidade: dto.cidade?.trim() || undefined,
                   endereco: dto.endereco?.trim() || undefined,
