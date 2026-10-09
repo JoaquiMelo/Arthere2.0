@@ -71,7 +71,7 @@ export class UsuariosService {
       return { perfil };
     }
 
-    if (tipo === 'CONTRATANTE') {
+    if (tipo === 'CONTRATANTE_EVENTOS' || tipo === 'CONTRATANTE_OPORTUNIDADES') {
       if (dados.cpfCnpj) {
         const outro = await this.prisma.contratante.findFirst({
           where: { cpfCnpj: String(dados.cpfCnpj).trim(), NOT: { usuarioId: id } },
