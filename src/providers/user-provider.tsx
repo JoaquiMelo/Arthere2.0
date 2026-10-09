@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import * as api from '../services/api';
 
-export type TipoUsuario = 'AGENTE' | 'CONTRATANTE' | 'ADMIN';
+export type TipoUsuario = 'AGENTE' | 'CONTRATANTE_EVENTOS' | 'CONTRATANTE_OPORTUNIDADES' | 'ADMIN';
 
 export interface LocalUser {
   id: string;
