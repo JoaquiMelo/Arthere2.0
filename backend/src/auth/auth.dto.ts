@@ -1,4 +1,4 @@
-export type TipoPublico = 'AGENTE' | 'CONTRATANTE';
+export type TipoPublico = 'AGENTE' | 'CONTRATANTE_EVENTOS' | 'CONTRATANTE_OPORTUNIDADES';
 
 export class RegisterDto {
   email!: string; senha!: string; tipo!: TipoPublico; nome!: string;
