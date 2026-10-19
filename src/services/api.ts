@@ -15,7 +15,7 @@ function normalizarApiUrl(valor: string) {
 }
 
 export const API_URL = normalizarApiUrl(
-  configuracaoApi || 'http://192.168.10.173:3000',
+  configuracaoApi || 'http://17.1.2.11:3006',
 );
 
 console.log('🔗 API_URL:', API_URL);
