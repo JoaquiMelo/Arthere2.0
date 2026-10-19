@@ -15,7 +15,11 @@ function normalizarApiUrl(valor: string) {
 }
 
 export const API_URL = normalizarApiUrl(
+<<<<<<< HEAD
   configuracaoApi || 'http://17.1.2.11:3000',
+=======
+  configuracaoApi || 'http://17.1.2.11:3006',
+>>>>>>> d42038e638f22097f4be58cc0d3d816e6a4848bf
 );
 
 console.log('🔗 API_URL:', API_URL);
