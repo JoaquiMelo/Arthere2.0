@@ -3,20 +3,29 @@ import * as SecureStore from 'expo-secure-store';
 // URL do backend NestJS.
 // O valor pode ser sobrescrito por EXPO_PUBLIC_API_URL no .env do app.
 const configuracaoApi = process.env.EXPO_PUBLIC_API_URL?.trim();
+const API_URL_PADRAO = 'http://2.24.65.149:3006';
 
-function normalizarApiUrl(valor: string) {
-  let url = valor.replace(/^['"]|['"]$/g, '').trim();
+function normalizarApiUrl(valor?: string) {
+  let url = (valor || '').replace(/^['"]|['"]$/g, '').trim();
 
-  // Corrige configurações acidentalmente salvas como http://http://...
-  url = url.replace(/^(https?:\/\/)(https?:\/\/)+/i, '$1');
+  // Corrige URLs duplicadas, como http://http://host:3006.
+  url = url.replace(/^(https?:\\/\\/)(https?:\\/\\/)+/i, '$1');
 
-  // Remove barras finais para evitar URLs como ...:3006//usuarios.
-  return url.replace(/\/+$/, '');
+  // Uma URL incompleta (ex.: "http:") não pode ser usada pelo fetch.
+  if (!/^https?:\\/\\/[^\\s/]+(?::\\d+)?(?:\\/.*)?$/i.test(url)) {
+    if (valor) {
+      console.warn(
+        'EXPO_PUBLIC_API_URL inválida. Usando o endereço padrão da API:',
+        API_URL_PADRAO,
+      );
+    }
+    return API_URL_PADRAO;
+  }
+
+  return url.replace(/\\/+$/, '');
 }
 
-export const API_URL = normalizarApiUrl(
-  configuracaoApi || 'http://172.20.10.2:3006',
-);
+export const API_URL = normalizarApiUrl(configuracaoApi);
 
 console.log('🔗 API_URL:', API_URL);
 
