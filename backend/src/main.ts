@@ -14,7 +14,7 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
 
   console.log(`Arthere API iniciada na porta ${port} (0.0.0.0).`);
-  console.log('URL configurada no app: http://17.1.2.11:' + port);
+  console.log(`URL para o app na rede local: http://172.20.10.2:${port}`);
 }
 
 bootstrap();
