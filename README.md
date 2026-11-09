@@ -22,6 +22,36 @@ npm run start:dev
 
 O backend não executa prisma migrate reset. Para banco existente, siga backend/README.md.
 
+### Testar a API
+
+Com o backend em execução, utilize a URL base `http://localhost:3006` (ou o endereço/IP e a porta configurados no servidor).
+
+**Verificar se a API e o banco estão funcionando:**
+
+```http
+GET http://localhost:3006/health
+```
+
+Resposta esperada:
+
+```json
+{
+  "status": "ok",
+  "database": "connected"
+}
+```
+
+Outras rotas públicas para testes:
+
+- `POST /auth/register` — cadastrar usuário.
+- `POST /auth/login` — autenticar usuário.
+- `GET /usuarios/agentes` — listar agentes.
+- `GET /projetos` — listar oportunidades/projetos.
+- `GET /eventos` — listar eventos.
+- `GET /portfolio/:agenteId` — consultar portfólio de um agente.
+
+As rotas que exigem autenticação devem receber o token JWT no cabeçalho `Authorization: Bearer <token>`. Consulte [backend/README.md](backend/README.md) para a relação de rotas, métodos HTTP e requisitos de autenticação.
+
 ## Mobile
 
 ```bash
