@@ -31,7 +31,7 @@ function normalizarApiUrl(valor?: string) {
   // Corrige URLs duplicadas, como "http://http://host:3006".
   url = url.replace(/^(https?:\/\/)(https?:\/\/)+/i, '$1');
 
-  if (!/^https?:\/\/[^\\s/]+(?::\\d+)?(?:\/.*)?$/i.test(url)) {
+  if (!/^https?:\/\/[^\s/]+(?::\d+)?(?:\/.*)?$/i.test(url)) {
     if (valor) {
       console.warn(
         'EXPO_PUBLIC_API_URL inválida. Usando o endereço padrão da API:',
