@@ -19,7 +19,7 @@ function obterHostDoExpo(): string | undefined {
   if (!hostUri) return undefined;
 
   // Remove eventual protocolo e porta, mantendo o hostname/IP.
-  const semProtocolo = hostUri.replace(/^https?:\\/\\//i, '');
+  const semProtocolo = hostUri.replace(/^https?:\/\//i, '');
   const host = semProtocolo.split('/')[0].split(':')[0].trim();
 
   return host || undefined;
@@ -29,9 +29,9 @@ function normalizarApiUrl(valor?: string) {
   let url = (valor || '').replace(/^['"]|['"]$/g, '').trim();
 
   // Corrige URLs duplicadas, como "http://http://host:3006".
-  url = url.replace(/^(https?:\\/\\/)(https?:\\/\\/)+/i, '$1');
+  url = url.replace(/^(https?:\/\/)(https?:\/\/)+/i, '$1');
 
-  if (!/^https?:\\/\\/[^\\s/]+(?::\\d+)?(?:\\/.*)?$/i.test(url)) {
+  if (!/^https?:\/\/[^\\s/]+(?::\\d+)?(?:\/.*)?$/i.test(url)) {
     if (valor) {
       console.warn(
         'EXPO_PUBLIC_API_URL inválida. Usando o endereço padrão da API:',
@@ -41,7 +41,7 @@ function normalizarApiUrl(valor?: string) {
     return API_URL_PADRAO;
   }
 
-  return url.replace(/\\/+$/, '');
+  return url.replace(/\/+$/, '');
 }
 
 function obterApiUrl(): string {
