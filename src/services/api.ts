@@ -1,17 +1,36 @@
 import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
 
-// URL do backend NestJS.
-// O valor pode ser sobrescrito por EXPO_PUBLIC_API_URL no .env do app.
+// URL pública configurada para builds de produção.
 const configuracaoApi = process.env.EXPO_PUBLIC_API_URL?.trim();
 const API_URL_PADRAO = 'http://2.24.65.149:3006';
+const PORTA_API = 3006;
+
+/**
+ * No Expo Go, hostUri contém o IP/host do computador que iniciou o Metro.
+ * Assim, o celular usa automaticamente o mesmo IP para acessar a API local.
+ */
+function obterHostDoExpo(): string | undefined {
+  const hostUri =
+    Constants.expoConfig?.hostUri ??
+    Constants.manifest2?.extra?.expoGo?.debuggerHost ??
+    Constants.manifest?.debuggerHost;
+
+  if (!hostUri) return undefined;
+
+  // Remove eventual protocolo e porta, mantendo o hostname/IP.
+  const semProtocolo = hostUri.replace(/^https?:\\/\\//i, '');
+  const host = semProtocolo.split('/')[0].split(':')[0].trim();
+
+  return host || undefined;
+}
 
 function normalizarApiUrl(valor?: string) {
   let url = (valor || '').replace(/^['"]|['"]$/g, '').trim();
 
-  // Corrige URLs duplicadas, como http://http://host:3006.
+  // Corrige URLs duplicadas, como "http://http://host:3006".
   url = url.replace(/^(https?:\\/\\/)(https?:\\/\\/)+/i, '$1');
 
-  // Uma URL incompleta (ex.: "http:") não pode ser usada pelo fetch.
   if (!/^https?:\\/\\/[^\\s/]+(?::\\d+)?(?:\\/.*)?$/i.test(url)) {
     if (valor) {
       console.warn(
@@ -25,7 +44,21 @@ function normalizarApiUrl(valor?: string) {
   return url.replace(/\\/+$/, '');
 }
 
-export const API_URL = normalizarApiUrl(configuracaoApi);
+function obterApiUrl(): string {
+  // Em desenvolvimento, prioriza o IP do computador detectado pelo Expo.
+  if (__DEV__) {
+    const host = obterHostDoExpo();
+
+    if (host) {
+      return `http://${host}:${PORTA_API}`;
+    }
+  }
+
+  // Em builds de produção, utiliza a URL pública configurada no ambiente.
+  return normalizarApiUrl(configuracaoApi);
+}
+
+export const API_URL = obterApiUrl();
 
 console.log('🔗 API_URL:', API_URL);
 
