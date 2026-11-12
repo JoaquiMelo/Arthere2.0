@@ -3,8 +3,8 @@ import Constants from 'expo-constants';
 
 // URL pública configurada para builds de produção.
 const configuracaoApi = process.env.EXPO_PUBLIC_API_URL?.trim();
-const API_URL_PADRAO = 'http://2.24.65.149:3006';
-const PORTA_API = 3006;
+const API_URL_PADRAO = 'http://2.24.65.149:3000';
+const PORTA_API = 3000;
 
 /**
  * No Expo Go, hostUri contém o IP/host do computador que iniciou o Metro.
