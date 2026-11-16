@@ -92,8 +92,9 @@ export default function EditContractorProfileScreen() {
 
     setSalvando(true);
     try {
+      const avatarPersistido = avatarUri.startsWith('file:') || avatarUri.startsWith('content:') ? await uploadImage(avatarUri) : avatarUri;
       const dados = {
-        avatarUrl: avatarUri,
+        avatarUrl: avatarPersistido,
         documento: documento.trim(),
         nome: nome.trim(),
         nomeSocial: nomeSocial.trim(),
