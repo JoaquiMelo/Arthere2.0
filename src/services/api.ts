@@ -286,8 +286,21 @@ export async function uploadImage(uri: string): Promise<string> {
   const nome = uri.split('/').pop()?.split('?')[0] || 'imagem.jpg';
   const extensao = nome.split('.').pop()?.toLowerCase();
   const mime = extensao === 'png' ? 'image/png' : extensao === 'webp' ? 'image/webp' : extensao === 'gif' ? 'image/gif' : 'image/jpeg';
+  // React Native 0.86 não aceita mais o objeto { uri, name, type }
+  // como parte do FormData em todos os ambientes. Convertemos o arquivo
+  // local para Blob, formato suportado pelo multipart nativo.
+  const arquivoResponse = await fetch(uri);
+  if (!arquivoResponse.ok) {
+    throw new Error('Não foi possível ler a imagem selecionada.');
+  }
+
+  const blob = await arquivoResponse.blob();
+  if (!blob.size) {
+    throw new Error('A imagem selecionada está vazia ou não pôde ser lida.');
+  }
+
   const form = new FormData();
-  form.append('file', { uri, name: nome, type: mime } as any);
+  form.append('file', blob, nome);
 
   const response = await fetch(`${API_URL}/uploads`, {
     method: 'POST',
