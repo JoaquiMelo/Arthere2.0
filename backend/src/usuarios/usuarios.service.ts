@@ -96,6 +96,7 @@ export class UsuariosService {
           ...(dados.cidade !== undefined ? { cidade: String(dados.cidade).trim() } : {}),
           ...(dados.endereco !== undefined ? { endereco: String(dados.endereco).trim() } : {}),
           ...(dados.avatarUrl !== undefined ? { avatarUrl: dados.avatarUrl || null } : {}),
+          ...(dados.bannerUrl !== undefined ? { bannerUrl: dados.bannerUrl || null } : {}),
           ...(dados.visivelNoMapa !== undefined ? { visivelMapa: Boolean(dados.visivelNoMapa) } : {}),
           ...(dados.latitude !== undefined ? { latitude: latFinal } : {}),
           ...(dados.longitude !== undefined ? { longitude: lngFinal } : {}),
