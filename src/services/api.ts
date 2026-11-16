@@ -294,7 +294,10 @@ export async function uploadImage(uri: string): Promise<string> {
     throw new Error('Não foi possível ler a imagem selecionada.');
   }
 
-  const blob = await arquivoResponse.blob();
+  const blobOriginal = await arquivoResponse.blob();
+  const blob = blobOriginal.type
+    ? blobOriginal
+    : blobOriginal.slice(0, blobOriginal.size, mime);
   if (!blob.size) {
     throw new Error('A imagem selecionada está vazia ou não pôde ser lida.');
   }
