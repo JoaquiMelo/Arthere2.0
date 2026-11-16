@@ -73,4 +73,8 @@ Elas adicionam campos de contratante, eventos, solicitações de participação,
 
 ## Imagens
 
-O portfólio aceita URL pública http/https para persistência. A seleção de imagem local funciona como pré-visualização; upload binário para servidor ainda não faz parte desta versão.
+A API oferece `POST /uploads/image` (JWT obrigatório, campo multipart `file`) para armazenar imagens em disco e retornar uma URL pública. São aceitos JPG, PNG, WEBP, GIF e HEIC, com limite de 10 MB por arquivo. O mobile pode usar `uploadImage(uri, nome, mimeType)` em `src/services/api.ts`; o método envia multipart sem sobrescrever o cabeçalho boundary.
+
+Configure `PUBLIC_API_URL` com a URL pública da API para que os links retornados sejam acessíveis pelo aplicativo. O diretório padrão é `backend/uploads`; configure `UPLOADS_DIR` para apontar para um volume persistente na hospedagem. **É obrigatório montar um volume persistente nesse caminho**: o disco efêmero de containers pode apagar as imagens em novos deploys.
+
+A migração `20261116120000_image_uploads` adiciona `bannerUrl` aos perfis de agente/contratante e `imageUrl` aos eventos. A seleção da imagem na interface deve enviar o arquivo com `uploadImage` e salvar a URL retornada no perfil, evento ou item de portfólio.
