@@ -36,6 +36,7 @@ export default function EditContractorProfileScreen() {
       (user as (typeof user & { avatar?: string }) | null)?.avatar ||
       AVATAR_PADRAO,
   );
+  const [bannerUri, setBannerUri] = useState<string>(user?.bannerUrl || "");
   const [documento, setDocumento] = useState(user?.documento || "");
   const [nome, setNome] = useState(user?.nome || "");
   const [nomeSocial, setNomeSocial] = useState(user?.nomeSocial || "");
@@ -75,6 +76,13 @@ export default function EditContractorProfileScreen() {
     }
   };
 
+  const escolherBanner = async () => {
+    const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissao.granted) { Alert.alert('Permissão necessária', 'Autorize o acesso à galeria para escolher o banner.'); return; }
+    const resultado = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [16, 9], quality: 0.85 });
+    if (!resultado.canceled && resultado.assets?.[0]) setBannerUri(resultado.assets[0].uri);
+  };
+
   const selecionarEstado = async (uf: string) => {
     setEstado(uf); setCidade(""); setBuscaCidade(""); setModalLocal(null); setCarregandoCidades(true);
     try { setCidades(await buscarCidades(uf)); setModalLocal("cidade"); } catch { Alert.alert("Cidades indisponíveis", "Não foi possível carregar as cidades deste estado."); } finally { setCarregandoCidades(false); }
@@ -93,8 +101,10 @@ export default function EditContractorProfileScreen() {
     setSalvando(true);
     try {
       const avatarPersistido = avatarUri.startsWith('file:') || avatarUri.startsWith('content:') ? await uploadImage(avatarUri) : avatarUri;
+      const bannerPersistido = bannerUri.startsWith('file:') || bannerUri.startsWith('content:') ? await uploadImage(bannerUri) : bannerUri;
       const dados = {
         avatarUrl: avatarPersistido,
+        bannerUrl: bannerPersistido || null,
         documento: documento.trim(),
         nome: nome.trim(),
         nomeSocial: nomeSocial.trim(),
@@ -147,6 +157,9 @@ export default function EditContractorProfileScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
         >
+          <TouchableOpacity onPress={escolherBanner} style={{ height: 116, borderRadius: 14, overflow: 'hidden', marginBottom: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+            {bannerUri ? <Image source={{ uri: bannerUri }} style={{ width: '100%', height: '100%' }} /> : <><Ionicons name="image-outline" size={24} color={colors.primaryDark} /><Text style={styles.changePhoto}>Adicionar banner do perfil</Text></>}
+          </TouchableOpacity>
           {/* Foto de Perfil */}
           <View style={styles.photoSection}>
             <TouchableOpacity
