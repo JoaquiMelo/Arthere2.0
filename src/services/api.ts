@@ -278,6 +278,29 @@ export async function obterMeuPerfil() {
 /**
  * Atualizar perfil.
  */
+/** Envia uma imagem local para o servidor e retorna a URL persistente. */
+export async function uploadImage(uri: string): Promise<string> {
+  const sessao = await obterSessao();
+  if (!sessao) throw new Error('Sua sessão expirou. Entre novamente.');
+
+  const nome = uri.split('/').pop()?.split('?')[0] || 'imagem.jpg';
+  const extensao = nome.split('.').pop()?.toLowerCase();
+  const mime = extensao === 'png' ? 'image/png' : extensao === 'webp' ? 'image/webp' : extensao === 'gif' ? 'image/gif' : 'image/jpeg';
+  const form = new FormData();
+  form.append('file', { uri, name: nome, type: mime } as any);
+
+  const response = await fetch(`${API_URL}/uploads`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessao.accessToken}` },
+    body: form,
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok || !body?.url) {
+    throw new Error(body?.message || 'Não foi possível enviar a imagem.');
+  }
+  return body.url as string;
+}
+
 export async function updateProfile(
   data: Record<string, unknown>,
 ) {
