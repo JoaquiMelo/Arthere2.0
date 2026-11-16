@@ -20,6 +20,7 @@ import {
 } from "react-native";
 
 import { useUser } from "@/providers/user-provider";
+import { uploadImage } from "@/services/api";
 import { colors } from "@/shared/theme/colors";
 import { buscarCidades, CidadeBR, ESTADOS_BR } from "@/shared/config/brazil-location";
 
