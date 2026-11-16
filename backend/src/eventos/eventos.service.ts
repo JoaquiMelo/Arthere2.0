@@ -41,6 +41,7 @@ export class EventosService {
       data: {
         titulo: String(dados.titulo).trim(),
         descricao: String(dados.descricao).trim(),
+        imageUrl: dados.imageUrl?.trim() || null,
         categoria: String(dados.categoria).trim(),
         local: String(dados.local).trim(),
         cidade: String(dados.cidade).trim(),
@@ -67,6 +68,7 @@ export class EventosService {
       data: {
         ...(dados.titulo !== undefined ? { titulo: String(dados.titulo).trim() } : {}),
         ...(dados.descricao !== undefined ? { descricao: String(dados.descricao).trim() } : {}),
+        ...(dados.imageUrl !== undefined ? { imageUrl: dados.imageUrl?.trim() || null } : {}),
         ...(dados.categoria !== undefined ? { categoria: String(dados.categoria).trim() } : {}),
         ...(dados.local !== undefined ? { local: String(dados.local).trim() } : {}),
         ...(dados.cidade !== undefined ? { cidade: String(dados.cidade).trim() } : {}),

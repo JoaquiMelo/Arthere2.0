@@ -40,6 +40,7 @@ npm run start:dev
 - 20261001120000_database_completion: completa campos de contratante e cria eventos.
 - 20261001150000_event_participation_requests: cria solicitações de participação em eventos.
 - 20261001153000_chat_persistence: cria conversas e mensagens.
+- 20261116120000_image_uploads: adiciona URLs de banners nos perfis e imagens nos eventos.
 
 ## Testar a API
 
@@ -101,6 +102,12 @@ As rotas abaixo exigem o cabeçalho:
 ```http
 Authorization: Bearer SEU_TOKEN_JWT
 ```
+
+**Imagens**
+
+| Método | Rota | Descrição |
+|---|---|---|
+| POST | `/uploads/image` | Envia uma imagem (multipart/form-data, campo `file`, até 10 MB) e retorna sua URL pública |
 
 **Usuários**
 
@@ -178,3 +185,10 @@ Para testar rotas autenticadas, primeiro faça login em `POST /auth/login`, copi
 ## Recursos persistentes
 
 Autenticação, agentes, contratantes, edição de perfil, mapa, portfólio, projetos, candidaturas, avaliações, eventos, solicitações de participação, conversas e mensagens.
+
+
+### Armazenamento de imagens
+
+Por padrão, os arquivos são gravados em `backend/uploads` (relativo ao diretório de execução da API) e publicados em `/uploads/`. Configure `PUBLIC_API_URL` com a URL pública completa da API, por exemplo `https://api.seudominio.com`, para montar URLs acessíveis no aplicativo. Configure `UPLOADS_DIR` para escolher o diretório de armazenamento.
+
+Em hospedagem por container, monte um volume persistente em `UPLOADS_DIR`. Sem volume persistente, os arquivos podem ser perdidos quando a instância for recriada. O endpoint aceita JPG, PNG, WEBP, GIF e HEIC, exige JWT e limita cada arquivo a 10 MB.
