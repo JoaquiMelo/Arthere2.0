@@ -4,7 +4,7 @@ import React,{useState} from 'react';
 import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useUser } from '@/providers/user-provider';
-import { addPortfolio } from '@/services/api';
+import { addPortfolio, uploadImage } from '@/services/api';
 import { colors } from '@/shared/theme/colors';
 
 export default function CreatePortfolioScreen(){
