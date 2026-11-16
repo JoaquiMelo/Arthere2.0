@@ -86,7 +86,6 @@ model Projeto {
   id            String        @id @default(uuid())
   titulo        String
   descricao     String        @db.Text
-  imageUrl      String?
   categoria     String
   status        StatusProjeto @default(ABERTO)
   orcamento     Float?
@@ -153,6 +152,7 @@ model Evento {
   id            String       @id @default(uuid())
   titulo        String
   descricao     String       @db.Text
+  imageUrl      String?
   categoria     String
   local         String
   cidade        String
