@@ -51,14 +51,14 @@ export class UsuariosService {
       where: { id },
       select: {
         id: true, nome: true, nomeSocial: true, pronomes: true,
-        empresa: true, avatarUrl: true, telefone: true, descricao: true,
+        empresa: true, avatarUrl: true, bannerUrl: true, telefone: true, descricao: true,
         site: true, estado: true, cidade: true, categoria: true,
         criadoEm: true, atualizadoEm: true,
         usuario: { select: { tipo: true } },
         eventos: { orderBy: { dataEvento: 'asc' }, select: {
           id: true, titulo: true, descricao: true, categoria: true,
           local: true, cidade: true, dataEvento: true, horario: true,
-          organizador: true, premium: true, fixado: true,
+          organizador: true, imagemUrl: true, premium: true, fixado: true,
         } },
         projetos: { where: { status: 'ABERTO' }, orderBy: { criadoEm: 'desc' }, select: {
           id: true, titulo: true, descricao: true, categoria: true,
