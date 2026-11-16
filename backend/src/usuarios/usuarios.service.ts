@@ -51,13 +51,13 @@ export class UsuariosService {
       where: { id },
       select: {
         id: true, nome: true, nomeSocial: true, pronomes: true,
-        empresa: true, avatarUrl: true, telefone: true, descricao: true,
+        empresa: true, avatarUrl: true, bannerUrl: true, telefone: true, descricao: true,
         site: true, estado: true, cidade: true, categoria: true,
         criadoEm: true, atualizadoEm: true,
         usuario: { select: { tipo: true } },
         eventos: { orderBy: { dataEvento: 'asc' }, select: {
           id: true, titulo: true, descricao: true, categoria: true,
-          local: true, cidade: true, dataEvento: true, horario: true,
+          local: true, cidade: true, dataEvento: true, horario: true, imageUrl: true,
           organizador: true, premium: true, fixado: true,
         } },
         projetos: { where: { status: 'ABERTO' }, orderBy: { criadoEm: 'desc' }, select: {
@@ -96,6 +96,7 @@ export class UsuariosService {
           ...(dados.cidade !== undefined ? { cidade: String(dados.cidade).trim() } : {}),
           ...(dados.endereco !== undefined ? { endereco: String(dados.endereco).trim() } : {}),
           ...(dados.avatarUrl !== undefined ? { avatarUrl: dados.avatarUrl || null } : {}),
+          ...(dados.bannerUrl !== undefined ? { bannerUrl: dados.bannerUrl || null } : {}),
           ...(dados.visivelNoMapa !== undefined ? { visivelMapa: Boolean(dados.visivelNoMapa) } : {}),
           ...(dados.latitude !== undefined ? { latitude: latFinal } : {}),
           ...(dados.longitude !== undefined ? { longitude: lngFinal } : {}),
