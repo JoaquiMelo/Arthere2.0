@@ -7,6 +7,7 @@ import { EventosModule } from './eventos/eventos.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 import { AvaliacoesModule } from './avaliacoes/avaliacoes.module';
 import { ChatModule } from './chat/chat.module';
+import { UploadsModule } from './uploads/uploads.module';
 import { HealthController } from './health.controller';
-@Module({imports:[PrismaModule,AuthModule,UsuariosModule,ProjetosModule,EventosModule,PortfolioModule,AvaliacoesModule,ChatModule],controllers:[HealthController]})
+@Module({imports:[PrismaModule,AuthModule,UsuariosModule,ProjetosModule,EventosModule,PortfolioModule,AvaliacoesModule,ChatModule,UploadsModule],controllers:[HealthController]})
 export class AppModule {}
