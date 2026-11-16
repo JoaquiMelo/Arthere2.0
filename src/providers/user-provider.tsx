@@ -26,7 +26,8 @@ export interface LocalUser {
   bio?: string | null;
   telefone?: string | null;
   foto?: string | null;
-  avatarUrl?: string | null;\n  bannerUrl?: string | null;
+  avatarUrl?: string | null;
+  bannerUrl?: string | null;
   empresa?: string | null;
   descricao?: string | null;
   site?: string | null;
