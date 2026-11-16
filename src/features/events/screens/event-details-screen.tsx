@@ -38,7 +38,7 @@ export default function EventDetailsScreen() {
         cidade: dados.cidade,
         data: Number.isNaN(dataEvento.getTime()) ? String(dados.dataEvento).slice(0, 10) : dataEvento.toISOString().slice(0, 10),
         horario: dados.horario ?? '',
-        organizador: dados.organizador ?? dados.contratante?.nome ?? '',
+        organizador: dados.organizador ?? dados.contratante?.nome ?? '',\n        imagemUrl: dados.imagemUrl ?? undefined,
         contratanteId: dados.contratanteId ?? dados.contratante?.id,
         premium: Boolean(dados.premium),
         destaque: Boolean(dados.fixado),
