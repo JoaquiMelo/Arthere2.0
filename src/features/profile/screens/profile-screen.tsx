@@ -112,7 +112,7 @@ function AgenteProfileScreenContent() {
         <View style={styles.coverContainer}>
           <Image
             source={{
-              uri: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
+              uri: user.bannerUrl || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
             }}
             style={styles.coverImage}
           />
