@@ -1,11 +1,13 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({ origin: true });
+  app.getHttpAdapter().getInstance().use('/uploads', require('express').static(join(process.cwd(), 'uploads'), { maxAge: '7d', immutable: true }));
 
   const port = Number(process.env.PORT ?? 3006);
 
