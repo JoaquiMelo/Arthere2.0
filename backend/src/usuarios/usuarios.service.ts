@@ -130,6 +130,7 @@ export class UsuariosService {
           ...(dados.endereco !== undefined ? { endereco: dados.endereco ? String(dados.endereco).trim() : null } : {}),
           ...(dados.categoria !== undefined ? { categoria: dados.categoria ? String(dados.categoria).trim() : null } : {}),
           ...(dados.avatarUrl !== undefined ? { avatarUrl: dados.avatarUrl || null } : {}),
+          ...(dados.bannerUrl !== undefined ? { bannerUrl: dados.bannerUrl || null } : {}),
         },
       });
       return { perfil };
