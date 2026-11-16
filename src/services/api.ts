@@ -297,6 +297,40 @@ export async function atualizarMeuPerfil(
 }
 
 /**
+ * Envia uma imagem local para o armazenamento persistente da API.
+ * O Content-Type é definido pelo fetch para incluir o boundary do multipart.
+ */
+export async function uploadImage(
+  uri: string,
+  fileName = 'imagem-' + Date.now() + '.jpg',
+  mimeType = 'image/jpeg',
+): Promise<{ url: string; filename: string; mimeType: string; size: number }> {
+  const sessao = await obterSessao();
+  if (!sessao) throw new Error('Sua sessão expirou. Entre novamente.');
+
+  const formData = new FormData();
+  formData.append('file', { uri, name: fileName, type: mimeType } as any);
+
+  const response = await fetch(API_URL + '/uploads/image', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + sessao.accessToken },
+    body: formData,
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = Array.isArray(body?.message)
+      ? body.message.join(', ')
+      : body?.message ?? 'Não foi possível enviar a imagem.';
+    throw new Error(message);
+  }
+  return body;
+}
+
+export async function enviarImagem(uri: string, fileName?: string, mimeType?: string) {
+  return uploadImage(uri, fileName, mimeType);
+}
+
+/**
  * Query string.
  */
 function queryString(
