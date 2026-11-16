@@ -78,7 +78,8 @@ export default function EditProfileScreen() {
     setSalvando(true);
     try {
       const dados: Record<string, unknown> = { nome: nome.trim(), especialidade: especialidade.trim(), estado, cidade: cidade.trim(), bio: bio.trim(), visivelNoMapa: visivelMapa, latitude: local.latitude, longitude: local.longitude, endereco: local.endereco };
-      if (/^(https?:\/\/|data:)/i.test(avatarUri)) dados.avatarUrl = avatarUri;
+      if (avatarUri.startsWith('file:') || avatarUri.startsWith('content:')) dados.avatarUrl = await uploadImage(avatarUri);
+      else if (/^https?:\/\//i.test(avatarUri)) dados.avatarUrl = avatarUri;
       await updateProfile(dados);
       Alert.alert('Perfil atualizado', 'Suas alterações foram salvas no banco de dados.');
       navigation.goBack();
