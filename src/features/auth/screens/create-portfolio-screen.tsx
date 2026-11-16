@@ -29,9 +29,10 @@ export default function CreatePortfolioScreen(){
   try{
    setCarregando(true);
    await updateProfile({especialidade:especialidade.trim(),cidade:cidade.trim(),bio:bio.trim()});
-   const url=imagemUrl.trim();
-   if(url){
-    if(!/^https?:\/\//i.test(url)){Alert.alert('URL inválida','Para salvar a amostra, use uma URL pública começando com http:// ou https://.');return;}
+   const origem=imagemUrl.trim()||preview||'';
+   if(origem){
+    const url=origem.startsWith('file:')||origem.startsWith('content:')?await uploadImage(origem):origem;
+    if(!/^https?:\/\//i.test(url)){Alert.alert('URL inválida','A imagem precisa ser enviada ou possuir uma URL pública.');return;}
     await addPortfolio({agenteId:user?.id,imageUrl:url,titulo:titulo.trim()||undefined});
    }
    navigation.reset({index:0,routes:[{name:'Tabs'}]});
