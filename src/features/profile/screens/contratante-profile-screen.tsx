@@ -73,7 +73,7 @@ export default function ContratanteProfileScreen() {
         <View style={styles.coverContainer}>
           <Image
             source={{
-              uri: "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80",
+              uri: user?.bannerUrl || "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80",
             }}
             style={styles.coverImage}
           />

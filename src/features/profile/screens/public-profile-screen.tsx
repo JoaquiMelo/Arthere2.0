@@ -58,6 +58,7 @@ export default function PublicProfileScreen() {
         contentContainerStyle={styles.content}
       >
         <View style={styles.hero}>
+          {!!perfil.bannerUrl && <Image source={{ uri: perfil.bannerUrl }} style={styles.heroBanner} resizeMode="cover" />}
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} accessibilityLabel="Voltar"><Ionicons name="arrow-back" size={21} color={colors.brandInk} /></TouchableOpacity>
           <View style={styles.heroShape} />
           <Text style={styles.kicker}>{agente ? 'PROFISSIONAL CRIATIVO' : perfil.usuario?.tipo === 'CONTRATANTE_EVENTOS' ? 'CONTRATANTE DE EVENTOS' : 'CONTRATANTE DE OPORTUNIDADES'}</Text>
@@ -106,6 +107,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.brandPaper },
   content: { paddingBottom: 32 },
   center: { flex: 1, backgroundColor: colors.brandPaper, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12 },
+  heroBanner: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', opacity: 0.28 },
   hero: { backgroundColor: colors.brandInk, paddingHorizontal: 20, paddingTop: 70, paddingBottom: 25, overflow: 'hidden' },
   back: { position: 'absolute', top: 16, left: 18, zIndex: 2, width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brandPaper },
   heroShape: { position: 'absolute', right: -35, top: 8, width: 145, height: 145, borderRadius: 75, backgroundColor: colors.brandCoral, opacity: 0.25 },

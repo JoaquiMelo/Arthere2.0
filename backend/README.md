@@ -39,7 +39,7 @@ npm run start:dev
 
 - 20261001120000_database_completion: completa campos de contratante e cria eventos.
 - 20261001150000_event_participation_requests: cria solicitações de participação em eventos.
-- 20261001153000_chat_persistence: cria conversas e mensagens.
+- 20261001153000_chat_persistence: cria conversas e mensagens.\n- 20261116090000_add_image_storage_fields: adiciona URLs de banner para perfis e imagem para eventos.
 
 ## Testar a API
 

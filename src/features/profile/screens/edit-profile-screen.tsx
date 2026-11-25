@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { AgentePerfil, MOCK_AGENT_PROFILE } from './profile-screen';
 import { colors } from '@/shared/theme/colors';
 import { useUser } from '@/providers/user-provider';
+import { uploadImage } from '@/services/api';
 import { buscarCidades, CidadeBR, ESTADOS_BR } from '@/shared/config/brazil-location';
 
 export default function EditProfileScreen() {
@@ -25,6 +26,7 @@ export default function EditProfileScreen() {
     portfolio: user?.portfolio ?? [],
   } as AgentePerfil;
   const [avatarUri, setAvatarUri] = useState(agenteAtual.avatarUrl);
+  const [bannerUri, setBannerUri] = useState<string>(user?.bannerUrl ?? '');
   const [nome, setNome] = useState(agenteAtual.nome);
   const [especialidade, setEspecialidade] = useState(agenteAtual.especialidade);
   const [estado, setEstado] = useState(user?.estado ?? '');
@@ -59,6 +61,13 @@ export default function EditProfileScreen() {
     if (!resultado.canceled && resultado.assets?.[0]) setAvatarUri(resultado.assets[0].uri);
   };
 
+  const escolherBanner = async () => {
+    const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissao.granted) { Alert.alert('Permissão necessária', 'Autorize o acesso à galeria para escolher o banner.'); return; }
+    const resultado = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [16, 9], quality: 0.85 });
+    if (!resultado.canceled && resultado.assets?.[0]) setBannerUri(resultado.assets[0].uri);
+  };
+
   const selecionarEstado = async (uf: string) => {
     setEstado(uf); setCidade(''); setBuscaCidade(''); setModalLocal(null); setCarregandoCidades(true);
     try { setCidades(await buscarCidades(uf)); setModalLocal('cidade'); } catch { Alert.alert('Cidades indisponíveis', 'Não foi possível carregar as cidades deste estado.'); } finally { setCarregandoCidades(false); }
@@ -77,7 +86,10 @@ export default function EditProfileScreen() {
     setSalvando(true);
     try {
       const dados: Record<string, unknown> = { nome: nome.trim(), especialidade: especialidade.trim(), estado, cidade: cidade.trim(), bio: bio.trim(), visivelNoMapa: visivelMapa, latitude: local.latitude, longitude: local.longitude, endereco: local.endereco };
-      if (/^(https?:\/\/|data:)/i.test(avatarUri)) dados.avatarUrl = avatarUri;
+      if (avatarUri.startsWith('file:') || avatarUri.startsWith('content:')) dados.avatarUrl = await uploadImage(avatarUri);
+      else if (/^https?:\/\//i.test(avatarUri)) dados.avatarUrl = avatarUri;
+      if (bannerUri.startsWith('file:') || bannerUri.startsWith('content:')) dados.bannerUrl = await uploadImage(bannerUri);
+      else if (/^https?:\/\//i.test(bannerUri)) dados.bannerUrl = bannerUri;
       await updateProfile(dados);
       Alert.alert('Perfil atualizado', 'Suas alterações foram salvas no banco de dados.');
       navigation.goBack();
@@ -95,6 +107,9 @@ export default function EditProfileScreen() {
       </View>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="none">
+          <TouchableOpacity onPress={escolherBanner} style={{ height: 116, borderRadius: 14, overflow: 'hidden', marginBottom: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+            {bannerUri ? <Image source={{ uri: bannerUri }} style={{ width: '100%', height: '100%' }} /> : <><Ionicons name="image-outline" size={24} color={colors.primaryDark} /><Text style={styles.changePhoto}>Adicionar banner do perfil</Text></>}
+          </TouchableOpacity>
           <View style={styles.photoSection}>
             <TouchableOpacity style={styles.avatarWrapper} onPress={escolherFoto} accessibilityLabel="Trocar foto de perfil">
               <Image source={{ uri: avatarUri }} style={styles.avatar} />

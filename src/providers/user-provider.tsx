@@ -27,6 +27,7 @@ export interface LocalUser {
   telefone?: string | null;
   foto?: string | null;
   avatarUrl?: string | null;
+  bannerUrl?: string | null;
   empresa?: string | null;
   descricao?: string | null;
   site?: string | null;
@@ -72,6 +73,7 @@ function mapUsuario(usuario: any): LocalUser {
     telefone: perfil.telefone ?? null,
     foto: perfil.avatarUrl ?? null,
     avatarUrl: perfil.avatarUrl ?? null,
+    bannerUrl: perfil.bannerUrl ?? null,
     empresa: perfil.empresa ?? null,
     descricao: perfil.descricao ?? perfil.bio ?? null,
     site: perfil.site ?? null,

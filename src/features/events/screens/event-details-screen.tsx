@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Image } from 'react-native';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -39,6 +39,7 @@ export default function EventDetailsScreen() {
         data: Number.isNaN(dataEvento.getTime()) ? String(dados.dataEvento).slice(0, 10) : dataEvento.toISOString().slice(0, 10),
         horario: dados.horario ?? '',
         organizador: dados.organizador ?? dados.contratante?.nome ?? '',
+        imagemUrl: dados.imagemUrl ?? undefined,
         contratanteId: dados.contratanteId ?? dados.contratante?.id,
         premium: Boolean(dados.premium),
         destaque: Boolean(dados.fixado),
@@ -106,6 +107,7 @@ export default function EventDetailsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        {evento.imagemUrl ? <Image source={{ uri: evento.imagemUrl }} style={styles.eventImage} resizeMode="cover" /> : null}
         <View style={[styles.hero, { backgroundColor: palette.brandInk }]}>
           <View style={[styles.shapeBlue, { backgroundColor: palette.brandBlue }]} />
           <View style={[styles.shapeGreen, { backgroundColor: palette.brandGreen }]} />
@@ -207,6 +209,7 @@ export default function EventDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
+  eventImage: { width: '100%', height: 210, borderRadius: 18, marginBottom: 12 },
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 34 },
   hero: { minHeight: 290, borderRadius: 20, overflow: 'hidden', position: 'relative', marginBottom: 14 },

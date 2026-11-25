@@ -1,0 +1,3 @@
+ALTER TABLE `agente_criativo` ADD COLUMN `bannerUrl` VARCHAR(191) NULL;
+ALTER TABLE `contratante` ADD COLUMN `bannerUrl` VARCHAR(191) NULL;
+ALTER TABLE `evento` ADD COLUMN `imagemUrl` VARCHAR(191) NULL;
