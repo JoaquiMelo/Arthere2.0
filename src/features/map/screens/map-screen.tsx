@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Image,
@@ -59,13 +59,17 @@ function CustomPin({
     >
       <View style={[styles.pinContainer, ativo && styles.pinActive]}>
         <View style={[styles.pinImageContainer, { borderColor: cor }]}>
-          <Image source={{ uri: agente.avatarUrl }} style={styles.pinImage} />
+          {agente.avatarUrl ? <Image source={{ uri: agente.avatarUrl }} style={styles.pinImage} /> : <Text style={[styles.pinInitials, { color: cor }]}>{iniciais(agente.nome)}</Text>}
         </View>
-        <View style={[styles.pinStatus, { backgroundColor: agente.disponivel ? cor : colors.muted }]} />
+        {typeof agente.disponivel === 'boolean' ? <View style={[styles.pinStatus, { backgroundColor: agente.disponivel ? cor : colors.muted }]} /> : null}
         <View style={[styles.pinTail, { borderTopColor: cor }]} />
       </View>
     </Marker>
   );
+}
+
+function iniciais(nome: string) {
+  return nome.split(/\s+/).filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase() || 'A';
 }
 
 export function MapScreen() {
@@ -78,44 +82,46 @@ export function MapScreen() {
   const [selecionado, setSelecionado] = useState<AgenteCriativo | null>(null);
   const [agentesBaixadaSantista, setAgentesBaixadaSantista] = useState<AgenteCriativo[]>([]);
   const [atualizando, setAtualizando] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
-  const carregarAgentes = useCallback(() => {
-    let ativo = true;
-    agents()
-      .then((lista) => {
-        if (!ativo) return;
-        const mapeados = (lista ?? [])
+  const carregarAgentes = useCallback(async () => {
+    setErro(null);
+    try {
+      const lista = await agents();
+      const mapeados = (lista ?? [])
           .filter((item: any) => Number.isFinite(Number(item.latitude)) && Number.isFinite(Number(item.longitude)))
           .map((item: any): AgenteCriativo => ({
             id: item.id,
             nome: item.nome,
             categoria: categoriaDoAgente(item.especialidade ?? ''),
-            disponivel: true,
+            disponivel: typeof item.disponivel === 'boolean' ? item.disponivel : undefined,
             avaliacao: Number(item.notaMedia ?? 0),
             cidade: item.cidade ?? 'Região da Baixada Santista',
             especialidades: item.especialidade ? [item.especialidade] : ['Profissional criativo'],
             latitude: Number(item.latitude),
             longitude: Number(item.longitude),
-            avatarUrl: item.avatarUrl ?? 'https://i.pravatar.cc/150?img=12',
+            avatarUrl: item.avatarUrl ?? '',
             descricao: item.bio ?? 'Profissional criativo cadastrado na Arthere.',
             portfolio: (item.portfolio ?? []).map((p: any) => ({ id: p.id, titulo: p.titulo ?? 'Trabalho', imagemUrl: p.imageUrl })),
           }));
-        setAgentesBaixadaSantista(mapeados);
-      })
-      .catch(() => { if (ativo) setAgentesBaixadaSantista([]); });
-    return () => { ativo = false; };
+      setAgentesBaixadaSantista(mapeados);
+    } catch {
+      setAgentesBaixadaSantista([]);
+      setErro('Não foi possível atualizar os profissionais. Verifique sua conexão e tente novamente.');
+    } finally {
+      setCarregando(false);
+    }
   }, []);
 
-  useEffect(() => carregarAgentes(), [carregarAgentes]);
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => carregarAgentes());
-    return unsubscribe;
-  }, [navigation, carregarAgentes]);
+  useFocusEffect(useCallback(() => {
+    void carregarAgentes();
+  }, [carregarAgentes]));
 
-  const recarregar = useCallback(() => {
+  const recarregar = useCallback(async () => {
     setAtualizando(true);
-    carregarAgentes();
-    setTimeout(() => setAtualizando(false), 700);
+    await carregarAgentes();
+    setAtualizando(false);
   }, [carregarAgentes]);
 
   const filtrados = useMemo(() => {
@@ -271,6 +277,9 @@ export function MapScreen() {
                 {filtrados.length} {filtrados.length === 1 ? 'ARTISTA' : 'ARTISTAS'} NO MAPA
               </Text>
             </View>
+            {carregando ? <View style={styles.mapMessage}><Text style={styles.mapMessageText}>Buscando profissionais…</Text></View> : null}
+            {erro ? <Pressable style={styles.mapMessage} onPress={() => void carregarAgentes()} accessibilityRole="button" accessibilityLabel="Tentar atualizar profissionais"><Text style={styles.mapMessageText}>{erro}</Text><Text style={styles.retryText}>TENTAR NOVAMENTE</Text></Pressable> : null}
+            {!carregando && !erro && filtrados.length === 0 ? <View style={styles.mapMessage}><Text style={styles.mapMessageText}>Nenhum profissional encontrado para esta busca.</Text></View> : null}
           </View>
 
           {selecionado ? (
@@ -304,7 +313,7 @@ export function MapScreen() {
           ) : (
             destaque.map((agente) => (
               <View key={agente.id} style={styles.card}>
-                <Image source={{ uri: agente.avatarUrl }} style={styles.cardImage} />
+                {agente.avatarUrl ? <Image source={{ uri: agente.avatarUrl }} style={styles.cardImage} /> : <View style={styles.cardAvatarFallback}><Text style={styles.cardAvatarInitials}>{iniciais(agente.nome)}</Text></View>}
                 <View style={styles.cardBody}>
                   <View style={styles.cardTop}>
                     <Text style={styles.cardCategory}>
@@ -345,16 +354,18 @@ function FilterChip({
   onPress: () => void;
 }) {
   return (
-    <Text
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={`Filtrar por ${label}`}
       onPress={onPress}
       style={[
         styles.chip,
         active ? styles.chipActive : styles.chipInactive,
       ]}
     >
-      {dot ? <Text style={{ color: dot }}>• </Text> : null}
-      {label.toUpperCase()}
-    </Text>
+      <Text style={active ? styles.chipTextActive : styles.chipText}>{dot ? <Text style={{ color: dot }}>• </Text> : null}{label.toUpperCase()}</Text>
+    </Pressable>
   );
 }
 
@@ -529,10 +540,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    fontSize: 8,
-    fontWeight: '800',
-    letterSpacing: 1,
+    minHeight: 40,
+    justifyContent: 'center',
   },
   chipActive: {
     color: colors.brandPaper,
@@ -544,6 +553,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandPaper,
     borderColor: colors.border,
   },
+  chipText: { color: colors.muted, fontSize: 9, fontWeight: '800', letterSpacing: 0.8 },
+  chipTextActive: { color: colors.brandPaper, fontSize: 9, fontWeight: '800', letterSpacing: 0.8 },
   mapSection: { paddingHorizontal: 20, paddingTop: 28 },
   mapFrame: {
     height: 520,
@@ -579,6 +590,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1.2,
   },
+  mapMessage: { position: 'absolute', left: 12, right: 12, bottom: 12, backgroundColor: colors.brandPaper, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12 },
+  mapMessageText: { color: colors.brandInk, fontSize: 11, fontWeight: '700', lineHeight: 16 },
+  retryText: { color: colors.brandCoral, fontSize: 9, fontWeight: '900', letterSpacing: 0.8, marginTop: 7 },
   profileOverlay: { marginTop: -200, marginHorizontal: 12, zIndex: 5 },
   featured: { paddingHorizontal: 20, paddingTop: 42, paddingBottom: 38 },
   featuredHeading: {
@@ -612,6 +626,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardImage: { width: '100%', height: 190, backgroundColor: colors.muted },
+  cardAvatarFallback: { width: '100%', height: 190, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceStrong },
+  cardAvatarInitials: { color: colors.brandInk, fontSize: 42, fontWeight: '900' },
   cardBody: { padding: 16 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardCategory: { color: colors.muted, fontSize: 7, fontWeight: '800', letterSpacing: 1.2 },
@@ -646,6 +662,7 @@ const styles = StyleSheet.create({
     shadowRadius: 7,
   },
   pinImage: { width: 40, height: 40, borderRadius: 20, alignSelf: 'center', marginTop: 2 },
+  pinInitials: { fontSize: 11, fontWeight: '900', alignSelf: 'center', marginTop: 13 },
   pinStatus: {
     position: 'absolute',
     right: 2,

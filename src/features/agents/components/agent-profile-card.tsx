@@ -68,11 +68,11 @@ export function AgentProfileCard({
             <Text style={styles.nome}>{agente.nome}</Text>
             <Text style={styles.especialidade}>{agente.especialidades?.[0] ?? 'Profissional criativo'}</Text>
 
-            {agente.disponivel ? (
+            {agente.disponivel === true ? (
               <Text style={styles.disponivel}>DISPONÍVEL AGORA</Text>
-            ) : (
+            ) : agente.disponivel === false ? (
               <Text style={styles.indisponivel}>EM PROJETO</Text>
-            )}
+            ) : null}
           </View>
         </View>
 

@@ -35,13 +35,13 @@ export type RootStackParamList={
  Opportunities:undefined; OpportunityDetails:{opportunityId:string}; PublicProfile:{profileType:'AGENTE'|'CONTRATANTE';profileId:string}; Events:undefined; EventDetails:{eventId:string}; CreateEvent:undefined;
 };
 
-export type TabParamList={Map:undefined;Profile:undefined;Opportunities:undefined;Events:undefined;Chat:undefined;Settings:undefined};
+export type TabParamList={Map:undefined;Profile:undefined;Opportunities:undefined;Events:undefined;Chat:undefined};
 
 const Stack=createNativeStackNavigator<RootStackParamList>();
 const Tab=createBottomTabNavigator<TabParamList>();
 
 const icons:Record<keyof TabParamList,keyof typeof Ionicons.glyphMap>={
- Map:'map-outline',Profile:'person-outline',Opportunities:'briefcase-outline',Events:'calendar-outline',Chat:'chatbubble-ellipses-outline',Settings:'settings-outline'
+ Map:'map-outline',Profile:'person-outline',Opportunities:'briefcase-outline',Events:'calendar-outline',Chat:'chatbubble-ellipses-outline'
 };
 
 function AppTabs(){
@@ -61,7 +61,6 @@ function AppTabs(){
   <Tab.Screen name="Opportunities" component={OpportunitiesScreen} options={{title:'Oportunidades'}}/>
   <Tab.Screen name="Events" component={EventsScreen} options={{title:'Eventos'}}/>
   <Tab.Screen name="Chat" component={ChatListScreen} options={{title:'Chat'}}/>
-  <Tab.Screen name="Settings" component={SettingsScreen} options={{title:'Config.'}}/>
  </Tab.Navigator>;
 }
 

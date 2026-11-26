@@ -7,7 +7,6 @@ import {
     SafeAreaView,
     ScrollView,
     StyleSheet,
-    Switch,
     Text,
     TouchableOpacity,
     View,
@@ -23,29 +22,18 @@ export default function SettingsScreen() {
   const { user, logout } = useUser();
   const { paletteName, palette, setPalette } = useTheme();
   const [paletaAberta, setPaletaAberta] = useState(false);
-  const [notificacoes, setNotificacoes] = useState(true);
-  const [modoEscuro, setModoEscuro] = useState(false);
-
-  const indisponivel = (titulo: string) =>
-    Alert.alert(titulo, "Esta opção estará disponível em breve.");
-
   const sair = () =>
     Alert.alert("Sair da conta", "Você deseja encerrar a sessão?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Sair",
         style: "destructive",
-        onPress: () => {
-          logout();
+        onPress: async () => {
+          await logout();
           navigation.reset({ index: 0, routes: [{ name: "Login" }] });
         },
       },
     ]);
-
-  const switchTrack = {
-    false: palette.border,
-    true: palette.brandCoral,
-  };
 
   return (
     <SafeAreaView
@@ -105,27 +93,8 @@ export default function SettingsScreen() {
             palette={palette}
             icon="person-outline"
             label="Editar perfil"
-            onPress={() => navigation.navigate(user?.tipo === "CONTRATANTE_EVENTOS" || user?.tipo === "CONTRATANTE_OPORTUNIDADES" ? "EditContractorProfile" : "EditProfile")}
-          />
-          <SettingRow
-            palette={palette}
-            icon="shield-checkmark-outline"
-            label="Privacidade e segurança"
-            onPress={() => indisponivel("Privacidade e segurança")}
-          />
-          <SettingRow
-            palette={palette}
-            icon="notifications-outline"
-            label="Notificações"
             last
-            right={
-              <Switch
-                value={notificacoes}
-                onValueChange={setNotificacoes}
-                trackColor={switchTrack}
-                thumbColor={palette.white}
-              />
-            }
+            onPress={() => navigation.navigate(user?.tipo === "CONTRATANTE_EVENTOS" || user?.tipo === "CONTRATANTE_OPORTUNIDADES" ? "EditContractorProfile" : "EditProfile")}
           />
         </View>
 
@@ -138,19 +107,6 @@ export default function SettingsScreen() {
             { backgroundColor: palette.white, borderColor: palette.border },
           ]}
         >
-          <SettingRow
-            palette={palette}
-            icon="moon-outline"
-            label="Modo escuro"
-            right={
-              <Switch
-                value={modoEscuro}
-                onValueChange={setModoEscuro}
-                trackColor={switchTrack}
-                thumbColor={palette.white}
-              />
-            }
-          />
           <SettingRow
             palette={palette}
             icon="color-palette-outline"
@@ -184,30 +140,6 @@ export default function SettingsScreen() {
                 />
               </View>
             }
-          />
-        </View>
-
-        <Text style={[styles.groupTitle, { color: palette.brandCoral }]}>
-          SUPORTE
-        </Text>
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: palette.white, borderColor: palette.border },
-          ]}
-        >
-          <SettingRow
-            palette={palette}
-            icon="help-circle-outline"
-            label="Ajuda e suporte"
-            onPress={() => indisponivel("Ajuda e suporte")}
-          />
-          <SettingRow
-            palette={palette}
-            icon="document-text-outline"
-            label="Termos e políticas"
-            onPress={() => indisponivel("Termos e políticas")}
-            last
           />
         </View>
 

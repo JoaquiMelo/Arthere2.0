@@ -8,7 +8,8 @@ export interface AgenteCriativo {
   id: string;
   nome: string;
   categoria: string;
-  disponivel: boolean;
+  /** Só definido quando a API confirma esse estado. */
+  disponivel?: boolean;
   avaliacao: number;
   cidade: string;
   latitude: number;

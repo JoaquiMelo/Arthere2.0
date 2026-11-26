@@ -16,7 +16,7 @@ function participante(raw:any){
   nome:perfil?.nome||contratante?.nomeSocial||contratante?.nome||'Usuário Arthere',
   avatarUrl:perfil?.avatarUrl||contratante?.avatarUrl||'https://i.pravatar.cc/150?img=12',
   especialidades:perfil?.especialidade?[perfil.especialidade]:contratante?.categoria?[contratante.categoria]:['Conexão Arthere'],
-  disponivel:true,
+  disponivel: typeof perfil?.disponivel === 'boolean' ? perfil.disponivel : undefined,
  } as Pick<AgenteCriativo,'id'|'nome'|'avatarUrl'|'especialidades'|'disponivel'>;
 }
 function mapConversation(raw:any,currentUserId:string):Conversation{

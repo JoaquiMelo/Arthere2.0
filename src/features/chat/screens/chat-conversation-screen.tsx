@@ -60,7 +60,7 @@ export default function ChatConversationScreen() {
             <Text style={styles.kicker}>CONVERSA</Text>
             <Text style={styles.name}>{conversation.participant.nome}</Text>
             <Text style={styles.status}>
-              {conversation.participant.disponivel ? 'Disponível agora' : 'Offline'}
+              {conversation.participant.disponivel === true ? 'Disponível agora' : conversation.participant.disponivel === false ? 'Indisponível no momento' : 'Disponibilidade não informada'}
             </Text>
           </View>
         </View>
