@@ -1,3 +1,4 @@
+import { Badge, FeedbackState } from '@/shared/components';
 import { formatarLocalizacao } from '@/shared/config/brazil-location';
 import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { colors } from '@/shared/theme/colors';
@@ -267,11 +268,11 @@ function AgenteProfileScreenContent() {
                 <Ionicons name="calendar-outline" size={24} color={colors.brandInk} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.brandInk, fontSize: 15, fontWeight: '700' }}>{item.eventoTitulo}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 13 }}>{item.status === 'ACEITA' ? 'Participação aceita' : item.status === 'RECUSADA' ? 'Solicitação recusada' : 'Aguardando resposta'}</Text>
+                  <Badge label={item.status === 'ACEITA' ? 'Participação aceita' : item.status === 'RECUSADA' ? 'Solicitação recusada' : 'Aguardando resposta'} tone={item.status === 'ACEITA' ? 'success' : item.status === 'RECUSADA' ? 'danger' : 'warning'} />
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.muted} />
               </TouchableOpacity>
-            )) : <Text style={{ color: colors.muted, marginTop: 12, fontSize: 14 }}>{loadingEventos ? 'Carregando participações…' : 'Você ainda não solicitou participação em eventos.'}</Text>}
+            )) : <FeedbackState kind={loadingEventos ? 'loading' : 'empty'} title={loadingEventos ? 'Carregando participações…' : 'Nenhuma participação ainda'} description={loadingEventos ? undefined : 'Você ainda não solicitou participação em eventos.'} icon="calendar-outline" />}
           </View>
         ) : null}
 

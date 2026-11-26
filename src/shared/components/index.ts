@@ -4,3 +4,8 @@ export { SectionHeader } from './section-header';
 export { TextField } from './text-field';
 export { Avatar, MediaImage } from './media-image';
 export { FeedbackState } from './feedback-state';
+export { IconButton } from './icon-button';
+export { Badge } from './badge';
+export { FilterChip } from './filter-chip';
+export { ScreenHeader } from './screen-header';
+export { ScreenContainer } from './screen-container';

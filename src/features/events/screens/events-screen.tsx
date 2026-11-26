@@ -1,3 +1,4 @@
+import { FilterChip, IconButton } from '@/shared/components';
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -257,12 +258,7 @@ export default function EventsScreen() {
               returnKeyType="search"
             />
             {!!busca && (
-              <TouchableOpacity
-                onPress={() => setBusca("")}
-                style={styles.clearSearch}
-              >
-                <Ionicons name="close" size={18} color={palette.muted} />
-              </TouchableOpacity>
+              <IconButton icon="close" variant="ghost" accessibilityLabel="Limpar busca" onPress={() => setBusca("")} />
             )}
           </View>
         </View>
@@ -278,41 +274,15 @@ export default function EventsScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterContent}
           >
-            {categorias.map((item) => {
-              const ativo = filtro === item;
-
-              return (
-                <TouchableOpacity
-                  key={item}
-                  onPress={() => setFiltro(item)}
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: ativo
-                        ? palette.brandCoral
-                        : palette.brandPaper,
-                      borderColor: ativo ? palette.brandCoral : palette.border,
-                    },
-                  ]}
-                >
-                  {item === "PREMIUM" && (
-                    <Ionicons
-                      name="star"
-                      size={14}
-                      color={ativo ? palette.brandPaper : palette.brandGreen}
-                    />
-                  )}
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      { color: ativo ? palette.brandPaper : palette.brandInk },
-                    ]}
-                  >
-                    {item.toUpperCase()}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+            {categorias.map((item) => (
+              <FilterChip
+                key={item}
+                label={item.toUpperCase()}
+                selected={filtro === item}
+                icon={item === "PREMIUM" ? "star" : undefined}
+                onPress={() => setFiltro(item)}
+              />
+            ))}
           </ScrollView>
         </View>
 

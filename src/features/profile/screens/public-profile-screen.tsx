@@ -1,10 +1,11 @@
+import { Button, FeedbackState, ScreenContainer } from '@/shared/components';
 import { formatarLocalizacao } from '@/shared/config/brazil-location';
 import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { publicAgent, publicContractor } from '@/services/api';
 import { colors } from '@/shared/theme/colors';
 import type { RootStackParamList } from '@/navigation/app-navigator';
@@ -38,11 +39,14 @@ export default function PublicProfileScreen() {
   useFocusEffect(useCallback(() => { void carregar(); }, [carregar]));
 
   if (carregando) {
-    return <SafeAreaView style={styles.center}><ActivityIndicator size="large" color={colors.brandCoral} /><Text style={styles.muted}>Carregando perfil...</Text></SafeAreaView>;
+    return <ScreenContainer style={{ justifyContent: 'center' }}><FeedbackState kind="loading" title="Carregando perfil…" /></ScreenContainer>;
   }
 
   if (erro || !perfil) {
-    return <SafeAreaView style={styles.center}><Ionicons name="person-circle-outline" size={48} color={colors.muted} /><Text style={styles.title}>Perfil indisponível</Text><Text style={styles.muted}>{erro || 'Este perfil não foi encontrado.'}</Text><TouchableOpacity style={styles.primary} onPress={() => navigation.goBack()}><Text style={styles.primaryText}>VOLTAR</Text></TouchableOpacity></SafeAreaView>;
+    return <ScreenContainer style={{ justifyContent: 'center', paddingHorizontal: 20 }}>
+      <FeedbackState kind="error" icon="person-circle-outline" title="Perfil indisponível" description={erro || 'Este perfil não foi encontrado.'} onRetry={() => { setCarregando(true); void carregar(); }} />
+      <Button variant="ghost" onPress={() => navigation.goBack()}>Voltar</Button>
+    </ScreenContainer>;
   }
 
   const agente = profileType === 'AGENTE';

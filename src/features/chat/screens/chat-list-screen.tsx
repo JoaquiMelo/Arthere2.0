@@ -1,8 +1,9 @@
+import { ScreenContainer, ScreenHeader, FeedbackState } from '@/shared/components';
 import { Avatar } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { useCallback } from 'react';
-import { FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useChat, type Conversation } from '@/providers/chat-provider';
 import { colors } from '@/shared/theme/colors';
@@ -15,17 +16,16 @@ function preview(conversation: Conversation) {
 export default function ChatListScreen() {
   const navigation = useNavigation<any>();
   const { conversations, refresh, loading } = useChat();
-  const recarregar = useCallback(() => { void refresh().catch(() => undefined); }, [refresh]);
+  const [erro, setErro] = useState('');
+  const recarregar = useCallback(() => {
+    setErro('');
+    void refresh().catch(() => setErro('Não foi possível carregar as conversas. Confira sua conexão.'));
+  }, [refresh]);
   useFocusEffect(recarregar);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.kicker}>CONEXÕES</Text>
-        <Text style={styles.title}>Mensagens</Text>
-        <Text style={styles.subtitle}>Suas conversas com pessoas e projetos.</Text>
-      </View>
-      <View style={styles.divider} />
+    <ScreenContainer edges={['top', 'left', 'right']}>
+      <ScreenHeader kicker="CONEXÕES" title="Mensagens" description="Suas conversas com pessoas e projetos." />
 
       <FlatList
         data={conversations}
@@ -34,16 +34,9 @@ export default function ChatListScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={conversations.length ? styles.list : styles.empty}
         ListEmptyComponent={
-          <View style={styles.emptyContent}>
-            <View style={styles.emptyGraphic}>
-              <View style={styles.emptyGraphicCoral} />
-              <Ionicons name="chatbubbles-outline" size={28} color={colors.brandPaper} />
-            </View>
-            <Text style={styles.emptyTitle}>Nenhuma conversa ainda</Text>
-            <Text style={styles.emptyText}>
-              No mapa, escolha um profissional e toque no ícone de mensagem para começar.
-            </Text>
-          </View>
+          loading ? <FeedbackState kind="loading" title="Carregando conversas…" /> :
+          erro ? <FeedbackState kind="error" title="Conversas indisponíveis" description={erro} onRetry={recarregar} /> :
+          <FeedbackState kind="empty" icon="chatbubbles-outline" title="Nenhuma conversa ainda" description="No mapa, escolha um profissional e toque no ícone de mensagem para começar." />
         }
         renderItem={({ item }) => (
           <ConversationRow
@@ -52,7 +45,7 @@ export default function ChatListScreen() {
           />
         )}
       />
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 

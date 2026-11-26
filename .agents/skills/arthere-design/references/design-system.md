@@ -54,3 +54,21 @@ Use `useThemeTokens()` de `@/shared/theme/use-theme-tokens` para consumir a inst
 - Botões usam altura mínima de 44/48/56 dp; campos usam 48 dp e a escala tipográfica compartilhada. Não fixar a altura quando o conteúdo pode crescer.
 - O NavigationContainer recebe as cores do tema sem trocar rotas. A prévia das paletas nas Configurações usa a mesma fonte de dados do provider.
 - Não criar diretório paralelo de UI. Evoluir `src/shared/components/` na etapa 3.3. Telas ainda com cores estáticas serão migradas por módulo; não considerar a migração visual global concluída.
+
+## Componentes globais — etapa 3.3
+
+A partir desta etapa, importar de `@/shared/components` para os novos módulos. Os componentes existentes continuam disponíveis, sem uma segunda pasta de UI.
+
+| Componente | Contrato de uso |
+| --- | --- |
+| IconButton | `icon`, `accessibilityLabel` obrigatório, `onPress`, `variant`, `size`, `disabled`, `loading`; alvo mínimo de 44 dp. |
+| FilterChip | `label`, `selected`, `onPress`, `icon`, `disabled`; a seleção pertence ao chamador. Marca visual e estado acessível de seleção. |
+| Badge | `label`, `tone` (neutral/accent/success/warning/danger), `icon`; apenas informação, sem toque. |
+| ScreenHeader | `title`, `kicker`, `description`, `onBack`, `action`; não acoplar à navegação. |
+| ScreenContainer | SafeAreaView com fundo temático, `edges` configurável; não envolve o conteúdo em ScrollView. Em abas, evitar duplicar a área segura inferior que a barra já cobre. |
+| FeedbackState | `kind` (loading/empty/error), `title`, `description`, `icon`, `onRetry`; uma base para os três estados, sem componentes duplicados. |
+| Avatar / MediaImage | `uri`, `style`, `icon`, `iconSize`, `resizeMode`; imagens reais, fallback local, cache e tentativas limitadas. |
+
+Adoção inicial: filtros e limpeza de busca na agenda, status de participações do agente, cabeçalho/container/feedback no chat e feedback de carregamento/erro do perfil público. O calendário mantém sua seleção e os handlers originais. A migração ampla das telas continua nas etapas 3.4–3.9. Não alterar os providers de sessão, mídia persistente nem os contratos da API apenas para aplicar componentes visuais.
+
+Para o mapa (3.4), usar ScreenContainer sem scroll implícito, ScreenHeader para hierarquia e ações, FilterChip para categorias reais e IconButton para controles com rótulos. Não sobrepor áreas seguras nem impedir gestos do mapa. Testar fonte ampliada, iOS/Android e as três paletas.
