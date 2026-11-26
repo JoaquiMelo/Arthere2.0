@@ -5,33 +5,21 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
-  RefreshControl,
 } from 'react-native';
 
-import { candidatarProjeto, criarProjeto, listarProjetos, obterSessao, Projeto } from '@/services/api';
+import { candidatarProjeto, listarProjetos, obterSessao, Projeto } from '@/services/api';
 import { colors } from '@/shared/theme/colors';
 
 export default function OpportunitiesScreen() {
   const navigation = useNavigation<any>();
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [atualizando, setAtualizando] = useState(false);
   const [tipo, setTipo] = useState<string | null>(null);
-  const [modalAberto, setModalAberto] = useState(false);
-  const [titulo, setTitulo] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [orcamento, setOrcamento] = useState('');
 
   const carregar = async () => {
     try {
@@ -57,15 +45,6 @@ export default function OpportunitiesScreen() {
     }, []),
   );
 
-  const recarregar = useCallback(async () => {
-    setAtualizando(true);
-    try {
-      await carregar();
-    } finally {
-      setAtualizando(false);
-    }
-  }, []);
-
   const candidatar = async (projeto: Projeto) => {
     try {
       await candidatarProjeto(projeto.id);
@@ -73,34 +52,6 @@ export default function OpportunitiesScreen() {
     } catch (error) {
       Alert.alert(
         'Não foi possível candidatar-se',
-        error instanceof Error ? error.message : 'Tente novamente.',
-      );
-    }
-  };
-
-  const publicar = async () => {
-    if (!titulo.trim() || !descricao.trim() || !categoria.trim()) {
-      Alert.alert('Campos obrigatórios', 'Preencha título, descrição e categoria.');
-      return;
-    }
-
-    try {
-      await criarProjeto({
-        titulo,
-        descricao,
-        categoria,
-        orcamento: orcamento ? Number(orcamento.replace(',', '.')) : undefined,
-      });
-      setModalAberto(false);
-      setTitulo('');
-      setDescricao('');
-      setCategoria('');
-      setOrcamento('');
-      await carregar();
-      Alert.alert('Oportunidade publicada!');
-    } catch (error) {
-      Alert.alert(
-        'Não foi possível publicar',
         error instanceof Error ? error.message : 'Tente novamente.',
       );
     }
@@ -126,7 +77,7 @@ export default function OpportunitiesScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.add}
-              onPress={() => setModalAberto(true)}
+              onPress={() => navigation.navigate('CreateOpportunity')}
               accessibilityLabel="Criar oportunidade"
             >
               <Ionicons name="add" color={colors.brandPaper} size={23} />
@@ -200,81 +151,8 @@ export default function OpportunitiesScreen() {
         />
       )}
 
-      <Modal
-        visible={modalAberto}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setModalAberto(false)}
-      >
-        <KeyboardAvoidingView
-          style={styles.overlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
-        >
-          <View style={styles.modal}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalKicker}>PUBLICAR PROJETO</Text>
-            <Text style={styles.modalTitle}>Nova oportunidade</Text>
-
-            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} />}>
-              <FieldLabel label="Título da vaga *" />
-              <TextInput
-                style={styles.input}
-                placeholder="Ex.: Fotógrafo para evento corporativo"
-                placeholderTextColor={colors.muted}
-                value={titulo}
-                onChangeText={setTitulo}
-              />
-
-              <FieldLabel label="Descrição *" />
-              <TextInput
-                style={[styles.input, styles.textarea]}
-                placeholder="Descreva o serviço, requisitos e o que espera do profissional."
-                placeholderTextColor={colors.muted}
-                value={descricao}
-                onChangeText={setDescricao}
-                multiline
-              />
-
-              <FieldLabel label="Categoria *" />
-              <TextInput
-                style={styles.input}
-                placeholder="Ex.: Fotografia, Música, Design..."
-                placeholderTextColor={colors.muted}
-                value={categoria}
-                onChangeText={setCategoria}
-              />
-
-              <FieldLabel label="Orçamento" />
-              <TextInput
-                style={styles.input}
-                placeholder="Ex.: 1500,00 (opcional)"
-                placeholderTextColor={colors.muted}
-                value={orcamento}
-                onChangeText={setOrcamento}
-                keyboardType="decimal-pad"
-              />
-
-              <View style={styles.actions}>
-                <TouchableOpacity onPress={() => setModalAberto(false)}>
-                  <Text style={styles.cancel}>CANCELAR</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.publish} onPress={publicar}>
-                  <Text style={styles.publishText}>PUBLICAR</Text>
-                  <Ionicons name="arrow-forward" size={15} color={colors.brandPaper} />
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </SafeAreaView>
   );
-}
-
-function FieldLabel({ label }: { label: string }) {
-  return <Text style={styles.fieldLabel}>{label}</Text>;
 }
 
 const styles = StyleSheet.create({
@@ -459,88 +337,5 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 1,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(41,36,43,0.50)',
-    justifyContent: 'flex-end',
-  },
-  modal: {
-    backgroundColor: colors.brandPaper,
-    padding: 20,
-    paddingTop: 10,
-    paddingBottom: 28,
-    maxHeight: '92%',
-    borderTopWidth: 2,
-    borderTopColor: colors.brandCoral,
-  },
-  modalHandle: {
-    width: 46,
-    height: 4,
-    backgroundColor: colors.border,
-    alignSelf: 'center',
-    marginBottom: 17,
-  },
-  modalKicker: {
-    color: colors.brandCoral,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1.5,
-  },
-  modalTitle: {
-    color: colors.brandInk,
-    fontSize: 23,
-    fontWeight: '900',
-    marginTop: 4,
-    marginBottom: 10,
-  },
-  fieldLabel: {
-    color: colors.brandInk,
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.7,
-    marginTop: 12,
-    marginBottom: 6,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    color: colors.text,
-    minHeight: 48,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    fontSize: 13,
-  },
-  textarea: {
-    minHeight: 106,
-    textAlignVertical: 'top',
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    gap: 18,
-    marginTop: 24,
-  },
-  cancel: {
-    color: colors.muted,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  publish: {
-    minHeight: 44,
-    paddingHorizontal: 15,
-    backgroundColor: colors.brandInk,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-  },
-  publishText: {
-    color: colors.brandPaper,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1.1,
   },
 });
