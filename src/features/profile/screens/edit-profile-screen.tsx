@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Modal,
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { AgentePerfil, MOCK_AGENT_PROFILE } from './profile-screen';
+import type { AgentePerfil } from './profile-screen';
 import { colors } from '@/shared/theme/colors';
 import { useUser } from '@/providers/user-provider';
 import { uploadImage } from '@/services/api';
