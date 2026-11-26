@@ -55,6 +55,8 @@ export default function PublicProfileScreen() {
   }
 
   const agente = profileType === 'AGENTE';
+  const contratanteEventos = !agente && perfil.usuario?.tipo === 'CONTRATANTE_EVENTOS';
+  const contratanteVagas = !agente && perfil.usuario?.tipo === 'CONTRATANTE_OPORTUNIDADES';
   const nome = perfil.nomeSocial || perfil.nome || 'Perfil Arthere';
   const cidade = formatarLocalizacao(perfil.cidade, perfil.estado);
   const portfolio: GalleryWork[] = Array.isArray(perfil.portfolio) ? perfil.portfolio : [];
@@ -73,22 +75,19 @@ export default function PublicProfileScreen() {
             <IconButton icon="arrow-back" variant="outline" accessibilityLabel="Voltar" onPress={() => navigation.goBack()} />
             <AppText variant="label" color="accentText" weight="bold">ARTHERE / PERFIL</AppText>
           </View>
-          {agente ? (
-            <View style={styles.agentCover}>
-              {perfil.bannerUrl ? <MediaImage uri={perfil.bannerUrl} style={styles.agentBanner} /> : null}
-              <View style={styles.agentAvatarFrame}>
-                <Avatar uri={perfil.avatarUrl} style={styles.agentAvatar} iconSize={36} />
-              </View>
+          <View style={[styles.agentCover, contratanteVagas && { backgroundColor: color.accentSoft }]}>
+            {perfil.bannerUrl ? <MediaImage uri={perfil.bannerUrl} style={styles.agentBanner} /> : null}
+            <View style={styles.agentAvatarFrame}>
+              <Avatar uri={perfil.avatarUrl} style={styles.agentAvatar} iconSize={36} />
             </View>
-          ) : perfil.bannerUrl ? <MediaImage uri={perfil.bannerUrl} style={styles.heroBanner} /> : null}
-          {!agente ? <Text style={styles.kicker}>{perfil.usuario?.tipo === 'CONTRATANTE_EVENTOS' ? 'CONTRATANTE DE EVENTOS' : 'CONTRATANTE DE OPORTUNIDADES'}</Text> : null}
-          <View style={[styles.identity, agente && styles.agentIdentity]}>
-            {!agente ? <Avatar uri={perfil.avatarUrl} style={styles.avatar} iconSize={36} /> : null}
-            <View style={agente ? styles.agentIdentityCopy : styles.identityCopy}>
-              {agente ? <AppText variant="label" color="accentText" weight="semibold" style={styles.centerText}>Profissional criativo</AppText> : null}
-              <AppText variant="h2" weight="heavy" accessibilityRole="header" style={agente ? styles.centerText : undefined}>{nome}</AppText>
-              <Text style={[styles.subtitle, agente && styles.centerText]}>{agente ? perfil.especialidade || 'Profissional criativo' : perfil.categoria || 'Contratante independente'}</Text>
-              {!!cidade && <View style={[styles.location, agente && { justifyContent: 'center' }]}><Ionicons name="location-outline" size={14} color={color.accentText} /><Text style={[styles.muted, agente && styles.centerText]}>{cidade}</Text></View>}
+          </View>
+          <View style={[styles.identity, styles.agentIdentity]}>
+            <View style={styles.agentIdentityCopy}>
+              <AppText variant="label" color="accentText" weight="semibold" style={styles.centerText}>{agente ? 'Profissional criativo' : contratanteEventos ? 'Contratante de eventos' : contratanteVagas ? 'Contratante de oportunidades' : 'Contratante'}</AppText>
+              <AppText variant="h2" weight="heavy" accessibilityRole="header" style={styles.centerText}>{nome}</AppText>
+              {contratanteEventos && perfil.empresa ? <AppText weight="semibold" style={styles.centerText}>{perfil.empresa}</AppText> : null}
+              <Text style={[styles.subtitle, styles.centerText]}>{agente ? perfil.especialidade || 'Profissional criativo' : perfil.categoria || (contratanteEventos ? 'Organização cultural' : 'Contratante independente')}</Text>
+              {!!cidade && <View style={[styles.location, { justifyContent: 'center' }]}><Ionicons name="location-outline" size={14} color={color.accentText} /><Text style={[styles.muted, styles.centerText]}>{cidade}</Text></View>}
             </View>
           </View>
         </View>
@@ -109,14 +108,22 @@ export default function PublicProfileScreen() {
           </View>
         ) : (
           <>
-            <View style={styles.panel}>
+            {!contratanteVagas ? <View style={styles.panel}>
               <View style={styles.sectionHeader}><AppText variant="h3" weight="bold" accessibilityRole="header">Eventos publicados</AppText><Text style={styles.count}>{eventos.length}</Text></View>
-              {eventos.length ? eventos.map((item: any) => <TouchableOpacity key={item.id} accessibilityRole="button" accessibilityLabel={`Abrir evento ${item.titulo}`} style={styles.listItem} onPress={() => navigation.navigate('EventDetails', { eventId: item.id })}><View style={[styles.listIcon, { backgroundColor: color.surfaceSubtle }]}><Ionicons name="calendar-outline" size={19} color={color.successText} /></View><View style={styles.listCopy}><Text style={styles.itemTitle}>{item.titulo}</Text><Text style={styles.muted}>{item.cidade} · {new Date(item.dataEvento).toLocaleDateString('pt-BR')}</Text></View><Ionicons name="chevron-forward" size={18} color={color.textSecondary} /></TouchableOpacity>) : <Text style={styles.muted}>Nenhum evento publicado.</Text>}
-            </View>
-            <View style={styles.panel}>
+              {eventos.length ? eventos.map((item: any) => {
+                const date = new Date(item.dataEvento);
+                return <TouchableOpacity key={item.id} accessibilityRole="button" accessibilityLabel={`Abrir evento ${item.titulo}`} style={{ gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border }} onPress={() => navigation.navigate('EventDetails', { eventId: item.id })}>
+                  <MediaImage uri={item.imagemUrl} icon="calendar-outline" style={{ width: '100%', aspectRatio: 16 / 10, borderRadius: tokens.radius.cardCompact }} />
+                  <AppText variant="label" color="accentText" weight="bold">{Number.isNaN(date.getTime()) ? 'Data não informada' : date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</AppText>
+                  <AppText variant="title" weight="bold">{item.titulo}</AppText>
+                  <AppText variant="bodySmall" color="textSecondary">{[item.categoria, item.cidade].filter(Boolean).join(' · ')}</AppText>
+                </TouchableOpacity>;
+              }) : <Text style={styles.muted}>Nenhum evento publicado.</Text>}
+            </View> : null}
+            {!contratanteEventos ? <View style={styles.panel}>
               <View style={styles.sectionHeader}><AppText variant="h3" weight="bold" accessibilityRole="header">Oportunidades abertas</AppText><Text style={styles.count}>{projetos.length}</Text></View>
               {projetos.length ? projetos.map((item: any) => <TouchableOpacity key={item.id} accessibilityRole="button" accessibilityLabel={`Abrir oportunidade ${item.titulo}`} style={styles.listItem} onPress={() => navigation.navigate('OpportunityDetails', { opportunityId: item.id })}><View style={[styles.listIcon, { backgroundColor: color.accentSecondary }]}><Ionicons name="briefcase-outline" size={19} color={color.onAccentSecondary} /></View><View style={styles.listCopy}><Text style={styles.itemTitle}>{item.titulo}</Text><Text style={styles.muted}>{item.categoria}{item.orcamento != null ? ' · R$ ' + Number(item.orcamento).toLocaleString('pt-BR') : ''}</Text></View><Ionicons name="chevron-forward" size={18} color={color.textSecondary} /></TouchableOpacity>) : <Text style={styles.muted}>Nenhuma oportunidade aberta.</Text>}
-            </View>
+            </View> : null}
           </>
         )}
       </ScrollView>
@@ -129,11 +136,7 @@ function createStyles({ color, radius, spacing, typography, dimensions }: ThemeT
     content: { paddingBottom: spacing['3xl'] },
     hero: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xl, gap: spacing.md },
     topBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-    heroBanner: { width: '100%', aspectRatio: 16 / 9, borderRadius: radius.cardCompact },
-    kicker: { color: color.accentText, fontSize: typography.size.label, lineHeight: typography.lineHeight.label, fontWeight: '700' },
     identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-    avatar: { width: 88, height: 88, borderRadius: radius.cardCompact, backgroundColor: color.surface },
-    identityCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
     agentIdentity: { flexDirection: 'column', alignItems: 'center', gap: spacing.sm },
     agentCover: { width: '100%', aspectRatio: 16 / 9, minHeight: 156, position: 'relative', alignItems: 'center', justifyContent: 'center', borderRadius: radius.cardCompact, backgroundColor: color.accentSecondary, overflow: 'hidden' },
     agentBanner: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', borderRadius: radius.cardCompact },
