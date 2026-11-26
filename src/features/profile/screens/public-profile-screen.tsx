@@ -10,6 +10,7 @@ import { publicAgent, publicContractor } from '@/services/api';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import type { ThemeTokens } from '@/shared/theme/tokens';
 import type { RootStackParamList } from '@/navigation/app-navigator';
+import { PortfolioGallery, type GalleryWork } from '../components/portfolio-gallery';
 
 type Route = RouteProp<RootStackParamList, 'PublicProfile'>;
 
@@ -56,7 +57,7 @@ export default function PublicProfileScreen() {
   const agente = profileType === 'AGENTE';
   const nome = perfil.nomeSocial || perfil.nome || 'Perfil Arthere';
   const cidade = formatarLocalizacao(perfil.cidade, perfil.estado);
-  const portfolio = Array.isArray(perfil.portfolio) ? perfil.portfolio : [];
+  const portfolio: GalleryWork[] = Array.isArray(perfil.portfolio) ? perfil.portfolio : [];
   const eventos = Array.isArray(perfil.eventos) ? perfil.eventos : [];
   const projetos = Array.isArray(perfil.projetos) ? perfil.projetos : [];
 
@@ -73,13 +74,14 @@ export default function PublicProfileScreen() {
             <AppText variant="label" color="accentText" weight="bold">ARTHERE / PERFIL</AppText>
           </View>
           {!!perfil.bannerUrl && <MediaImage uri={perfil.bannerUrl} style={styles.heroBanner} />}
-          <Text style={styles.kicker}>{agente ? 'PROFISSIONAL CRIATIVO' : perfil.usuario?.tipo === 'CONTRATANTE_EVENTOS' ? 'CONTRATANTE DE EVENTOS' : 'CONTRATANTE DE OPORTUNIDADES'}</Text>
-          <View style={styles.identity}>
-            <Avatar uri={perfil.avatarUrl} style={styles.avatar} iconSize={36} />
-            <View style={styles.identityCopy}>
-              <AppText variant="h2" weight="heavy" accessibilityRole="header">{nome}</AppText>
-              <Text style={styles.subtitle}>{agente ? perfil.especialidade || 'Profissional criativo' : perfil.categoria || 'Contratante independente'}</Text>
-              {!!cidade && <View style={styles.location}><Ionicons name="location-outline" size={14} color={color.accentText} /><Text style={styles.muted}>{cidade}</Text></View>}
+          {!agente ? <Text style={styles.kicker}>{perfil.usuario?.tipo === 'CONTRATANTE_EVENTOS' ? 'CONTRATANTE DE EVENTOS' : 'CONTRATANTE DE OPORTUNIDADES'}</Text> : null}
+          <View style={[styles.identity, agente && styles.agentIdentity, agente && perfil.bannerUrl ? { marginTop: -spacing['4xl'] } : undefined]}>
+            <Avatar uri={perfil.avatarUrl} style={agente ? styles.agentAvatar : styles.avatar} iconSize={36} />
+            <View style={agente ? styles.agentIdentityCopy : styles.identityCopy}>
+              {agente ? <AppText variant="label" color="accentText" weight="semibold" style={styles.centerText}>Profissional criativo</AppText> : null}
+              <AppText variant="h2" weight="heavy" accessibilityRole="header" style={agente ? styles.centerText : undefined}>{nome}</AppText>
+              <Text style={[styles.subtitle, agente && styles.centerText]}>{agente ? perfil.especialidade || 'Profissional criativo' : perfil.categoria || 'Contratante independente'}</Text>
+              {!!cidade && <View style={[styles.location, agente && { justifyContent: 'center' }]}><Ionicons name="location-outline" size={14} color={color.accentText} /><Text style={[styles.muted, agente && styles.centerText]}>{cidade}</Text></View>}
             </View>
           </View>
         </View>
@@ -95,7 +97,7 @@ export default function PublicProfileScreen() {
         {agente ? (
           <View style={styles.panel}>
             <View style={styles.sectionHeader}><AppText variant="h3" weight="bold" accessibilityRole="header">Portfólio</AppText><Text style={styles.count}>{portfolio.length} {portfolio.length === 1 ? 'trabalho' : 'trabalhos'}</Text></View>
-            {portfolio.length ? <View style={styles.gallery}>{portfolio.map((item: any) => <View key={item.id} style={styles.work}><MediaImage uri={item.imageUrl} style={styles.workImage} /><View style={styles.workCopy}><AppText variant="title" weight="bold">{item.titulo || 'Trabalho criativo'}</AppText>{!!item.descricao && <AppText variant="bodySmall" color="textSecondary">{item.descricao}</AppText>}</View></View>)}</View> : <Text style={styles.muted}>Este perfil ainda não publicou trabalhos no portfólio.</Text>}
+            {portfolio.length ? <PortfolioGallery works={portfolio} /> : <Text style={styles.muted}>Este perfil ainda não publicou trabalhos no portfólio.</Text>}
             <View style={styles.statRow}><View style={styles.stat}><Text style={styles.statNumber}>{Number(perfil.totalProjetos || 0)}</Text><Text style={styles.statLabel}>PROJETOS</Text></View><View style={styles.stat}><Text style={styles.statNumber}>{Number(perfil.totalAvaliacoes || 0) > 0 ? Number(perfil.notaMedia || 0).toFixed(1) : '—'}</Text><Text style={styles.statLabel}>NOTA MÉDIA</Text></View><View style={styles.stat}><Text style={styles.statNumber}>{Number(perfil.totalAvaliacoes || 0)}</Text><Text style={styles.statLabel}>AVALIAÇÕES</Text></View></View>
           </View>
         ) : (
@@ -125,6 +127,10 @@ function createStyles({ color, radius, spacing, typography, dimensions }: ThemeT
     identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     avatar: { width: 88, height: 88, borderRadius: radius.cardCompact, backgroundColor: color.surface },
     identityCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
+    agentIdentity: { flexDirection: 'column', alignItems: 'center', gap: spacing.sm },
+    agentAvatar: { width: 108, height: 108, borderWidth: 4, borderColor: color.background, borderRadius: radius.sheetCompact },
+    agentIdentityCopy: { width: '100%', alignItems: 'center', gap: spacing.xs },
+    centerText: { textAlign: 'center' },
     subtitle: { color: color.textPrimary, fontSize: typography.size.body, lineHeight: typography.lineHeight.body },
     location: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
     muted: { color: color.textSecondary, fontSize: typography.size.bodySmall, lineHeight: typography.lineHeight.bodySmall, flexShrink: 1 },
@@ -132,10 +138,6 @@ function createStyles({ color, radius, spacing, typography, dimensions }: ThemeT
     sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm },
     count: { color: color.accentText, fontSize: typography.size.label, fontWeight: '600' },
     body: { color: color.textPrimary, fontSize: typography.size.body, lineHeight: typography.lineHeight.body },
-    gallery: { gap: spacing.xl, marginTop: spacing.sm },
-    work: { gap: spacing.sm },
-    workImage: { width: '100%', aspectRatio: 4 / 3, borderRadius: radius.cardCompact, backgroundColor: color.surfaceSubtle },
-    workCopy: { gap: spacing.xs, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border },
     statRow: { flexDirection: 'row', flexWrap: 'wrap', backgroundColor: color.surfaceSubtle, borderRadius: radius.control, padding: spacing.md, gap: spacing.sm, marginTop: spacing.md },
     stat: { flexGrow: 1, flexBasis: 82, alignItems: 'center', gap: spacing.xs },
     statNumber: { color: color.textPrimary, fontSize: typography.size.h3, fontWeight: '700' },
