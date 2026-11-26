@@ -1,666 +1,178 @@
+import { AppText, Badge, Button, FeedbackState, IconButton, ScreenContainer, SectionHeader, TextField } from '@/shared/components';
 import { formatarLocalizacao } from '@/shared/config/brazil-location';
 import { Avatar, MediaImage } from '@/shared/components/media-image';
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { useCallback, useState } from "react";
-import {
-    Alert,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useManagement } from '@/providers/management-provider';
+import { useUser } from '@/providers/user-provider';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 
-import { useManagement } from "@/providers/management-provider";
-import { useUser } from "@/providers/user-provider";
-import { colors } from "@/shared/theme/colors";
-
+function formatDate(value: string) {
+  const date = new Date(value.length === 10 ? value + 'T12:00:00' : value);
+  return Number.isNaN(date.getTime()) ? 'Data não informada' : date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 
 export default function ContratanteProfileScreen() {
   const navigation = useNavigation<any>();
   const { user, updateProfile, refresh: refreshUser } = useUser();
-  const { vagas, eventos: todosEventos, refresh: refreshManagement } = useManagement();
+  const { vagas, eventos: todosEventos, refresh: refreshManagement, loading } = useManagement();
+  const { color, spacing, radius, dimensions } = useThemeTokens();
+  const isEvents = user?.tipo === 'CONTRATANTE_EVENTOS';
   const eventos = todosEventos.filter((evento) => evento.contratanteId === user?.id);
-
-  const empresa = user?.empresa || "Empresa não informada";
   const [atualizando, setAtualizando] = useState(false);
+  const [erro, setErro] = useState(false);
+  const [aba, setAba] = useState<'publicacoes' | 'gestao' | 'sobre'>('publicacoes');
+  const [editando, setEditando] = useState(false);
+  const [rascunhoEmpresa, setRascunhoEmpresa] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const pending = useRef(false);
+
   const recarregar = useCallback(async () => {
     setAtualizando(true);
     try {
-      await Promise.allSettled([refreshUser(), refreshManagement()]);
+      const result = await Promise.allSettled([refreshUser(), refreshManagement()]);
+      setErro(result.some((item) => item.status === 'rejected'));
     } finally {
       setAtualizando(false);
     }
   }, [refreshUser, refreshManagement]);
-  const [editando, setEditando] = useState(false);
-  const [rascunhoEmpresa, setRascunhoEmpresa] = useState(empresa);
 
-  const concluidas = vagas.filter((vaga) => vaga.status === "CONCLUIDA").length;
-  const emAndamento = vagas.filter(
-    (vaga) => vaga.status === "EM_ANDAMENTO",
-  ).length;
-  const totalCandidaturas = vagas.reduce(
-    (soma, vaga) => soma + vaga.candidatos.length,
-    0,
-  );
+  if (!user || (user.tipo !== 'CONTRATANTE_EVENTOS' && user.tipo !== 'CONTRATANTE_OPORTUNIDADES')) return null;
 
+  const empresa = user.empresa?.trim() || '';
+  const local = formatarLocalizacao(user.cidade, user.estado);
+  const concluidas = vagas.filter((vaga) => vaga.status === 'CONCLUIDA').length;
+  const emAndamento = vagas.filter((vaga) => vaga.status === 'EM_ANDAMENTO').length;
+  const abertas = vagas.filter((vaga) => vaga.status === 'ABERTA').length;
+  const totalCandidaturas = vagas.reduce((soma, vaga) => soma + vaga.candidatos.length, 0);
+  const editarPerfil = () => navigation.navigate('EditContractorProfile');
   const abrirEdicao = () => {
     setRascunhoEmpresa(empresa);
     setEditando(true);
   };
-
   const salvarEmpresa = async () => {
     const valor = rascunhoEmpresa.trim();
-    if (!valor) return;
+    if (!valor || pending.current) return;
+    pending.current = true;
+    setSalvando(true);
     try {
       await updateProfile({ empresa: valor });
       setEditando(false);
     } catch (error) {
       Alert.alert('Não foi possível salvar', error instanceof Error ? error.message : 'Tente novamente.');
+    } finally {
+      pending.current = false;
+      setSalvando(false);
     }
   };
-
-  const avatarSource = user?.avatarUrl || '';
+  const stats = isEvents
+    ? [{ label: 'Eventos publicados', value: eventos.length }]
+    : [{ label: 'Vagas abertas', value: abertas }, { label: 'Em andamento', value: emAndamento }, { label: 'Concluídas', value: concluidas }];
+  const section = { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, gap: spacing.md };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} />}
-      >
-        <View style={styles.coverContainer}>
-          <MediaImage uri={user?.bannerUrl} style={styles.coverImage} icon="image-outline" iconSize={40} />
-          <View style={styles.coverOverlay} />
-
-          <View style={styles.coverLabel}>
-            <Text style={styles.coverLabelText}>{user?.tipo === "CONTRATANTE_EVENTOS" ? "PERFIL · CONTRATANTE DE EVENTOS" : "PERFIL · CONTRATANTE DE OPORTUNIDADES"}</Text>
+    <ScreenContainer edges={['top', 'left', 'right']}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing['3xl'] }}
+        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} tintColor={color.accentText} colors={[color.accentText]} />}>
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.lg, gap: spacing.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+              <AppText variant="label" color="accentText" weight="bold">ARTHERE / MEU PERFIL</AppText>
+              <AppText variant="h2" weight="heavy" accessibilityRole="header">{isEvents ? 'Seu espaço cultural.' : 'Conexões que criam.'}</AppText>
+            </View>
+            <IconButton icon="settings-outline" variant="outline" accessibilityLabel="Abrir configurações" onPress={() => navigation.navigate('Settings')} />
           </View>
-
-          <TouchableOpacity
-            style={styles.settingsIcon}
-            onPress={() => navigation.navigate("Settings")}
-            accessibilityLabel="Abrir configurações"
-          >
-            <Ionicons
-              name="settings-outline"
-              size={19}
-              color={colors.brandPaper}
-            />
-          </TouchableOpacity>
+          <View style={{ width: '100%', aspectRatio: 16 / 9, minHeight: 156, position: 'relative', alignItems: 'center', justifyContent: 'center', borderRadius: radius.cardCompact, backgroundColor: isEvents ? color.accentSecondary : color.accentSoft }}>
+            {user.bannerUrl ? <MediaImage uri={user.bannerUrl} style={{ ...StyleSheet.absoluteFill, width: '100%', height: '100%', borderRadius: radius.cardCompact }} /> : null}
+            <Pressable accessibilityRole="button" accessibilityLabel="Editar foto de perfil" onPress={editarPerfil} style={({ pressed }) => ({ width: 108, height: 108, borderWidth: 4, borderColor: color.background, borderRadius: radius.sheetCompact, backgroundColor: color.background, opacity: pressed ? 0.85 : 1 })}>
+              <Avatar uri={user.avatarUrl} style={{ width: 100, height: 100, borderRadius: radius.card }} iconSize={36} />
+              <View style={{ position: 'absolute', right: 0, bottom: 0, width: 28, height: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: color.accent, borderColor: color.background, borderWidth: 2, borderRadius: radius.sm }}><Ionicons name="camera-outline" color={color.onAccent} size={dimensions.icon.small} /></View>
+            </Pressable>
+            <View style={{ position: 'absolute', right: spacing.sm, bottom: spacing.sm, backgroundColor: color.surface, borderRadius: radius.control }}>
+              <IconButton icon={user.bannerUrl ? 'create-outline' : 'image-outline'} variant="outline" accessibilityLabel={user.bannerUrl ? 'Editar capa' : 'Adicionar capa'} onPress={editarPerfil} />
+            </View>
+          </View>
+          <View style={{ alignItems: 'center', gap: spacing.xs }}>
+            <Badge label={isEvents ? 'Contratante de eventos' : 'Contratante de oportunidades'} icon={isEvents ? 'calendar-outline' : 'briefcase-outline'} tone="accent" style={{ alignSelf: 'center' }} />
+            <AppText variant="h2" weight="heavy" accessibilityRole="header" style={{ textAlign: 'center' }}>{user.nomeSocial || user.nome || 'Contratante'}</AppText>
+            {isEvents ? <Button variant="ghost" size="small" onPress={abrirEdicao}>{empresa || 'Informar organização'}</Button> : <AppText variant="bodySmall" color="textSecondary" style={{ textAlign: 'center' }}>{user.categoria || 'Contratante independente'}</AppText>}
+            {isEvents && user.categoria ? <AppText variant="bodySmall" color="textSecondary" style={{ textAlign: 'center' }}>{user.categoria}</AppText> : null}
+            {local ? <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs }}><Ionicons name="location-outline" size={dimensions.icon.small} color={color.accentText} /><AppText variant="bodySmall" color="textSecondary" style={{ flexShrink: 1, textAlign: 'center' }}>{local}</AppText></View> : null}
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, backgroundColor: color.surfaceSubtle, padding: spacing.md, borderRadius: radius.control }}>
+            {stats.map((stat) => <View key={stat.label} style={{ flexGrow: 1, flexBasis: 76, alignItems: 'center', gap: spacing.xs }}><AppText variant="h3" weight="bold">{stat.value}</AppText><AppText variant="label" color="textSecondary" style={{ textAlign: 'center' }}>{stat.label}</AppText></View>)}
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            <Button style={{ flexGrow: 1, flexBasis: 138, borderRadius: radius.control }} onPress={editarPerfil}>Editar perfil</Button>
+            <Button variant="outline" style={{ flexGrow: 1, flexBasis: 138, borderRadius: radius.control }} onPress={() => navigation.navigate('PublicProfile', { profileType: 'CONTRATANTE', profileId: user.id })}>Ver perfil público</Button>
+          </View>
+          {erro ? <View style={{ gap: spacing.xs }}><AppText color="dangerText" variant="bodySmall" accessibilityLiveRegion="polite">Não foi possível atualizar todas as informações.</AppText><Button variant="ghost" onPress={recarregar} disabled={atualizando}>Tentar novamente</Button></View> : null}
         </View>
 
-        <View style={styles.intro}>
-          <Avatar uri={avatarSource} style={styles.avatar} iconSize={48} />
-
-          <Text style={styles.name}>
-            {user?.nomeSocial || user?.nome || "Contratante"}
-          </Text>
-
-          <TouchableOpacity
-            style={styles.empresaBadge}
-            onPress={abrirEdicao}
-            activeOpacity={0.75}
-          >
-            <Ionicons name="business" size={14} color={colors.brandInk} />
-            <Text style={styles.empresa} numberOfLines={1}>
-              {empresa}
-            </Text>
-            <Ionicons name="pencil" size={11} color={colors.brandInk} />
-          </TouchableOpacity>
-
-          {user ? (
-            <View style={styles.locationRow}>
-              <Ionicons
-                name="location-outline"
-                size={14}
-                color={colors.brandTerracotta}
-              />
-              <Text style={styles.location}>{formatarLocalizacao(user.cidade, user.estado)}</Text>
-            </View>
-          ) : null}
-
-          {user?.tipo === "CONTRATANTE_OPORTUNIDADES" ? (
-            <View style={styles.statsCard}>
-              <View style={styles.stat}><Text style={styles.statNumber}>{vagas.length}</Text><Text style={styles.statLabel}>VAGAS</Text></View>
-              <View style={styles.statDivider} />
-              <View style={styles.stat}><Text style={styles.statNumber}>{emAndamento}</Text><Text style={styles.statLabel}>EM ANDAMENTO</Text></View>
-              <View style={styles.statDivider} />
-              <View style={styles.stat}><Text style={styles.statNumber}>{concluidas}</Text><Text style={styles.statLabel}>CONCLUÍDAS</Text></View>
-            </View>
-          ) : (
-            <View style={styles.statsCard}>
-              <View style={styles.stat}><Text style={styles.statNumber}>{eventos.length}</Text><Text style={styles.statLabel}>EVENTOS PUBLICADOS</Text></View>
-            </View>
-          )}
-
-          <View style={styles.actionButtonsRow}>
-            {user?.tipo === "CONTRATANTE_OPORTUNIDADES" ? (
-              <TouchableOpacity style={styles.manageButton} onPress={() => navigation.navigate("ManageOpportunities")} activeOpacity={0.85}>
-                <Ionicons name="people-outline" size={16} color={colors.brandPaper} />
-                <Text style={styles.manageButtonText}>CANDIDATURAS{totalCandidaturas > 0 ? ` · ${totalCandidaturas}` : ""}</Text>
-              </TouchableOpacity>
-            ) : null}
-
-            <TouchableOpacity
-              style={styles.editProfileButton}
-              onPress={() => navigation.navigate("EditContractorProfile")}
-              activeOpacity={0.85}
-            >
-              <Ionicons
-                name="create-outline"
-                size={16}
-                color={colors.brandInk}
-              />
-              <Text style={styles.editProfileButtonText}>EDITAR PERFIL</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', borderBottomWidth: 1, borderBottomColor: color.border, paddingHorizontal: spacing.lg, gap: spacing.sm }}>
+          {([['publicacoes', isEvents ? 'Eventos' : 'Vagas'], ['gestao', 'Gestão'], ['sobre', 'Sobre']] as const).map(([key, label]) => (
+            <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: aba === key }} onPress={() => setAba(key)} style={({ pressed }) => ({ minHeight: dimensions.touchTarget, flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: spacing.sm, borderBottomWidth: 2, borderBottomColor: aba === key ? color.accent : 'transparent', opacity: pressed ? 0.75 : 1 })}>
+              <AppText variant="bodySmall" weight={aba === key ? 'bold' : 'medium'} color={aba === key ? 'accentText' : 'textSecondary'}>{label}</AppText>
+            </Pressable>
+          ))}
         </View>
 
-        {user?.tipo === "CONTRATANTE_EVENTOS" ? <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={styles.sectionKicker}>PORTFÓLIO DE EVENTOS</Text>
-              <Text style={styles.sectionTitle}>Meus eventos</Text>
-            </View>
-            <Text style={styles.sectionSubtitle}>
-              {eventos.length} registros
-            </Text>
-          </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.galleryContainer}
-          >
-            {eventos.map((evento) => (
-              <TouchableOpacity key={evento.id} style={styles.eventCard} accessibilityRole="button"
-                accessibilityLabel={`Abrir evento ${evento.titulo}`}
-                onPress={() => navigation.navigate("EventDetails", { eventId: evento.id })}>
-                <MediaImage uri={evento.imagemUrl} style={styles.eventImage} icon="calendar-outline" iconSize={40} />
-                <View style={styles.eventOverlay}>
-                  <Text style={styles.eventTitle} numberOfLines={2}>
-                    {evento.titulo}
-                  </Text>
-                  <Text style={styles.eventDateText}>{new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(evento.data + "T12:00:00")).replace(".", "")}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-
-            <TouchableOpacity
-              style={styles.addEventCard}
-              activeOpacity={0.75}
-              onPress={() => navigation.navigate("CreateEvent")}
-            >
-              <View style={styles.addEventIcon}>
-                <Ionicons name="add" size={24} color={colors.brandInk} />
-              </View>
-              <Text style={styles.addEventText}>ADICIONAR EVENTO</Text>
-            </TouchableOpacity>
-          </ScrollView>
+        {aba === 'publicacoes' && isEvents ? <View style={section}>
+          <SectionHeader title="Minha programação" description={`${eventos.length} ${eventos.length === 1 ? 'evento publicado' : 'eventos publicados'}`} />
+          {loading && eventos.length === 0 ? <FeedbackState kind="loading" title="Carregando eventos…" /> : eventos.length === 0 ? <FeedbackState kind="empty" title="Sua programação começa aqui" description="Crie um evento para divulgar sua atividade cultural." icon="calendar-outline" /> : eventos.map((evento, index) => (
+            <Pressable key={evento.id} accessibilityRole="button" accessibilityLabel={`Abrir evento ${evento.titulo}`} onPress={() => navigation.navigate('EventDetails', { eventId: evento.id })} style={({ pressed }) => ({ gap: spacing.sm, paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: color.border, opacity: pressed ? 0.8 : 1 })}>
+              <MediaImage uri={evento.imagemUrl} icon="calendar-outline" style={{ width: '100%', aspectRatio: index % 2 === 0 ? 16 / 10 : 4 / 3, borderRadius: radius.cardCompact }} />
+              <AppText variant="label" weight="bold" color="accentText">{formatDate(evento.data)}</AppText>
+              <AppText variant="title" weight="bold">{evento.titulo}</AppText>
+              <AppText variant="bodySmall" color="textSecondary">{[evento.categoria, evento.cidade].filter(Boolean).join(' · ')}</AppText>
+            </Pressable>
+          ))}
+          <Button fullWidth variant="outline" onPress={() => navigation.navigate('CreateEvent')}>Adicionar evento</Button>
         </View> : null}
 
-        {user?.tipo === "CONTRATANTE_OPORTUNIDADES" ? <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={styles.sectionKicker}>VAGAS PUBLICADAS</Text>
-              <Text style={styles.sectionTitle}>Minhas vagas</Text>
-            </View>
-          </View>
+        {aba === 'publicacoes' && !isEvents ? <View style={section}>
+          <SectionHeader title="Minhas oportunidades" description={`${vagas.length} ${vagas.length === 1 ? 'vaga publicada' : 'vagas publicadas'}`} />
+          {loading && vagas.length === 0 ? <FeedbackState kind="loading" title="Carregando vagas…" /> : vagas.length === 0 ? <FeedbackState kind="empty" title="Nenhuma vaga publicada" description="As oportunidades que você publicar aparecerão aqui." icon="briefcase-outline" /> : vagas.map((vaga) => (
+            <Pressable key={vaga.id} accessibilityRole="button" accessibilityLabel={`Gerenciar vaga ${vaga.titulo}`} onPress={() => navigation.navigate('ManageOpportunities')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border, opacity: pressed ? 0.8 : 1 })}>
+              <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+                <AppText variant="label" color="accentText" weight="semibold">{vaga.categoria}</AppText>
+                <AppText variant="title" weight="bold">{vaga.titulo}</AppText>
+                <Badge label={vaga.status === 'CONCLUIDA' ? 'Concluída' : vaga.status === 'EM_ANDAMENTO' ? 'Em andamento' : 'Aberta'} tone={vaga.status === 'CONCLUIDA' ? 'success' : vaga.status === 'EM_ANDAMENTO' ? 'warning' : 'accent'} />
+                <AppText variant="bodySmall" color="textSecondary">{vaga.candidatos.length} {vaga.candidatos.length === 1 ? 'candidato' : 'candidatos'}</AppText>
+              </View>
+              <Ionicons name="chevron-forward" size={dimensions.icon.medium} color={color.textSecondary} />
+            </Pressable>
+          ))}
+          <Button variant="outline" fullWidth onPress={() => navigation.navigate('ManageOpportunities')}>Gerenciar vagas</Button>
+        </View> : null}
 
-          {vagas.length === 0 ? (
-            <View style={styles.emptyStateContainer}>
-              <Ionicons
-                name="folder-open-outline"
-                size={30}
-                color={colors.brandCoral}
-              />
-              <Text style={styles.emptyTitle}>Nenhuma vaga publicada</Text>
-              <Text style={styles.emptyText}>
-                Suas oportunidades aparecerão aqui depois que forem publicadas.
-              </Text>
-            </View>
-          ) : (
-            vagas.map((vaga) => (
-              <TouchableOpacity
-                key={vaga.id}
-                style={styles.vagaCard}
-                onPress={() => navigation.navigate("ManageOpportunities")}
-                activeOpacity={0.75}
-              >
-                <View style={styles.flex1}>
-                  <Text style={styles.vagaCategoria}>{vaga.categoria}</Text>
-                  <Text style={styles.vagaTitulo}>{vaga.titulo}</Text>
-                  <Text style={styles.vagaMeta}>
-                    {vaga.candidatos.length} candidato
-                    {vaga.candidatos.length === 1 ? "" : "s"}
-                  </Text>
-                </View>
-                <View style={styles.vagaRight}>
-                  <Text style={styles.statusBadge}>
-                    {vaga.status === "CONCLUIDA"
-                      ? "CONCLUÍDA"
-                      : vaga.status === "EM_ANDAMENTO"
-                        ? "EM ANDAMENTO"
-                        : "ABERTA"}
-                  </Text>
-                  <Ionicons
-                    name="arrow-forward"
-                    size={15}
-                    color={colors.brandInk}
-                  />
-                </View>
-              </TouchableOpacity>
-            ))
-          )}
+        {aba === 'gestao' ? <View style={section}>
+          <SectionHeader title={isEvents ? 'Gerencie seus eventos' : 'Gerencie contratações'} description={isEvents ? 'Publique atividades e acompanhe as participações.' : 'Acompanhe as candidaturas e o andamento das suas vagas.'} />
+          {isEvents ? <>
+            <Button fullWidth onPress={() => navigation.navigate('CreateEvent')}>Criar evento</Button>
+            <Button variant="outline" fullWidth onPress={() => navigation.navigate('ManageOpportunities')}>Solicitações de participação</Button>
+          </> : <Button fullWidth onPress={() => navigation.navigate('ManageOpportunities')}>Candidaturas ({totalCandidaturas})</Button>}
+        </View> : null}
+
+        {aba === 'sobre' ? <View style={section}>
+          <SectionHeader title={isEvents ? 'Sobre a organização' : 'Apresentação profissional'} />
+          <AppText color={user.descricao?.trim() ? 'textPrimary' : 'textSecondary'}>{user.descricao?.trim() || 'Adicione uma apresentação ao seu perfil.'}</AppText>
+          {user.site ? <AppText variant="bodySmall" color="textSecondary">{user.site}</AppText> : null}
+          <Button variant="outline" fullWidth onPress={editarPerfil}>Editar apresentação</Button>
         </View> : null}
       </ScrollView>
-
-      <Modal
-        visible={editando}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setEditando(false)}
-      >
-        <KeyboardAvoidingView
-          style={styles.overlay}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
-          <View style={styles.editCard}>
-            <Text style={styles.editKicker}>PERFIL DO CONTRATANTE</Text>
-            <Text style={styles.editTitle}>Nome da empresa</Text>
-            <TextInput
-              style={styles.editInput}
-              value={rascunhoEmpresa}
-              onChangeText={setRascunhoEmpresa}
-              placeholder="Ex.: Vitrine Eventos"
-              placeholderTextColor={colors.muted}
-            />
-            <View style={styles.editActions}>
-              <TouchableOpacity onPress={() => setEditando(false)}>
-                <Text style={styles.cancel}>CANCELAR</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.save} onPress={salvarEmpresa}>
-                <Text style={styles.saveText}>SALVAR</Text>
-                <Ionicons
-                  name="arrow-forward"
-                  size={14}
-                  color={colors.brandPaper}
-                />
-              </TouchableOpacity>
-            </View>
+      <Modal visible={editando && isEvents} transparent animationType="none" onRequestClose={() => { if (!salvando) setEditando(false); }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'center', padding: spacing.lg, backgroundColor: color.overlay }}>
+          <View accessibilityViewIsModal style={{ backgroundColor: color.background, borderRadius: radius.sheetCompact, padding: spacing.xl, gap: spacing.md }}>
+            <SectionHeader title="Nome da organização" />
+            <TextField label="Organização" value={rascunhoEmpresa} onChangeText={setRascunhoEmpresa} editable={!salvando} />
+            <Button loading={salvando} disabled={!rascunhoEmpresa.trim()} onPress={salvarEmpresa}>Salvar</Button>
+            <Button variant="outline" disabled={salvando} onPress={() => setEditando(false)}>Cancelar</Button>
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.brandPaper },
-  scrollContent: { paddingBottom: 42 },
-  coverContainer: {
-    height: 178,
-    overflow: "hidden",
-    backgroundColor: colors.brandInk,
-    position: "relative",
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-  },
-  coverImage: { width: "100%", height: "100%" },
-  coverOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(41,36,43,0.50)",
-  },
-  coverLabel: {
-    position: "absolute",
-    left: 16,
-    bottom: 14,
-    backgroundColor: colors.brandInk,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-  },
-  coverLabelText: {
-    color: colors.brandSand,
-    fontSize: 8,
-    fontWeight: "900",
-    letterSpacing: 1.2,
-  },
-  settingsIcon: {
-    position: "absolute",
-    top: 14,
-    right: 14,
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(246,241,232,0.36)",
-    backgroundColor: "rgba(41,36,43,0.60)",
-    borderRadius: 19,
-  },
-  intro: {
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  avatar: {
-    width: 106,
-    height: 106,
-    marginTop: -48,
-    borderWidth: 4,
-    borderColor: colors.brandPaper,
-    backgroundColor: colors.white,
-    borderRadius: 53,
-  },
-  name: {
-    marginTop: 12,
-    color: colors.brandInk,
-    fontSize: 24,
-    fontWeight: "900",
-    letterSpacing: -0.6,
-  },
-  empresaBadge: {
-    maxWidth: "92%",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: colors.brandInk,
-    backgroundColor: colors.brandSand,
-    borderRadius: 14,
-  },
-  empresa: {
-    flexShrink: 1,
-    color: colors.brandInk,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  locationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    marginTop: 7,
-  },
-  location: { color: colors.muted, fontSize: 12 },
-  statsCard: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 19,
-    paddingVertical: 13,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-  },
-  stat: { flex: 1, alignItems: "center" },
-  statNumber: { color: colors.brandInk, fontSize: 18, fontWeight: "900" },
-  statLabel: {
-    marginTop: 2,
-    color: colors.muted,
-    fontSize: 8,
-    fontWeight: "900",
-    letterSpacing: 0.8,
-  },
-  statDivider: { width: 1, height: 24, backgroundColor: colors.border },
-  actionButtonsRow: {
-    width: "100%",
-    flexDirection: "row",
-    gap: 9,
-    marginTop: 16,
-  },
-  manageButton: {
-    flex: 1,
-    minHeight: 44,
-    backgroundColor: colors.brandInk,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    borderRadius: 14,
-  },
-  manageButtonText: {
-    color: colors.brandPaper,
-    fontSize: 8.5,
-    fontWeight: "900",
-    letterSpacing: 0.8,
-  },
-  editProfileButton: {
-    flex: 1,
-    minHeight: 44,
-    borderWidth: 1,
-    borderColor: colors.brandInk,
-    backgroundColor: colors.brandSand,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    borderRadius: 14,
-  },
-  editProfileButtonText: {
-    color: colors.brandInk,
-    fontSize: 8.5,
-    fontWeight: "900",
-    letterSpacing: 0.8,
-  },
-  section: { marginTop: 24, paddingHorizontal: 20 },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    gap: 10,
-    marginBottom: 11,
-  },
-  sectionKicker: {
-    color: colors.brandCoral,
-    fontSize: 8,
-    fontWeight: "900",
-    letterSpacing: 1.3,
-    marginBottom: 2,
-  },
-  sectionTitle: { color: colors.brandInk, fontSize: 18, fontWeight: "900" },
-  sectionSubtitle: { color: colors.muted, fontSize: 9, fontWeight: "700" },
-  galleryContainer: { gap: 10, paddingRight: 20 },
-  eventCard: {
-    width: 158,
-    height: 184,
-    overflow: "hidden",
-    position: "relative",
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-  },
-  eventImage: { width: "100%", height: "100%" },
-  eventOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 10,
-    backgroundColor: "rgba(41,36,43,0.75)",
-  },
-  eventTitle: {
-    color: colors.brandPaper,
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: "900",
-  },
-  eventDateText: {
-    color: colors.brandSand,
-    fontSize: 9,
-    fontWeight: "800",
-    marginTop: 5,
-  },
-  addEventCard: {
-    width: 118,
-    height: 184,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: colors.brandInk,
-    backgroundColor: colors.brandBlue,
-    alignItems: "center",
-    borderRadius: 18,
-    justifyContent: "center",
-    padding: 10,
-  },
-  addEventIcon: {
-    width: 38,
-    height: 38,
-    backgroundColor: colors.brandPaper,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 19,
-  },
-  addEventText: {
-    color: colors.brandInk,
-    textAlign: "center",
-    fontSize: 8,
-    fontWeight: "900",
-    letterSpacing: 0.9,
-    marginTop: 9,
-  },
-  emptyStateContainer: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    padding: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 18,
-  },
-  emptyTitle: {
-    color: colors.brandInk,
-    fontSize: 15,
-    fontWeight: "900",
-    marginTop: 10,
-  },
-  emptyText: {
-    color: colors.muted,
-    fontSize: 11.5,
-    lineHeight: 18,
-    textAlign: "center",
-    marginTop: 5,
-    maxWidth: 290,
-  },
-  vagaCard: {
-    minHeight: 78,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 11,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 13,
-    marginBottom: 9,
-    borderRadius: 16,
-  },
-  flex1: { flex: 1, minWidth: 0 },
-  vagaCategoria: {
-    color: colors.brandCoral,
-    fontSize: 8,
-    fontWeight: "900",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  vagaTitulo: {
-    color: colors.brandInk,
-    fontSize: 14,
-    lineHeight: 17,
-    fontWeight: "900",
-    marginTop: 3,
-  },
-  vagaMeta: { color: colors.muted, fontSize: 10.5, marginTop: 4 },
-  vagaRight: { alignItems: "flex-end", gap: 7 },
-  statusBadge: {
-    color: colors.brandInk,
-    backgroundColor: colors.brandSand,
-    paddingHorizontal: 7,
-    paddingVertical: 4,
-    fontSize: 7.5,
-    fontWeight: "900",
-    letterSpacing: 0.6,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(41,36,43,0.52)",
-    justifyContent: "center",
-    paddingHorizontal: 22,
-  },
-  editCard: {
-    backgroundColor: colors.brandPaper,
-    borderTopWidth: 2,
-    borderTopColor: colors.brandCoral,
-    padding: 20,
-    borderRadius: 22,
-  },
-  editKicker: {
-    color: colors.brandCoral,
-    fontSize: 8,
-    fontWeight: "900",
-    letterSpacing: 1.3,
-  },
-  editTitle: {
-    color: colors.brandInk,
-    fontSize: 21,
-    fontWeight: "900",
-    marginTop: 3,
-    marginBottom: 13,
-  },
-  fieldLabel: {
-    color: colors.muted,
-    fontSize: 8,
-    fontWeight: "900",
-    letterSpacing: 1,
-    marginTop: 11,
-    marginBottom: 5,
-  },
-  editInput: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    color: colors.text,
-    paddingHorizontal: 12,
-    fontSize: 13,
-  },
-  editActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    gap: 18,
-    marginTop: 18,
-  },
-  cancel: {
-    color: colors.muted,
-    fontSize: 9,
-    fontWeight: "900",
-    letterSpacing: 1,
-  },
-  save: {
-    minHeight: 42,
-    paddingHorizontal: 14,
-    backgroundColor: colors.brandInk,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  saveDisabled: {
-    opacity: 0.45,
-  },
-  saveText: {
-    color: colors.brandPaper,
-    fontSize: 9,
-    fontWeight: "900",
-    letterSpacing: 1.1,
-  },
-});
