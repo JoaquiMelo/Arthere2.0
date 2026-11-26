@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import * as api from '../services/api';
@@ -91,33 +92,47 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<LocalUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refresh = useCallback(async () => {
-    try {
-      const sessao = await api.obterSessao();
+  // A mesma sessão pode receber vários pedidos de atualização simultâneos.
+  // Uma resposta iniciada antes de editar o perfil ou trocar de conta é descartada.
+  const revision = useRef(0);
+  const activeRefresh = useRef<{ revision: number; promise: Promise<void> } | null>(null);
 
-      if (!sessao) {
-        setUser(null);
-        return;
-      }
+  const refresh = useCallback((): Promise<void> => {
+    const started = revision.current;
+    if (activeRefresh.current?.revision === started) return activeRefresh.current.promise;
 
-      // Mantém uma identidade local enquanto a API é revalidada. Isso evita
-      // transformar indisponibilidade temporária em logout.
-      setUser(mapUsuario(sessao.usuario));
-
+    const promise = (async () => {
       try {
-        const remoto = await api.me();
-        setUser(mapUsuario(remoto));
-      } catch (error) {
-        if (error instanceof api.ApiRequestError && error.status === 401) {
-          await api.encerrarSessao();
+        const sessao = await api.obterSessao();
+        if (revision.current !== started) return;
+        if (!sessao) {
           setUser(null);
+          return;
         }
+
+        try {
+          const remoto = await api.me();
+          if (revision.current === started) setUser(mapUsuario(remoto));
+        } catch (error) {
+          if (revision.current !== started) return;
+          if (error instanceof api.ApiRequestError && error.status === 401) {
+            await api.encerrarSessao();
+            if (revision.current === started) setUser(null);
+          } else {
+            // Cache local só é usado se ainda não existe um perfil em memória.
+            // Nunca restaura fotos, município ou demais campos anteriores ao PATCH.
+            setUser((current) => current ?? mapUsuario(sessao.usuario));
+          }
+        }
+      } catch {
+        // Falha de armazenamento/rede não equivale a logout.
       }
-    } catch {
-      // Uma falha de leitura não equivale a logout. Preserve a identidade atual;
-      // a sessão será revalidada na próxima tentativa de refresh.
-      return;
-    }
+    })();
+    activeRefresh.current = { revision: started, promise };
+    void promise.finally(() => {
+      if (activeRefresh.current?.promise === promise) activeRefresh.current = null;
+    });
+    return promise;
   }, []);
 
   useEffect(() => {
@@ -131,12 +146,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     login: async (email, senha) => {
+      const started = ++revision.current;
       const result = await api.login(email.trim(), senha);
-      setUser(mapUsuario(result.usuario));
+      if (revision.current === started) setUser(mapUsuario(result.usuario));
     },
     register: async (dados) => {
+      const started = ++revision.current;
       const result = await api.register(dados);
-      setUser(mapUsuario(result.usuario));
+      if (revision.current === started) setUser(mapUsuario(result.usuario));
     },
     updateProfile: async (dados) => {
       const payload = { ...dados } as Record<string, unknown>;
@@ -146,19 +163,26 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       delete payload.documento;
       if (dados.documento !== undefined) payload.cpfCnpj = dados.documento;
 
+      const started = revision.current;
       const result = await api.updateProfile(payload);
-      setUser((current) =>
-        current ? { ...current, ...mapUsuario({
+      if (revision.current !== started) return;
+      revision.current += 1;
+      setUser((current) => {
+        if (!current) return current;
+        const atualizado = mapUsuario({
           id: current.usuarioId,
           email: current.email,
           tipo: current.tipo,
           perfil: result.perfil,
-        }) } : current,
-      );
+        });
+        // O PATCH do agente não inclui a relação de portfólio.
+        return { ...current, ...atualizado, portfolio: result.perfil?.portfolio ?? current.portfolio };
+      });
     },
     logout: async () => {
+      const started = ++revision.current;
       await api.logout();
-      setUser(null);
+      if (revision.current === started) setUser(null);
     },
     refresh,
   };

@@ -51,7 +51,7 @@ export default function ProfileScreen() {
   // Perfil, portfólio e dados do contratante são reconsultados ao voltar para a tela.
   useFocusEffect(
     useCallback(() => {
-      void Promise.all([refreshUser(), refreshManagement()]);
+      void Promise.allSettled([refreshUser(), refreshManagement()]);
     }, [refreshUser, refreshManagement]),
   );
 
@@ -74,7 +74,7 @@ function AgenteProfileScreenContent() {
   const recarregar = useCallback(async () => {
     setAtualizando(true);
     try {
-      await Promise.all([refreshUser(), refreshManagement()]);
+      await Promise.allSettled([refreshUser(), refreshManagement()]);
     } finally {
       setAtualizando(false);
     }

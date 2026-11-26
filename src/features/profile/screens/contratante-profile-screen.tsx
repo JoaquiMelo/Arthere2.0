@@ -2,7 +2,7 @@ import { formatarLocalizacao } from '@/shared/config/brazil-location';
 import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
     Alert,
     KeyboardAvoidingView,
@@ -10,6 +10,7 @@ import {
     Platform,
     SafeAreaView,
     ScrollView,
+    RefreshControl,
     StyleSheet,
     Text,
     TextInput,
@@ -24,13 +25,20 @@ import { colors } from "@/shared/theme/colors";
 
 export default function ContratanteProfileScreen() {
   const navigation = useNavigation<any>();
-  const { user, updateProfile } = useUser();
-  const { vagas, eventos: todosEventos } = useManagement();
+  const { user, updateProfile, refresh: refreshUser } = useUser();
+  const { vagas, eventos: todosEventos, refresh: refreshManagement } = useManagement();
   const eventos = todosEventos.filter((evento) => evento.contratanteId === user?.id);
 
-  const [empresa, setEmpresa] = useState(
-    user?.empresa || "Empresa não informada",
-  );
+  const empresa = user?.empresa || "Empresa não informada";
+  const [atualizando, setAtualizando] = useState(false);
+  const recarregar = useCallback(async () => {
+    setAtualizando(true);
+    try {
+      await Promise.allSettled([refreshUser(), refreshManagement()]);
+    } finally {
+      setAtualizando(false);
+    }
+  }, [refreshUser, refreshManagement]);
   const [editando, setEditando] = useState(false);
   const [rascunhoEmpresa, setRascunhoEmpresa] = useState(empresa);
 
@@ -53,23 +61,20 @@ export default function ContratanteProfileScreen() {
     if (!valor) return;
     try {
       await updateProfile({ empresa: valor });
-      setEmpresa(valor);
       setEditando(false);
     } catch (error) {
       Alert.alert('Não foi possível salvar', error instanceof Error ? error.message : 'Tente novamente.');
     }
   };
 
-  const avatarSource =
-    (user as { avatarUrl?: string; avatar?: string } | null)?.avatarUrl ||
-    (user as { avatar?: string } | null)?.avatar ||
-    '';
+  const avatarSource = user?.avatarUrl || '';
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} />}
       >
         <View style={styles.coverContainer}>
           <MediaImage uri={user?.bannerUrl} style={styles.coverImage} icon="image-outline" iconSize={40} />

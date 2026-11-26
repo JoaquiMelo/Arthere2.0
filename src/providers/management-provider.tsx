@@ -1,4 +1,4 @@
-import React,{createContext,useCallback,useContext,useEffect,useMemo,useState} from 'react';
+import React,{createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} from 'react';
 import {uploadImage,createEvent,createProject,events as listarEventosApi,meusProjetos,minhasSolicitacoesEvento,projects,responderSolicitacaoEvento,solicitarParticipacaoEvento,updateApplication,updateProject} from '@/services/api';
 import type {Candidato,StatusVaga,VagaGerenciada} from '@/features/opportunities/screens/types/management';
 import type {Evento} from '@/features/events/types/event';
@@ -17,9 +17,19 @@ function mapEvento(x:any):Evento{const d=new Date(x.dataEvento);const data=Numbe
 function mapSolicitacao(x:any):SolicitacaoEvento{return{id:x.id,eventId:x.eventoId,eventoTitulo:x.evento?.titulo??'Evento',agenteId:x.agente?.id??x.agenteId,agenteNome:x.agente?.nome??'Agente criativo',agenteEspecialidade:x.agente?.especialidade??'Profissional criativo',mensagem:x.mensagem??'',status:x.status};}
 
 export function ManagementProvider({children}:{children:React.ReactNode}){
- const{user}=useUser();const[vagas,setVagas]=useState<VagaGerenciada[]>([]);const[eventos,setEventos]=useState<Evento[]>([]);const[solicitacoesEvento,setSolicitacoesEvento]=useState<SolicitacaoEvento[]>([]);const[loading,setLoading]=useState(false);const[avaliados,setAvaliados]=useState<Set<string>>(new Set());
- const refresh=useCallback(async()=>{if(!user){setVagas([]);setEventos([]);setSolicitacoesEvento([]);return;}setLoading(true);try{const[ev,pr,sr]=await Promise.all([listarEventosApi(),user.tipo==='CONTRATANTE_OPORTUNIDADES'?meusProjetos():projects(),user.tipo==='AGENTE'||user.tipo==='CONTRATANTE_EVENTOS'?minhasSolicitacoesEvento():Promise.resolve([])]);setEventos((ev??[]).map(mapEvento));setVagas((pr??[]).map(mapVaga));setSolicitacoesEvento((sr??[]).map(mapSolicitacao));}finally{setLoading(false);}},[user]);
- useEffect(()=>{const task=setTimeout(()=>{void refresh();},0);return()=>clearTimeout(task);},[refresh]);
+ const{user}=useUser();const usuarioId=user?.usuarioId;const tipo=user?.tipo;const[vagas,setVagas]=useState<VagaGerenciada[]>([]);const[eventos,setEventos]=useState<Evento[]>([]);const[solicitacoesEvento,setSolicitacoesEvento]=useState<SolicitacaoEvento[]>([]);const[loading,setLoading]=useState(false);const[avaliados,setAvaliados]=useState<Set<string>>(new Set());
+ const requestVersion=useRef(0);
+ const refresh=useCallback(async()=>{
+  const version=++requestVersion.current;
+  if(!usuarioId){setVagas([]);setEventos([]);setSolicitacoesEvento([]);setLoading(false);return;}
+  setLoading(true);
+  try{
+   const[ev,pr,sr]=await Promise.all([listarEventosApi(),tipo==='CONTRATANTE_OPORTUNIDADES'?meusProjetos():projects(),tipo==='AGENTE'||tipo==='CONTRATANTE_EVENTOS'?minhasSolicitacoesEvento():Promise.resolve([])]);
+   if(version!==requestVersion.current)return;
+   setEventos((ev??[]).map(mapEvento));setVagas((pr??[]).map(mapVaga));setSolicitacoesEvento((sr??[]).map(mapSolicitacao));
+  }finally{if(version===requestVersion.current)setLoading(false);}
+ },[usuarioId,tipo]);
+ useEffect(()=>{const task=setTimeout(()=>{void refresh().catch(()=>undefined);},0);return()=>clearTimeout(task);},[refresh]);
  const publicarVaga=useCallback(async(d:NovaVaga)=>{await createProject({titulo:d.titulo,descricao:d.descricao??'Oportunidade publicada pela Arthere.',categoria:d.categoria,orcamento:d.orcamento});await refresh();},[refresh]);
  const criarEvento=useCallback(async(d:NovoEvento)=>{const dataEvento=new Date(d.data+'T'+(d.horario||'00:00')+':00');const imagemUrl=d.imagemUrl?.startsWith('file:')||d.imagemUrl?.startsWith('content:')?await uploadImage(d.imagemUrl):d.imagemUrl;await createEvent({titulo:d.titulo,descricao:d.descricao,categoria:d.categoria,local:d.local,cidade:d.cidade,dataEvento:dataEvento.toISOString(),horario:d.horario,organizador:d.organizador,premium:d.premium,fixado:d.destaque,imagemUrl});await refresh();},[refresh]);
  const responder=useCallback(async(id:string,status:'ACEITA'|'RECUSADA')=>{await updateApplication(id,status);await refresh();},[refresh]);

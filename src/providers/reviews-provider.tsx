@@ -10,9 +10,9 @@ const Ctx=createContext<Context>({} as Context);
 function mapAvaliacao(x:any):Avaliacao { return { id:x.id, agenteId:x.agenteId, autorNome:x.contratante?.nomeSocial||x.contratante?.nome||'Contratante', nota:Number(x.nota), comentario:x.comentario??undefined, criadoEm:new Date(x.criadoEm) }; }
 
 export function ReviewsProvider({children}:{children:React.ReactNode}) {
- const {user}=useUser(); const [dados,setDados]=useState<Record<string,Avaliacao[]>>({});
+ const {user}=useUser(); const agenteId=user?.tipo==='AGENTE'?user.id:undefined; const [dados,setDados]=useState<Record<string,Avaliacao[]>>({});
  const carregarAvaliacoes=useCallback(async(id:string)=>{const lista=await ratings(id);setDados(c=>({...c,[id]:(lista??[]).map(mapAvaliacao)}));},[]);
- useEffect(()=>{if(user?.tipo!=='AGENTE'||!user.id)return;const task=setTimeout(()=>{void carregarAvaliacoes(user.id);},0);return()=>clearTimeout(task);},[user,carregarAvaliacoes]);
+ useEffect(()=>{if(!agenteId)return;const task=setTimeout(()=>{void carregarAvaliacoes(agenteId).catch(()=>undefined);},0);return()=>clearTimeout(task);},[agenteId,carregarAvaliacoes]);
  const avaliacoesPorAgente=useCallback((id:string)=>dados[id]??[],[dados]);
  const mediaPorAgente=useCallback((id:string)=>{const lista=dados[id]??[];return lista.length?lista.reduce((s,a)=>s+a.nota,0)/lista.length:0;},[dados]);
  const adicionarAvaliacao=useCallback(async(d:NovaAvaliacao)=>{if(!Number.isInteger(d.nota)||d.nota<1||d.nota>5)throw new Error('A nota deve estar entre 1 e 5.');await rateAgent(d.agenteId,{nota:d.nota,comentario:d.comentario?.trim()||undefined});await carregarAvaliacoes(d.agenteId);},[carregarAvaliacoes]);

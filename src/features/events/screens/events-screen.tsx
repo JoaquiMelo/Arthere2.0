@@ -74,7 +74,7 @@ export default function EventsScreen() {
   // Reconsulta eventos toda vez que a tela recebe foco.
   useFocusEffect(
     useCallback(() => {
-      void refresh();
+      void refresh().catch(() => undefined);
     }, [refresh]),
   );
 
@@ -82,6 +82,8 @@ export default function EventsScreen() {
     setAtualizando(true);
     try {
       await refresh();
+    } catch {
+      // Preserva o calendário e os eventos já exibidos em caso de falha de rede.
     } finally {
       setAtualizando(false);
     }

@@ -27,36 +27,37 @@ function mapConversation(raw:any,currentUserId:string):Conversation{
 
 export function ChatProvider({children}:{children:React.ReactNode}){
  const{user}=useUser();
+ const usuarioId=user?.usuarioId;
  const[conversations,setConversations]=useState<Conversation[]>([]);
  const[loading,setLoading]=useState(false);
 
  const refresh=useCallback(async()=>{
-  if(!user?.usuarioId){setConversations([]);return;}
+  if(!usuarioId){setConversations([]);return;}
   setLoading(true);
-  try{const lista=await listarConversas();setConversations((lista??[]).map((x:any)=>mapConversation(x,user.usuarioId)));}
+  try{const lista=await listarConversas();setConversations((lista??[]).map((x:any)=>mapConversation(x,usuarioId)));}
   finally{setLoading(false);}
- },[user]);
+ },[usuarioId]);
 
- useEffect(()=>{const task=setTimeout(()=>{void refresh();},0);return()=>clearTimeout(task);},[refresh]);
+ useEffect(()=>{const task=setTimeout(()=>{void refresh().catch(()=>undefined);},0);return()=>clearTimeout(task);},[refresh]);
 
  const startConversation=useCallback(async(agent:AgenteCriativo)=>{
   const raw=await iniciarChatComAgente(agent.id);
-  if(user?.usuarioId)setConversations(c=>{const mapped=mapConversation(raw,user.usuarioId);const others=c.filter(x=>x.id!==mapped.id);return[mapped,...others];});
+  if(usuarioId)setConversations(c=>{const mapped=mapConversation(raw,usuarioId);const others=c.filter(x=>x.id!==mapped.id);return[mapped,...others];});
   return raw.id as string;
- },[user]);
+ },[usuarioId]);
 
  const sendMessage=useCallback(async(id:string,text:string)=>{
   const value=text.trim();if(!value)return;
-  if(!user?.usuarioId)throw new Error('Sessão expirada.');
+  if(!usuarioId)throw new Error('Sessão expirada.');
   const created=await enviarMensagemApi(id,value);
   setConversations(c=>c.map(conv=>conv.id===id?{...conv,messages:[...conv.messages,{id:created.id,text:created.texto,sentByMe:true,createdAt:new Date(created.criadoEm)}]}:conv));
- },[user]);
+ },[usuarioId]);
 
  const carregarMensagens=useCallback(async(id:string)=>{
   const lista=await mensagensDaConversa(id);
-  if(!user?.usuarioId)return;
-  setConversations(c=>c.map(conv=>conv.id===id?{...conv,messages:(lista??[]).map((m:any)=>({id:m.id,text:m.texto,sentByMe:m.remetenteId===user.usuarioId,createdAt:new Date(m.criadoEm)}))}:conv));
- },[user]);
+  if(!usuarioId)return;
+  setConversations(c=>c.map(conv=>conv.id===id?{...conv,messages:(lista??[]).map((m:any)=>({id:m.id,text:m.texto,sentByMe:m.remetenteId===usuarioId,createdAt:new Date(m.criadoEm)}))}:conv));
+ },[usuarioId]);
 
  const value=useMemo<Context>(()=>({conversations,loading,refresh,startConversation,sendMessage,carregarMensagens}),[conversations,loading,refresh,startConversation,sendMessage,carregarMensagens]);
  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

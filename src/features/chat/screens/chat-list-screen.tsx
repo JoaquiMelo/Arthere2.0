@@ -1,6 +1,7 @@
 import { Avatar } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useCallback } from 'react';
 import { FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useChat, type Conversation } from '@/providers/chat-provider';
@@ -13,7 +14,9 @@ function preview(conversation: Conversation) {
 
 export default function ChatListScreen() {
   const navigation = useNavigation<any>();
-  const { conversations } = useChat();
+  const { conversations, refresh, loading } = useChat();
+  const recarregar = useCallback(() => { void refresh().catch(() => undefined); }, [refresh]);
+  useFocusEffect(recarregar);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -26,6 +29,8 @@ export default function ChatListScreen() {
 
       <FlatList
         data={conversations}
+        refreshing={loading}
+        onRefresh={recarregar}
         keyExtractor={(item) => item.id}
         contentContainerStyle={conversations.length ? styles.list : styles.empty}
         ListEmptyComponent={
