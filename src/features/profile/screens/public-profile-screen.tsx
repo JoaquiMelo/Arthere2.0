@@ -1,19 +1,23 @@
-import { Button, FeedbackState, ScreenContainer } from '@/shared/components';
+import { AppText, Button, FeedbackState, IconButton, ScreenContainer, SectionHeader } from '@/shared/components';
 import { formatarLocalizacao } from '@/shared/config/brazil-location';
 import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { publicAgent, publicContractor } from '@/services/api';
-import { colors } from '@/shared/theme/colors';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import type { ThemeTokens } from '@/shared/theme/tokens';
 import type { RootStackParamList } from '@/navigation/app-navigator';
 
 type Route = RouteProp<RootStackParamList, 'PublicProfile'>;
 
 export default function PublicProfileScreen() {
   const navigation = useNavigation<any>();
+  const tokens = useThemeTokens();
+  const { color, spacing } = tokens;
+  const styles = createStyles(tokens);
   const route = useRoute<Route>();
   const { profileType, profileId } = route.params;
   const [perfil, setPerfil] = useState<any>(null);
@@ -43,7 +47,7 @@ export default function PublicProfileScreen() {
   }
 
   if (erro || !perfil) {
-    return <ScreenContainer style={{ justifyContent: 'center', paddingHorizontal: 20 }}>
+    return <ScreenContainer style={{ justifyContent: 'center', paddingHorizontal: spacing.xl }}>
       <FeedbackState kind="error" icon="person-circle-outline" title="Perfil indisponível" description={erro || 'Este perfil não foi encontrado.'} onRetry={() => { setCarregando(true); void carregar(); }} />
       <Button variant="ghost" onPress={() => navigation.goBack()}>Voltar</Button>
     </ScreenContainer>;
@@ -57,30 +61,32 @@ export default function PublicProfileScreen() {
   const projetos = Array.isArray(perfil.projetos) ? perfil.projetos : [];
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <ScreenContainer>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={atualizando} onRefresh={() => { setAtualizando(true); void carregar(); }} />}
         contentContainerStyle={styles.content}
       >
         <View style={styles.hero}>
+          <View style={styles.topBar}>
+            <IconButton icon="arrow-back" variant="outline" accessibilityLabel="Voltar" onPress={() => navigation.goBack()} />
+            <AppText variant="label" color="accentText" weight="bold">ARTHERE / PERFIL</AppText>
+          </View>
           {!!perfil.bannerUrl && <MediaImage uri={perfil.bannerUrl} style={styles.heroBanner} />}
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} accessibilityLabel="Voltar"><Ionicons name="arrow-back" size={21} color={colors.brandInk} /></TouchableOpacity>
-          <View style={styles.heroShape} />
           <Text style={styles.kicker}>{agente ? 'PROFISSIONAL CRIATIVO' : perfil.usuario?.tipo === 'CONTRATANTE_EVENTOS' ? 'CONTRATANTE DE EVENTOS' : 'CONTRATANTE DE OPORTUNIDADES'}</Text>
           <View style={styles.identity}>
             <Avatar uri={perfil.avatarUrl} style={styles.avatar} iconSize={36} />
             <View style={styles.identityCopy}>
-              <Text style={styles.name}>{nome}</Text>
+              <AppText variant="h2" weight="heavy" accessibilityRole="header">{nome}</AppText>
               <Text style={styles.subtitle}>{agente ? perfil.especialidade || 'Profissional criativo' : perfil.categoria || 'Contratante independente'}</Text>
-              {!!cidade && <View style={styles.location}><Ionicons name="location-outline" size={14} color={colors.brandCoral} /><Text style={styles.muted}>{cidade}</Text></View>}
+              {!!cidade && <View style={styles.location}><Ionicons name="location-outline" size={14} color={color.accentText} /><Text style={styles.muted}>{cidade}</Text></View>}
             </View>
           </View>
         </View>
 
         {!!(perfil.bio || perfil.descricao || perfil.pronomes) && (
           <View style={styles.panel}>
-            <Text style={styles.sectionTitle}>SOBRE</Text>
+            <SectionHeader title="Sobre" />
             {!!perfil.pronomes && <Text style={styles.muted}>{perfil.pronomes}</Text>}
             <Text style={styles.body}>{perfil.bio || perfil.descricao}</Text>
           </View>
@@ -88,61 +94,55 @@ export default function PublicProfileScreen() {
 
         {agente ? (
           <View style={styles.panel}>
-            <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>PORTFÓLIO</Text><Text style={styles.count}>{portfolio.length} trabalhos</Text></View>
-            {portfolio.length ? <View style={styles.gallery}>{portfolio.map((item: any) => <View key={item.id} style={styles.work}><MediaImage uri={item.imageUrl} style={styles.workImage} /><Text style={styles.workTitle} numberOfLines={2}>{item.titulo || 'Trabalho criativo'}</Text>{!!item.descricao && <Text style={styles.muted} numberOfLines={3}>{item.descricao}</Text>}</View>)}</View> : <Text style={styles.muted}>Este perfil ainda não publicou trabalhos no portfólio.</Text>}
-            <View style={styles.statRow}><View style={styles.stat}><Text style={styles.statNumber}>{Number(perfil.totalProjetos || 0)}</Text><Text style={styles.statLabel}>PROJETOS</Text></View><View style={styles.stat}><Text style={styles.statNumber}>{Number(perfil.notaMedia || 0).toFixed(1)}</Text><Text style={styles.statLabel}>NOTA MÉDIA</Text></View><View style={styles.stat}><Text style={styles.statNumber}>{Number(perfil.totalAvaliacoes || 0)}</Text><Text style={styles.statLabel}>AVALIAÇÕES</Text></View></View>
+            <View style={styles.sectionHeader}><AppText variant="h3" weight="bold" accessibilityRole="header">Portfólio</AppText><Text style={styles.count}>{portfolio.length} {portfolio.length === 1 ? 'trabalho' : 'trabalhos'}</Text></View>
+            {portfolio.length ? <View style={styles.gallery}>{portfolio.map((item: any) => <View key={item.id} style={styles.work}><MediaImage uri={item.imageUrl} style={styles.workImage} /><View style={styles.workCopy}><AppText variant="title" weight="bold">{item.titulo || 'Trabalho criativo'}</AppText>{!!item.descricao && <AppText variant="bodySmall" color="textSecondary">{item.descricao}</AppText>}</View></View>)}</View> : <Text style={styles.muted}>Este perfil ainda não publicou trabalhos no portfólio.</Text>}
+            <View style={styles.statRow}><View style={styles.stat}><Text style={styles.statNumber}>{Number(perfil.totalProjetos || 0)}</Text><Text style={styles.statLabel}>PROJETOS</Text></View><View style={styles.stat}><Text style={styles.statNumber}>{Number(perfil.totalAvaliacoes || 0) > 0 ? Number(perfil.notaMedia || 0).toFixed(1) : '—'}</Text><Text style={styles.statLabel}>NOTA MÉDIA</Text></View><View style={styles.stat}><Text style={styles.statNumber}>{Number(perfil.totalAvaliacoes || 0)}</Text><Text style={styles.statLabel}>AVALIAÇÕES</Text></View></View>
           </View>
         ) : (
           <>
             <View style={styles.panel}>
-              <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>EVENTOS PUBLICADOS</Text><Text style={styles.count}>{eventos.length}</Text></View>
-              {eventos.length ? eventos.map((item: any) => <TouchableOpacity key={item.id} accessibilityRole="button" accessibilityLabel={`Abrir evento ${item.titulo}`} style={styles.listItem} onPress={() => navigation.navigate('EventDetails', { eventId: item.id })}><View style={[styles.listIcon, { backgroundColor: '#DCEBE3' }]}><Ionicons name="calendar-outline" size={19} color="#648A78" /></View><View style={styles.listCopy}><Text style={styles.itemTitle}>{item.titulo}</Text><Text style={styles.muted}>{item.cidade} · {new Date(item.dataEvento).toLocaleDateString('pt-BR')}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted} /></TouchableOpacity>) : <Text style={styles.muted}>Nenhum evento publicado.</Text>}
+              <View style={styles.sectionHeader}><AppText variant="h3" weight="bold" accessibilityRole="header">Eventos publicados</AppText><Text style={styles.count}>{eventos.length}</Text></View>
+              {eventos.length ? eventos.map((item: any) => <TouchableOpacity key={item.id} accessibilityRole="button" accessibilityLabel={`Abrir evento ${item.titulo}`} style={styles.listItem} onPress={() => navigation.navigate('EventDetails', { eventId: item.id })}><View style={[styles.listIcon, { backgroundColor: color.surfaceSubtle }]}><Ionicons name="calendar-outline" size={19} color={color.successText} /></View><View style={styles.listCopy}><Text style={styles.itemTitle}>{item.titulo}</Text><Text style={styles.muted}>{item.cidade} · {new Date(item.dataEvento).toLocaleDateString('pt-BR')}</Text></View><Ionicons name="chevron-forward" size={18} color={color.textSecondary} /></TouchableOpacity>) : <Text style={styles.muted}>Nenhum evento publicado.</Text>}
             </View>
             <View style={styles.panel}>
-              <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>OPORTUNIDADES ABERTAS</Text><Text style={styles.count}>{projetos.length}</Text></View>
-              {projetos.length ? projetos.map((item: any) => <TouchableOpacity key={item.id} style={styles.listItem} onPress={() => navigation.navigate('OpportunityDetails', { opportunityId: item.id })}><View style={[styles.listIcon, { backgroundColor: '#EADFF2' }]}><Ionicons name="briefcase-outline" size={19} color="#9275AA" /></View><View style={styles.listCopy}><Text style={styles.itemTitle}>{item.titulo}</Text><Text style={styles.muted}>{item.categoria}{item.orcamento != null ? ' · R$ ' + Number(item.orcamento).toLocaleString('pt-BR') : ''}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted} /></TouchableOpacity>) : <Text style={styles.muted}>Nenhuma oportunidade aberta.</Text>}
+              <View style={styles.sectionHeader}><AppText variant="h3" weight="bold" accessibilityRole="header">Oportunidades abertas</AppText><Text style={styles.count}>{projetos.length}</Text></View>
+              {projetos.length ? projetos.map((item: any) => <TouchableOpacity key={item.id} accessibilityRole="button" accessibilityLabel={`Abrir oportunidade ${item.titulo}`} style={styles.listItem} onPress={() => navigation.navigate('OpportunityDetails', { opportunityId: item.id })}><View style={[styles.listIcon, { backgroundColor: color.accentSecondary }]}><Ionicons name="briefcase-outline" size={19} color={color.onAccentSecondary} /></View><View style={styles.listCopy}><Text style={styles.itemTitle}>{item.titulo}</Text><Text style={styles.muted}>{item.categoria}{item.orcamento != null ? ' · R$ ' + Number(item.orcamento).toLocaleString('pt-BR') : ''}</Text></View><Ionicons name="chevron-forward" size={18} color={color.textSecondary} /></TouchableOpacity>) : <Text style={styles.muted}>Nenhuma oportunidade aberta.</Text>}
             </View>
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.brandPaper },
-  content: { paddingBottom: 32 },
-  center: { flex: 1, backgroundColor: colors.brandPaper, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12 },
-  title: { color: colors.brandInk, fontSize: 20, fontWeight: '900', textAlign: 'center' },
-  heroBanner: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', opacity: 0.28 },
-  hero: { backgroundColor: colors.brandInk, paddingHorizontal: 20, paddingTop: 70, paddingBottom: 25, overflow: 'hidden' },
-  back: { position: 'absolute', top: 16, left: 18, zIndex: 2, width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brandPaper },
-  heroShape: { position: 'absolute', right: -35, top: 8, width: 145, height: 145, borderRadius: 75, backgroundColor: colors.brandCoral, opacity: 0.25 },
-  kicker: { color: colors.brandSand, fontSize: 9, fontWeight: '900', letterSpacing: 1.6, marginBottom: 17 },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: 15 },
-  avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.brandPaper, backgroundColor: colors.white },
-  identityCopy: { flex: 1 },
-  name: { color: colors.brandPaper, fontSize: 24, fontWeight: '900' },
-  subtitle: { color: colors.brandSand, fontSize: 13, marginTop: 4 },
-  location: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 7 },
-  muted: { color: colors.muted, fontSize: 12, lineHeight: 18 },
-  panel: { marginHorizontal: 16, marginTop: 16, padding: 17, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, borderRadius: 18 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 },
-  sectionTitle: { color: colors.brandInk, fontSize: 10, fontWeight: '900', letterSpacing: 1.3 },
-  count: { color: colors.brandCoral, fontSize: 11, fontWeight: '900' },
-  body: { color: colors.text, fontSize: 14, lineHeight: 21, marginTop: 8 },
-  gallery: { gap: 12 },
-  work: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 7 },
-  workImage: { width: 82, height: 76, borderRadius: 12, backgroundColor: colors.surface },
-  workTitle: { flex: 1, color: colors.brandInk, fontSize: 13, fontWeight: '800' },
-  statRow: { flexDirection: 'row', borderTopWidth: 1, borderColor: colors.border, paddingTop: 14, marginTop: 14 },
-  stat: { flex: 1, alignItems: 'center' },
-  statNumber: { color: colors.brandInk, fontSize: 18, fontWeight: '900' },
-  statLabel: { color: colors.muted, fontSize: 8, fontWeight: '900', marginTop: 3, letterSpacing: 0.7 },
-  listItem: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.border },
-  listIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  listCopy: { flex: 1 },
-  itemTitle: { color: colors.brandInk, fontSize: 13, fontWeight: '900', marginBottom: 3 },
-  primary: { backgroundColor: colors.brandInk, paddingHorizontal: 22, paddingVertical: 12, borderRadius: 999 },
-  primaryText: { color: colors.brandPaper, fontSize: 11, fontWeight: '900' },
-});
+function createStyles({ color, radius, spacing, typography, dimensions }: ThemeTokens) {
+  return StyleSheet.create({
+    content: { paddingBottom: spacing['3xl'] },
+    hero: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xl, gap: spacing.md },
+    topBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    heroBanner: { width: '100%', aspectRatio: 16 / 9, borderRadius: radius.cardCompact },
+    kicker: { color: color.accentText, fontSize: typography.size.label, lineHeight: typography.lineHeight.label, fontWeight: '700' },
+    identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    avatar: { width: 88, height: 88, borderRadius: radius.cardCompact, backgroundColor: color.surface },
+    identityCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
+    subtitle: { color: color.textPrimary, fontSize: typography.size.body, lineHeight: typography.lineHeight.body },
+    location: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+    muted: { color: color.textSecondary, fontSize: typography.size.bodySmall, lineHeight: typography.lineHeight.bodySmall, flexShrink: 1 },
+    panel: { marginHorizontal: spacing.lg, paddingVertical: spacing.lg, borderTopWidth: 1, borderTopColor: color.border, gap: spacing.sm },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm },
+    count: { color: color.accentText, fontSize: typography.size.label, fontWeight: '600' },
+    body: { color: color.textPrimary, fontSize: typography.size.body, lineHeight: typography.lineHeight.body },
+    gallery: { gap: spacing.xl, marginTop: spacing.sm },
+    work: { gap: spacing.sm },
+    workImage: { width: '100%', aspectRatio: 4 / 3, borderRadius: radius.cardCompact, backgroundColor: color.surfaceSubtle },
+    workCopy: { gap: spacing.xs, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border },
+    statRow: { flexDirection: 'row', flexWrap: 'wrap', backgroundColor: color.surfaceSubtle, borderRadius: radius.control, padding: spacing.md, gap: spacing.sm, marginTop: spacing.md },
+    stat: { flexGrow: 1, flexBasis: 82, alignItems: 'center', gap: spacing.xs },
+    statNumber: { color: color.textPrimary, fontSize: typography.size.h3, fontWeight: '700' },
+    statLabel: { color: color.textSecondary, fontSize: typography.size.label, lineHeight: typography.lineHeight.label, textAlign: 'center' },
+    listItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: dimensions.touchTarget, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border },
+    listIcon: { width: 40, height: 40, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
+    listCopy: { flex: 1, minWidth: 0 },
+    itemTitle: { color: color.textPrimary, fontSize: typography.size.body, lineHeight: typography.lineHeight.body, fontWeight: '700' },
+  });
+}
