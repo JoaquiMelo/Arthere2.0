@@ -4,8 +4,10 @@ export const radius = {
   sm: 10,
   control: 12,
   button: 14,
+  cardCompact: 16,
   card: 18,
   panel: 22,
+  sheetCompact: 24,
   modal: 28,
   pill: 999,
 } as const;
