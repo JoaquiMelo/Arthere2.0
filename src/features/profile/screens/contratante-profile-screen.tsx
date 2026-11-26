@@ -1,3 +1,4 @@
+import { formatarLocalizacao } from '@/shared/config/brazil-location';
 import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -110,14 +111,14 @@ export default function ContratanteProfileScreen() {
             <Ionicons name="pencil" size={11} color={colors.brandInk} />
           </TouchableOpacity>
 
-          {user?.cidade ? (
+          {user ? (
             <View style={styles.locationRow}>
               <Ionicons
                 name="location-outline"
                 size={14}
                 color={colors.brandTerracotta}
               />
-              <Text style={styles.location}>{user.cidade}</Text>
+              <Text style={styles.location}>{formatarLocalizacao(user.cidade, user.estado)}</Text>
             </View>
           ) : null}
 

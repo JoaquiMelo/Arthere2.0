@@ -1,3 +1,4 @@
+import { formatarLocalizacao } from '@/shared/config/brazil-location';
 import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
@@ -46,7 +47,7 @@ export default function PublicProfileScreen() {
 
   const agente = profileType === 'AGENTE';
   const nome = perfil.nomeSocial || perfil.nome || 'Perfil Arthere';
-  const cidade = [perfil.cidade, perfil.estado].filter(Boolean).join(', ');
+  const cidade = formatarLocalizacao(perfil.cidade, perfil.estado);
   const portfolio = Array.isArray(perfil.portfolio) ? perfil.portfolio : [];
   const eventos = Array.isArray(perfil.eventos) ? perfil.eventos : [];
   const projetos = Array.isArray(perfil.projetos) ? perfil.projetos : [];

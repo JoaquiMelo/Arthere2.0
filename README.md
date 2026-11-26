@@ -73,6 +73,6 @@ Elas adicionam campos de contratante, eventos, solicitações de participação,
 
 ## Imagens e uploads
 
-O aplicativo já possui upload binário de imagens pelo endpoint autenticado `POST /uploads` (campo multipart `file`). O backend aceita JPG, PNG, WEBP e GIF, com limite de 8 MB por arquivo, e grava os arquivos no diretório `backend/uploads`, retornando uma URL pública. O portfólio também aceita URLs públicas HTTP/HTTPS.
+O aplicativo já possui upload binário de imagens pelo endpoint autenticado `POST /uploads` (campo multipart `file`). O backend aceita JPG, PNG, WEBP e GIF, com limite de 8 MB por arquivo, e grava os novos arquivos no MySQL (`upload_imagem`), retornando uma URL pública. O portfólio também aceita URLs públicas HTTP/HTTPS.
 
-**Hospedagem:** o endpoint utiliza armazenamento em disco local. Em produção, configure um disco persistente no provedor de hospedagem e monte-o no caminho utilizado pelo backend; sem armazenamento persistente, arquivos locais podem ser perdidos em reinicializações ou redeploys. Não trate o disco efêmero do serviço como armazenamento durável.
+**Hospedagem:** antes de iniciar esta versão, execute `npm run prisma:generate`, `npm run prisma:deploy` e `npm run build` no backend. Novos uploads persistem no MySQL; arquivos antigos ainda existentes em `backend/uploads` continuam servidos pela rota estática legada. Arquivos já perdidos em disco efêmero não podem ser recuperados pela migração. Confirme que o limite `max_allowed_packet` do MySQL comporta uploads de 8 MB (preferencialmente 16 MB ou mais).

@@ -1,3 +1,4 @@
+import { formatarLocalizacao } from '@/shared/config/brazil-location';
 import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { colors } from '@/shared/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
@@ -90,7 +91,7 @@ function AgenteProfileScreenContent() {
     nome: user.nome || 'Seu nome',
     especialidade: user.especialidade || 'Profissional criativo',
     bio: user.bio || 'Adicione uma apresentação sobre seu trabalho.',
-    cidade: user.cidade || 'Cidade não informada',
+    cidade: user.cidade || '',
     avatarUrl: user.avatarUrl || '',
     notaMedia: Number(user.notaMedia ?? 0),
     totalAvaliacoes: Number(user.totalAvaliacoes ?? 0),
@@ -157,7 +158,7 @@ function AgenteProfileScreenContent() {
 
           <View style={styles.locationRow}>
             <Ionicons name="location-outline" size={14} color={colors.brandTerracotta} />
-            <Text style={styles.location}>{agente.cidade}</Text>
+            <Text style={styles.location}>{formatarLocalizacao(agente.cidade, user.estado)}</Text>
           </View>
 
           <View style={styles.statsRow}>

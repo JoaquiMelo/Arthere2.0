@@ -22,3 +22,23 @@ export async function buscarCidades(uf: string): Promise<CidadeBR[]> {
   if (!response.ok) throw new Error('Não foi possível carregar as cidades.');
   return response.json();
 }
+
+export function nomeMunicipio(valor?: string | null): string {
+  const nome = valor?.trim() || '';
+  return /^(brasileiro|brasil|brazil|cidade não informada)$/i.test(nome) ? '' : nome;
+}
+
+export function formatarLocalizacao(cidade?: string | null, estado?: string | null): string {
+  const municipio = nomeMunicipio(cidade);
+  if (!municipio) return 'Localização não informada';
+  const uf = ESTADOS_BR.find((item) => item.sigla === estado?.trim().toUpperCase())?.sigla;
+  return uf ? `${municipio} · ${uf}` : municipio;
+}
+
+function normalizar(valor: string): string {
+  return valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+export function municipioCadastrado(cidades: CidadeBR[], nome: string): CidadeBR | undefined {
+  return cidades.find((item) => normalizar(item.nome) === normalizar(nome));
+}

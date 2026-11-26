@@ -23,7 +23,7 @@ import {
 import { useUser } from "@/providers/user-provider";
 import { uploadImage } from "@/services/api";
 import { colors } from "@/shared/theme/colors";
-import { buscarCidades, CidadeBR, ESTADOS_BR } from "@/shared/config/brazil-location";
+import { buscarCidades, CidadeBR, ESTADOS_BR, municipioCadastrado, nomeMunicipio } from "@/shared/config/brazil-location";
 
 
 export default function EditContractorProfileScreen() {
@@ -42,7 +42,7 @@ export default function EditContractorProfileScreen() {
   const [telefone, setTelefone] = useState(user?.telefone || "");
   const [categoria, setCategoria] = useState(user?.categoria || "");
   const [estado, setEstado] = useState(user?.estado || "");
-  const [cidade, setCidade] = useState(user?.cidade || "");
+  const [cidade, setCidade] = useState(nomeMunicipio(user?.cidade));
   const [cidades, setCidades] = useState<CidadeBR[]>([]);
   const [modalLocal, setModalLocal] = useState<"estado" | "cidade" | null>(null);
   const [carregandoCidades, setCarregandoCidades] = useState(false);
@@ -80,9 +80,26 @@ export default function EditContractorProfileScreen() {
     if (!resultado.canceled && resultado.assets?.[0]) setBannerUri(resultado.assets[0].uri);
   };
 
+  const abrirCidades = async (uf: string) => {
+    if (!uf || carregandoCidades) return;
+    setCidades([]);
+    setBuscaCidade('');
+    setModalLocal('cidade');
+    setCarregandoCidades(true);
+    try {
+      setCidades(await buscarCidades(uf));
+    } catch {
+      Alert.alert('Cidades indisponíveis', 'Não foi possível carregar as cidades deste estado. Tente novamente.');
+      setModalLocal(null);
+    } finally {
+      setCarregandoCidades(false);
+    }
+  };
+
   const selecionarEstado = async (uf: string) => {
-    setEstado(uf); setCidade(""); setBuscaCidade(""); setModalLocal(null); setCarregandoCidades(true);
-    try { setCidades(await buscarCidades(uf)); setModalLocal("cidade"); } catch { Alert.alert("Cidades indisponíveis", "Não foi possível carregar as cidades deste estado."); } finally { setCarregandoCidades(false); }
+    if (uf !== estado) setCidade('');
+    setEstado(uf);
+    await abrirCidades(uf);
   };
 
   const salvar = async () => {
@@ -97,6 +114,9 @@ export default function EditContractorProfileScreen() {
 
     setSalvando(true);
     try {
+      const municipios = cidades.length ? cidades : await buscarCidades(estado);
+      const municipio = municipioCadastrado(municipios, cidade);
+      if (!municipio) { Alert.alert('Cidade inválida', 'Selecione um município válido do estado informado.'); return; }
       const avatarPersistido = avatarUri.startsWith('file:') || avatarUri.startsWith('content:') ? await uploadImage(avatarUri) : avatarUri;
       const bannerPersistido = bannerUri.startsWith('file:') || bannerUri.startsWith('content:') ? await uploadImage(bannerUri) : bannerUri;
       const dados = {
@@ -110,7 +130,7 @@ export default function EditContractorProfileScreen() {
         telefone: telefone.trim(),
         categoria: categoria.trim(),
         estado: estado.trim(),
-        cidade: cidade.trim(),
+        cidade: municipio.nome,
         endereco: endereco.trim(),
         site: site.trim(),
         descricao: descricao.trim(),
@@ -232,7 +252,7 @@ export default function EditContractorProfileScreen() {
             <Text style={styles.label}>Estado</Text>
             <TouchableOpacity style={styles.locationSelect} onPress={() => setModalLocal("estado")}><Ionicons name="map-outline" size={18} color={colors.primaryDark} /><Text style={styles.locationSelectText}>{ESTADOS_BR.find((item) => item.sigla === estado)?.nome || "Selecione seu estado"}</Text><Ionicons name="chevron-down" size={18} color={colors.muted} /></TouchableOpacity>
             <Text style={styles.label}>Cidade</Text>
-            <TouchableOpacity style={[styles.locationSelect, !estado && styles.locationDisabled]} disabled={!estado} onPress={() => setModalLocal("cidade")}><Ionicons name="location-outline" size={18} color={colors.primaryDark} /><Text style={styles.locationSelectText}>{carregandoCidades ? "Carregando cidades..." : cidade || "Selecione sua cidade"}</Text><Ionicons name="chevron-down" size={18} color={colors.muted} /></TouchableOpacity>
+            <TouchableOpacity style={[styles.locationSelect, !estado && styles.locationDisabled]} disabled={!estado || carregandoCidades} onPress={() => void abrirCidades(estado)}><Ionicons name="location-outline" size={18} color={colors.primaryDark} /><Text style={styles.locationSelectText}>{carregandoCidades ? "Carregando cidades..." : cidade || "Selecione sua cidade"}</Text><Ionicons name="chevron-down" size={18} color={colors.muted} /></TouchableOpacity>
             <Field
               label="Endereço"
               value={endereco}

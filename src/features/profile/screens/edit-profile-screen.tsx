@@ -9,7 +9,7 @@ import type { AgentePerfil } from './profile-screen';
 import { colors } from '@/shared/theme/colors';
 import { useUser } from '@/providers/user-provider';
 import { uploadImage } from '@/services/api';
-import { buscarCidades, CidadeBR, ESTADOS_BR } from '@/shared/config/brazil-location';
+import { buscarCidades, CidadeBR, ESTADOS_BR, municipioCadastrado, nomeMunicipio } from '@/shared/config/brazil-location';
 
 export default function EditProfileScreen() {
   const navigation = useNavigation<any>();
@@ -32,7 +32,7 @@ export default function EditProfileScreen() {
   const [nome, setNome] = useState(agenteAtual.nome);
   const [especialidade, setEspecialidade] = useState(agenteAtual.especialidade);
   const [estado, setEstado] = useState(user?.estado ?? '');
-  const [cidade, setCidade] = useState(agenteAtual.cidade);
+  const [cidade, setCidade] = useState(nomeMunicipio(agenteAtual.cidade));
   const [cidades, setCidades] = useState<CidadeBR[]>([]);
   const [modalLocal, setModalLocal] = useState<'estado' | 'cidade' | null>(null);
   const [carregandoCidades, setCarregandoCidades] = useState(false);
@@ -49,7 +49,7 @@ export default function EditProfileScreen() {
     const escolhido = route.params?.localSelecionado;
     if (!escolhido) return;
     setLocal({ latitude: escolhido.latitude, longitude: escolhido.longitude, endereco: escolhido.endereco });
-    if (escolhido.cidade) setCidade(escolhido.cidade);
+    // A cidade do perfil é escolhida na lista oficial do estado, não pelo geocoder.
   }, [route.params?.localSelecionado]));
   const [salvando, setSalvando] = useState(false);
 
@@ -70,9 +70,26 @@ export default function EditProfileScreen() {
     if (!resultado.canceled && resultado.assets?.[0]) setBannerUri(resultado.assets[0].uri);
   };
 
+  const abrirCidades = async (uf: string) => {
+    if (!uf || carregandoCidades) return;
+    setCidades([]);
+    setBuscaCidade('');
+    setModalLocal('cidade');
+    setCarregandoCidades(true);
+    try {
+      setCidades(await buscarCidades(uf));
+    } catch {
+      Alert.alert('Cidades indisponíveis', 'Não foi possível carregar as cidades deste estado. Tente novamente.');
+      setModalLocal(null);
+    } finally {
+      setCarregandoCidades(false);
+    }
+  };
+
   const selecionarEstado = async (uf: string) => {
-    setEstado(uf); setCidade(''); setBuscaCidade(''); setModalLocal(null); setCarregandoCidades(true);
-    try { setCidades(await buscarCidades(uf)); setModalLocal('cidade'); } catch { Alert.alert('Cidades indisponíveis', 'Não foi possível carregar as cidades deste estado.'); } finally { setCarregandoCidades(false); }
+    if (uf !== estado) setCidade('');
+    setEstado(uf);
+    await abrirCidades(uf);
   };
 
   const salvar = async () => {
@@ -87,7 +104,10 @@ export default function EditProfileScreen() {
     }
     setSalvando(true);
     try {
-      const dados: Record<string, unknown> = { nome: nome.trim(), especialidade: especialidade.trim(), estado, cidade: cidade.trim(), bio: bio.trim(), visivelNoMapa: visivelMapa, latitude: local.latitude, longitude: local.longitude, endereco: local.endereco };
+      const municipios = cidades.length ? cidades : await buscarCidades(estado);
+      const municipio = municipioCadastrado(municipios, cidade);
+      if (!municipio) { Alert.alert('Cidade inválida', 'Selecione um município válido do estado informado.'); return; }
+      const dados: Record<string, unknown> = { nome: nome.trim(), especialidade: especialidade.trim(), estado, cidade: municipio.nome, bio: bio.trim(), visivelNoMapa: visivelMapa, latitude: local.latitude, longitude: local.longitude, endereco: local.endereco };
       if (avatarUri.startsWith('file:') || avatarUri.startsWith('content:')) dados.avatarUrl = await uploadImage(avatarUri);
       else if (/^https?:\/\//i.test(avatarUri)) dados.avatarUrl = avatarUri;
       if (bannerUri.startsWith('file:') || bannerUri.startsWith('content:')) dados.bannerUrl = await uploadImage(bannerUri);
@@ -95,6 +115,8 @@ export default function EditProfileScreen() {
       await updateProfile(dados);
       Alert.alert('Perfil atualizado', 'Suas alterações foram salvas no banco de dados.');
       navigation.goBack();
+    } catch (error) {
+      Alert.alert('Não foi possível salvar', error instanceof Error ? error.message : 'Tente novamente.');
     } finally {
       setSalvando(false);
     }
@@ -126,7 +148,7 @@ export default function EditProfileScreen() {
             <Text style={styles.label}>Estado</Text>
             <TouchableOpacity style={styles.locationSelect} onPress={() => setModalLocal('estado')}><Ionicons name="map-outline" size={18} color={colors.primaryDark} /><Text style={styles.locationSelectText}>{ESTADOS_BR.find((item) => item.sigla === estado)?.nome || 'Selecione seu estado'}</Text><Ionicons name="chevron-down" size={18} color={colors.muted} /></TouchableOpacity>
             <Text style={styles.label}>Cidade</Text>
-            <TouchableOpacity style={[styles.locationSelect, !estado && styles.locationDisabled]} disabled={!estado} onPress={() => setModalLocal('cidade')}><Ionicons name="location-outline" size={18} color={colors.primaryDark} /><Text style={styles.locationSelectText}>{carregandoCidades ? 'Carregando cidades...' : cidade || 'Selecione sua cidade'}</Text><Ionicons name="chevron-down" size={18} color={colors.muted} /></TouchableOpacity>
+            <TouchableOpacity style={[styles.locationSelect, !estado && styles.locationDisabled]} disabled={!estado || carregandoCidades} onPress={() => void abrirCidades(estado)}><Ionicons name="location-outline" size={18} color={colors.primaryDark} /><Text style={styles.locationSelectText}>{carregandoCidades ? 'Carregando cidades...' : cidade || 'Selecione sua cidade'}</Text><Ionicons name="chevron-down" size={18} color={colors.muted} /></TouchableOpacity>
             <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View style={styles.modalCard}><View style={styles.modalHeader}><Text style={styles.modalTitle}>{modalLocal === 'estado' ? 'Selecione seu estado' : 'Selecione sua cidade'}</Text><TouchableOpacity onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={colors.text} /></TouchableOpacity></View>{modalLocal === 'estado' ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color={colors.muted} /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." placeholderTextColor={colors.muted} autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => {setCidade(item.nome); setBuscaCidade(''); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>}</View></View></Modal>
           <View style={styles.mapCard}>
               <View style={styles.mapCopy}>

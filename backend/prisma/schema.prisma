@@ -245,3 +245,12 @@ enum StatusSolicitacaoEvento {
   ACEITA
   RECUSADA
 }
+
+model UploadImagem {
+  filename String   @id
+  mime     String
+  conteudo Bytes    @db.LongBlob
+  criadoEm DateTime @default(now())
+
+  @@map("upload_imagem")
+}

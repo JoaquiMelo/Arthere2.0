@@ -178,3 +178,7 @@ Para testar rotas autenticadas, primeiro faça login em `POST /auth/login`, copi
 ## Recursos persistentes
 
 Autenticação, agentes, contratantes, edição de perfil, mapa, portfólio, projetos, candidaturas, avaliações, eventos, solicitações de participação, conversas e mensagens.
+
+## Persistência de imagens
+
+A migração aditiva `20261126160000_persist_uploaded_images` cria a tabela `upload_imagem` sem alterar os registros existentes. Execute `npm run prisma:generate`, `npm run prisma:deploy` e `npm run build` antes de disponibilizar a versão no Render. POST /uploads é autenticado; GET /uploads/:filename entrega a imagem pública no mesmo caminho já usado pelo app. O armazenamento legado em disco continua disponível quando os arquivos ainda existem. O MySQL precisa aceitar pacotes maiores que o limite de upload de 8 MB (recomendado pelo menos 16 MB). Imagens perdidas antes desta migração precisam ser reenviadas.

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -87,25 +87,13 @@ export default function EventsScreen() {
     }
   }, [refresh]);
 
-  const primeiroEvento = eventos[0];
-  const dataInicial = primeiroEvento ? dataDoEvento(primeiroEvento.data) : new Date();
-
   const [filtro, setFiltro] = useState<Filtro>("TODOS");
   const [busca, setBusca] = useState("");
-  const [ano, setAno] = useState(dataInicial.getFullYear());
-  const [mes, setMes] = useState(dataInicial.getMonth());
-  const [diaSelecionado, setDiaSelecionado] = useState(dataInicial.getDate());
-
-  useEffect(() => {
-    if (!primeiroEvento) return;
-    const task = setTimeout(() => {
-      const data = dataDoEvento(primeiroEvento.data);
-      setAno(data.getFullYear());
-      setMes(data.getMonth());
-      setDiaSelecionado(data.getDate());
-    }, 0);
-    return () => clearTimeout(task);
-  }, [primeiroEvento]);
+  // A data selecionada pertence ao usuário, não à lista retornada pela API.
+  const [dataSelecionada, setDataSelecionada] = useState(() => new Date());
+  const ano = dataSelecionada.getFullYear();
+  const mes = dataSelecionada.getMonth();
+  const diaSelecionado = dataSelecionada.getDate();
 
   const categorias = useMemo(() => {
     const unicas = Array.from(
@@ -185,10 +173,7 @@ export default function EventsScreen() {
   }, [eventosDoMes]);
 
   const moverMes = (delta: number) => {
-    const novaData = new Date(ano, mes + delta, 1);
-    setAno(novaData.getFullYear());
-    setMes(novaData.getMonth());
-    setDiaSelecionado(1);
+    setDataSelecionada((atual) => new Date(atual.getFullYear(), atual.getMonth() + delta, 1));
   };
 
   const abrirEvento = (eventId: string) => {
@@ -426,7 +411,7 @@ export default function EventsScreen() {
               return (
                 <TouchableOpacity
                   key={dia}
-                  onPress={() => setDiaSelecionado(dia)}
+                  onPress={() => setDataSelecionada((atual) => new Date(atual.getFullYear(), atual.getMonth(), dia))}
                   style={[
                     styles.dayCell,
                     {

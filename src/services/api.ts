@@ -324,6 +324,11 @@ export async function uploadImage(uri: string): Promise<string> {
   if (!response.ok || !body?.url) {
     throw new Error(body?.message || 'Não foi possível enviar a imagem.');
   }
+  // O host utilizado pelo app é a origem confiável do upload (inclusive atrás de proxy).
+  const filename = typeof body.filename === 'string' ? body.filename : '';
+  if (/^[a-f0-9-]{36}\.(?:jpg|png|webp|gif)$/i.test(filename)) {
+    return `${API_URL}/uploads/${filename}`;
+  }
   return body.url as string;
 }
 
