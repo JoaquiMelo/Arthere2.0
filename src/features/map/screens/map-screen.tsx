@@ -1,682 +1,280 @@
-import { Avatar } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { useCallback, useMemo, useState } from 'react';
-import {
-  Alert,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  Pressable,
-  RefreshControl,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Keyboard, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 
-import type { AgenteCriativo } from '@/features/agents/types/agent';
-import { agents } from '@/services/api';
+import { AppText, Avatar, Button, FeedbackState, FilterChip, IconButton, ScreenContainer } from '@/shared/components';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { useChat } from '@/providers/chat-provider';
 import { useUser } from '@/providers/user-provider';
-import { colors } from '@/shared/theme/colors';
-import { AgentProfileCard } from '../../../features/agents/components/agent-profile-card';
-import { CATEGORIAS } from '../../../shared/config/categories';
+import { agents } from '@/services/api';
+import { AgentProfileCard } from '@/features/agents/components/agent-profile-card';
+import type { AgenteCriativo } from '@/features/agents/types/agent';
+import { mapAgent, matchesAgent, MAP_CATEGORIES, categoryLabel } from '../utils/map-agents';
 
 const REGIAO_INICIAL: Region = {
   latitude: -23.96,
   longitude: -46.34,
-  latitudeDelta: 0.12,
-  longitudeDelta: 0.12,
+  latitudeDelta: 0.45,
+  longitudeDelta: 0.45,
 };
-
-function categoriaDoAgente(especialidade: string) {
-  const termo = especialidade.toLowerCase();
-  if (termo.includes('foto')) return 'fotografo';
-  if (termo.includes('vídeo') || termo.includes('video')) return 'videomaker';
-  if (termo.includes('dj') || termo.includes('música') || termo.includes('musica')) return 'dj';
-  if (termo.includes('artesan')) return 'artesao';
-  return 'design';
-}
-
-function CustomPin({
-  agente,
-  ativo,
-  onPress,
-}: {
-  agente: AgenteCriativo;
-  ativo: boolean;
-  onPress: (a: AgenteCriativo) => void;
-}) {
-  const cor = CATEGORIAS[agente.categoria]?.cor ?? CATEGORIAS.design.cor;
-
-  return (
-    <Marker
-      coordinate={{ latitude: agente.latitude, longitude: agente.longitude }}
-      onPress={() => onPress(agente)}
-      anchor={{ x: 0.5, y: 1 }}
-    >
-      <View style={[styles.pinContainer, ativo && styles.pinActive]}>
-        <View style={[styles.pinImageContainer, { borderColor: cor }]}>
-          <Avatar uri={agente.avatarUrl} style={styles.pinImage} iconSize={22} />
-        </View>
-        {typeof agente.disponivel === 'boolean' ? <View style={[styles.pinStatus, { backgroundColor: agente.disponivel ? cor : colors.muted }]} /> : null}
-        <View style={[styles.pinTail, { borderTopColor: cor }]} />
-      </View>
-    </Marker>
-  );
-}
 
 export function MapScreen() {
   const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
-  const { startConversation } = useChat();
+  const { color, spacing, radius, dimensions, typography, elevation } = useThemeTokens();
   const { user } = useUser();
+  const { startConversation } = useChat();
+  const mapRef = useRef<MapView>(null);
+  const lastRegion = useRef(REGIAO_INICIAL);
+  const [initialRegion, setInitialRegion] = useState(REGIAO_INICIAL);
+  const requestVersion = useRef(0);
+  const [mapReady, setMapReady] = useState(false);
+  const [mode, setMode] = useState<'map' | 'list'>('map');
   const [busca, setBusca] = useState('');
   const [categoria, setCategoria] = useState<string | null>(null);
-  const [selecionado, setSelecionado] = useState<AgenteCriativo | null>(null);
-  const [agentesBaixadaSantista, setAgentesBaixadaSantista] = useState<AgenteCriativo[]>([]);
-  const [atualizando, setAtualizando] = useState(false);
+  const [selecionado, setSelecionado] = useState<string | null>(null);
+  const [agentes, setAgentes] = useState<AgenteCriativo[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [conectando, setConectando] = useState(false);
+  const chatPending = useRef(false);
 
   const carregarAgentes = useCallback(async () => {
+    const version = ++requestVersion.current;
+    setCarregando(true);
     setErro(null);
     try {
       const lista = await agents();
-      const mapeados = (lista ?? [])
-          .filter((item: any) => Number.isFinite(Number(item.latitude)) && Number.isFinite(Number(item.longitude)))
-          .map((item: any): AgenteCriativo => ({
-            id: item.id,
-            nome: item.nome,
-            categoria: categoriaDoAgente(item.especialidade ?? ''),
-            disponivel: typeof item.disponivel === 'boolean' ? item.disponivel : undefined,
-            avaliacao: Number(item.notaMedia ?? 0),
-            cidade: item.cidade ?? 'Região da Baixada Santista',
-            especialidades: item.especialidade ? [item.especialidade] : ['Profissional criativo'],
-            latitude: Number(item.latitude),
-            longitude: Number(item.longitude),
-            avatarUrl: item.avatarUrl ?? '',
-            descricao: item.bio ?? 'Profissional criativo cadastrado na Arthere.',
-            portfolio: (item.portfolio ?? []).map((p: any) => ({ id: p.id, titulo: p.titulo ?? 'Trabalho', imagemUrl: p.imageUrl })),
-          }));
-      setAgentesBaixadaSantista(mapeados);
+      const mapeados = (lista ?? []).map(mapAgent).filter((item: AgenteCriativo | null): item is AgenteCriativo => item !== null);
+      if (version === requestVersion.current) setAgentes(mapeados);
     } catch {
-      setAgentesBaixadaSantista([]);
-      setErro('Não foi possível atualizar os profissionais. Verifique sua conexão e tente novamente.');
+      if (version === requestVersion.current) setErro('Não foi possível atualizar os profissionais. Confira sua conexão.');
     } finally {
-      setCarregando(false);
+      if (version === requestVersion.current) setCarregando(false);
     }
   }, []);
 
   useFocusEffect(useCallback(() => {
     void carregarAgentes();
+    return () => { requestVersion.current += 1; };
   }, [carregarAgentes]));
 
-  const recarregar = useCallback(async () => {
-    setAtualizando(true);
-    await carregarAgentes();
-    setAtualizando(false);
-  }, [carregarAgentes]);
+  const filtrados = useMemo(() => agentes.filter((agente) => matchesAgent(agente, busca, categoria)), [agentes, busca, categoria]);
+  const resultados = useMemo(() => [...filtrados].sort((a, b) => b.avaliacao - a.avaliacao || a.nome.localeCompare(b.nome, 'pt-BR')), [filtrados]);
+  const agenteSelecionado = agentes.find((agente) => agente.id === selecionado) ?? null;
+  const categories = useMemo(() => Object.entries(MAP_CATEGORIES).filter(([id]) => id !== 'outros' || agentes.some((a) => a.categoria === id)), [agentes]);
 
-  const filtrados = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
+  const trocarModo = (next: 'map' | 'list') => {
+    Keyboard.dismiss();
+    if (mode !== next) {
+      setMapReady(false);
+      if (next === 'map') setInitialRegion(lastRegion.current);
+      setMode(next);
+    }
+  };
 
-    return agentesBaixadaSantista.filter((agente) => {
-      const categoriaOk = !categoria || agente.categoria === categoria;
-      const categoriaLabel = CATEGORIAS[agente.categoria]?.label.toLowerCase() ?? '';
-      const termoOk =
-        !termo ||
-        agente.nome.toLowerCase().includes(termo) ||
-        agente.cidade.toLowerCase().includes(termo) ||
-        categoriaLabel.includes(termo) ||
-        agente.especialidades.some((item) => item.toLowerCase().includes(termo));
-
-      return categoriaOk && termoOk;
-    });
-  }, [agentesBaixadaSantista, busca, categoria]);
-
-  const destaque = [...filtrados].sort((a, b) => b.avaliacao - a.avaliacao).slice(0, 3);
+  const enquadrar = () => {
+    if (!mapRef.current || !mapReady) return;
+    const pontos = filtrados.map(({ latitude, longitude }) => ({ latitude, longitude }));
+    if (!pontos.length) {
+      mapRef.current.animateToRegion(REGIAO_INICIAL, 250);
+    } else if (pontos.every((p) => p.latitude === pontos[0].latitude && p.longitude === pontos[0].longitude)) {
+      mapRef.current.animateToRegion({ ...pontos[0], latitudeDelta: 0.05, longitudeDelta: 0.05 }, 250);
+    } else {
+      mapRef.current.fitToCoordinates(pontos, { edgePadding: { top: 48, right: 48, bottom: 72, left: 48 }, animated: true });
+    }
+  };
 
   const abrirChat = async (agente: AgenteCriativo) => {
+    if (!user) {
+      setSelecionado(null);
+      navigation.navigate('Login');
+      return;
+    }
+    if (user.tipo === 'AGENTE' && user.id === agente.id) return;
+    if (chatPending.current) return;
+    chatPending.current = true;
+    setConectando(true);
     try {
       const conversationId = await startConversation(agente);
       setSelecionado(null);
       navigation.navigate('ChatConversation', { conversationId });
     } catch (error) {
       Alert.alert('Não foi possível iniciar a conversa', error instanceof Error ? error.message : 'Tente novamente.');
+    } finally {
+      chatPending.current = false;
+      setConectando(false);
     }
   };
 
+  const limparFiltros = () => { setBusca(''); setCategoria(null); };
+  const abrirAgente = (agente: AgenteCriativo) => { Keyboard.dismiss(); setSelecionado(agente.id); };
+
   return (
-    <View style={styles.screen}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="none"
-        stickyHeaderIndices={[0]}
-      
-        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} />}>
-        <View style={styles.header}>
-          <View style={[styles.headerInner, { paddingTop: insets.top + 8 }]}>
-            <View style={styles.brandLine}>
-              <Text style={styles.brand}></Text>
-              <Text style={styles.region}></Text>
-            </View>
-            <Text style={styles.headerLink}>MAPA</Text>
+    <ScreenContainer edges={user ? ['top', 'left', 'right'] : ['top', 'left', 'right', 'bottom']}>
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: spacing.md }}>
+        <View style={styles.brandRow}>
+          <View style={styles.flex}>
+            <AppText variant="label" color="accentText" weight="heavy">ARTHERE / TERRITÓRIO CRIATIVO</AppText>
+            <AppText variant="h2" weight="heavy" accessibilityRole="header" style={{ letterSpacing: typography.tracking.tight }}>Explore a cena.</AppText>
           </View>
-          {!user ? (
-            <View style={styles.headerActions}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Entrar"
-                hitSlop={6}
-                style={({ pressed }) => [styles.loginButton, pressed && styles.buttonPressed]}
-                onPress={() => navigation.navigate('Login')}
-              >
-                <Text style={styles.loginButtonText}>ENTRAR</Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Criar perfil"
-                hitSlop={6}
-                style={({ pressed }) => [styles.profileButton, pressed && styles.buttonPressed]}
-                onPress={() => navigation.navigate('Register')}
-              >
-                <Text style={styles.profileButtonText}>CRIAR PERFIL</Text>
-              </Pressable>
-            </View>
-          ) : null}
+          {user ? <IconButton icon="settings-outline" accessibilityLabel="Abrir configurações" onPress={() => navigation.navigate('Settings')} /> : null}
         </View>
-
-        <View style={styles.hero}>
-          <Text style={styles.kicker}>ARTE, ENCONTRO E TERRITÓRIO</Text>
-
-          <View style={styles.heroBrandBlock}>
-            <Text style={styles.heroBrand}>ARTHERE</Text>
-            <Text style={styles.heroRegion}>Conectando a Baixada Criativa.</Text>
+        {!user ? (
+          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+            <Button variant="outline" size="small" style={{ flex: 1 }} onPress={() => navigation.navigate('Login')}>Entrar</Button>
+            <Button size="small" style={{ flex: 1 }} onPress={() => navigation.navigate('Register')}>Criar perfil</Button>
           </View>
-
-          <Text style={styles.heroDescription}>
-            Fotógrafos, DJs, videomakers, designers e artesãos abertos a novos projetos. Descubra quem está perto, veja o trabalho e comece a conversa.
-          </Text>
-
-          <View style={styles.stats}>
-            <View>
-              <Text style={styles.statNumber}>{agentesBaixadaSantista.length}</Text>
-              <Text style={styles.statLabel}>ARTISTAS</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View>
-              <Text style={styles.statNumber}>{Object.keys(CATEGORIAS).length}</Text>
-              <Text style={styles.statLabel}>ÁREAS CRIATIVAS</Text>
-            </View>
-          </View>
+        ) : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingLeft: spacing.md, minHeight: dimensions.control.medium, borderWidth: 1, borderColor: color.border, backgroundColor: color.surface, borderRadius: radius.control }}>
+          <Ionicons name="search-outline" size={dimensions.icon.medium} color={color.textSecondary} />
+          <TextInput
+            value={busca}
+            onChangeText={setBusca}
+            placeholder="Nome, cidade ou especialidade"
+            placeholderTextColor={color.textSecondary}
+            accessibilityLabel="Buscar profissionais criativos"
+            returnKeyType="search"
+            onSubmitEditing={Keyboard.dismiss}
+            autoComplete="off"
+            autoCorrect={false}
+            style={{ flex: 1, minWidth: 0, paddingVertical: spacing.sm, paddingRight: spacing.sm, color: color.textPrimary, fontSize: typography.size.body }}
+          />
+          {busca.length > 0 ? <IconButton icon="close" variant="ghost" accessibilityLabel="Limpar busca" onPress={() => setBusca('')} /> : null}
         </View>
+      </View>
 
-        <View style={styles.controls}>
-          <View style={styles.searchRow}>
-            <Ionicons name="search" size={17} color={colors.muted} />
-            <TextInput
-              value={busca}
-              onChangeText={setBusca}
-              placeholder="Buscar artista, cidade ou especialidade"
-              placeholderTextColor={colors.muted}
-              style={styles.searchInput}
-              editable={true}
-              autoComplete="off"
-              importantForAutofill="no"
-            />
-            {busca ? (
-              <Ionicons name="close" size={18} color={colors.muted} onPress={() => setBusca('')} />
-            ) : null}
-          </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.categoryStrip} contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, gap: spacing.sm }}>
+        <FilterChip label="Todos" selected={!categoria} onPress={() => setCategoria(null)} />
+        {categories.map(([id, item]) => (
+          <FilterChip key={id} label={item.label} selected={categoria === id} onPress={() => setCategoria((current) => current === id ? null : id)} />
+        ))}
+      </ScrollView>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-            <FilterChip label="Todos" active={!categoria} onPress={() => setCategoria(null)} />
-            {Object.entries(CATEGORIAS).map(([id, item]) => (
-              <FilterChip
-                key={id}
-                label={item.label}
-                dot={item.cor}
-                active={categoria === id}
-                onPress={() => setCategoria(categoria === id ? null : id)}
+      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm }}>
+        <AppText variant="bodySmall" weight="semibold" style={{ flex: 1, minWidth: 92 }} accessibilityLiveRegion="polite">
+          {carregando && !agentes.length ? 'Buscando…' : erro && !agentes.length ? 'Não foi possível carregar' : `${filtrados.length} ${filtrados.length === 1 ? 'profissional' : 'profissionais'}`}
+        </AppText>
+        <FilterChip label="Mapa" icon="map-outline" selected={mode === 'map'} onPress={() => trocarModo('map')} />
+        <FilterChip label="Lista" icon="list-outline" selected={mode === 'list'} onPress={() => trocarModo('list')} />
+      </View>
+
+      {mode === 'map' ? (
+        <View style={[styles.mapFrame, { marginHorizontal: spacing.lg, marginBottom: spacing.sm, backgroundColor: color.surfaceSubtle, borderColor: color.border, borderRadius: radius.panel }]}>
+          <MapView
+            ref={mapRef}
+            style={StyleSheet.absoluteFill}
+            provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+            initialRegion={initialRegion}
+            onMapReady={() => setMapReady(true)}
+            onRegionChangeComplete={(region) => { lastRegion.current = region; }}
+            scrollEnabled
+            zoomEnabled
+            pitchEnabled={false}
+          >
+            {filtrados.map((agente) => (
+              <Marker
+                key={agente.id}
+                identifier={agente.id}
+                coordinate={{ latitude: agente.latitude, longitude: agente.longitude }}
+                title={agente.nome}
+                description={agente.especialidades[0]}
+                pinColor={color.accent}
+                onPress={() => abrirAgente(agente)}
               />
             ))}
-          </ScrollView>
-        </View>
-
-        <View style={styles.mapSection}>
-          <View style={styles.mapFrame}>
-            <MapView
-              style={StyleSheet.absoluteFill}
-              provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-              initialRegion={REGIAO_INICIAL}
-              scrollEnabled
-            >
-              {filtrados.map((agente) => (
-                <CustomPin
-                  key={agente.id}
-                  agente={agente}
-                  ativo={selecionado?.id === agente.id}
-                  onPress={setSelecionado}
-                />
-              ))}
-            </MapView>
-
-            <View style={styles.mapBadge}>
-              <View style={styles.liveDot} />
-              <Text style={styles.mapBadgeText}>
-                {filtrados.length} {filtrados.length === 1 ? 'ARTISTA' : 'ARTISTAS'} NO MAPA
-              </Text>
+          </MapView>
+          <View style={{ position: 'absolute', top: spacing.md, right: spacing.md, gap: spacing.sm }}>
+            <View style={{ backgroundColor: color.surface, borderRadius: radius.control, ...elevation.low }}>
+              <IconButton icon="scan-outline" accessibilityLabel={filtrados.length ? 'Enquadrar profissionais no mapa' : 'Voltar à região inicial'} variant="ghost" disabled={!mapReady} onPress={enquadrar} />
             </View>
-            {carregando ? <View style={styles.mapMessage}><Text style={styles.mapMessageText}>Buscando profissionais…</Text></View> : null}
-            {erro ? <Pressable style={styles.mapMessage} onPress={() => void carregarAgentes()} accessibilityRole="button" accessibilityLabel="Tentar atualizar profissionais"><Text style={styles.mapMessageText}>{erro}</Text><Text style={styles.retryText}>TENTAR NOVAMENTE</Text></Pressable> : null}
-            {!carregando && !erro && filtrados.length === 0 ? <View style={styles.mapMessage}><Text style={styles.mapMessageText}>Nenhum profissional encontrado para esta busca.</Text></View> : null}
+            <View style={{ backgroundColor: color.surface, borderRadius: radius.control, ...elevation.low }}>
+              <IconButton icon="refresh-outline" accessibilityLabel="Atualizar profissionais" variant="ghost" loading={carregando} onPress={() => void carregarAgentes()} />
+            </View>
           </View>
-
-          {selecionado ? (
-            <View style={styles.profileOverlay}>
-              <AgentProfileCard
-                agente={selecionado}
-                visible
-                onClose={() => setSelecionado(null)}
-                onAgendar={(agente) => {
-                  setSelecionado(null);
-                  Alert.alert(`Solicitação de agenda para ${agente.nome}`);
-                }}
-                onChat={abrirChat}
-                onVerPerfil={(agente) => {
-                  setSelecionado(null);
-                  navigation.navigate('PublicProfile', { profileType: 'AGENTE', profileId: agente.id });
-                }}
-              />
+          {carregando && !agentes.length ? (
+            <View pointerEvents="none" style={[styles.mapNotice, { backgroundColor: color.surface, padding: spacing.md, borderRadius: radius.control, gap: spacing.sm }]}>
+              <ActivityIndicator color={color.accentText} />
+              <AppText variant="bodySmall">Buscando profissionais…</AppText>
+            </View>
+          ) : null}
+          {erro ? (
+            <View style={[styles.mapNotice, { backgroundColor: color.surface, padding: spacing.md, borderRadius: radius.control, gap: spacing.sm }]}>
+              <AppText color="dangerText" variant="bodySmall">{erro}</AppText>
+              <Button variant="outline" size="small" onPress={() => void carregarAgentes()}>Tentar novamente</Button>
+            </View>
+          ) : !carregando && !filtrados.length ? (
+            <View style={[styles.mapNotice, { backgroundColor: color.surface, padding: spacing.md, borderRadius: radius.control, gap: spacing.sm }]}>
+              <AppText weight="semibold">Nenhum profissional encontrado</AppText>
+              <AppText variant="bodySmall" color="textSecondary">{busca || categoria ? 'Experimente outros filtros.' : 'Ainda não há profissionais disponíveis no mapa.'}</AppText>
+              {busca || categoria ? <Button variant="outline" size="small" onPress={limparFiltros}>Limpar filtros</Button> : null}
             </View>
           ) : null}
         </View>
+      ) : (
+        <FlatList
+          data={resultados}
+          keyExtractor={(item) => item.id}
+          refreshing={carregando}
+          onRefresh={() => void carregarAgentes()}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.sm, flexGrow: 1 }}
+          ListHeaderComponent={resultados.length ? (
+            <View style={{ paddingVertical: spacing.sm, gap: spacing.xs }}>
+              <AppText variant="label" color="textSecondary">PROFISSIONAIS · ORDENADOS POR AVALIAÇÃO</AppText>
+              {erro ? <AppText color="dangerText" variant="bodySmall">{erro}</AppText> : null}
+            </View>
+          ) : null}
+          ListEmptyComponent={carregando ? <FeedbackState kind="loading" title="Buscando profissionais…" /> :
+            erro ? <FeedbackState kind="error" title="Profissionais indisponíveis" description={erro} onRetry={() => void carregarAgentes()} /> :
+            <View style={{ gap: spacing.sm }}>
+              <FeedbackState kind="empty" icon="search-outline" title="Nenhum profissional encontrado" description="Experimente outra busca ou remova os filtros." />
+              {busca || categoria ? <Button variant="outline" fullWidth onPress={limparFiltros}>Limpar filtros</Button> : null}
+            </View>}
+          renderItem={({ item }) => <AgentResult agente={item} onPress={() => abrirAgente(item)} />}
+        />
+      )}
 
-        <View style={styles.featured}>
-          <View style={styles.featuredHeading}>
-            <Text style={styles.featuredTitle}>Em destaque</Text>
-            <Text style={styles.featuredCaption}>SELECIONADOS PELA AVALIAÇÃO</Text>
-          </View>
-
-          {destaque.length === 0 ? (
-            <Text style={styles.empty}>Nenhum artista encontrado com esses filtros.</Text>
-          ) : (
-            destaque.map((agente) => (
-              <View key={agente.id} style={styles.card}>
-                <Avatar uri={agente.avatarUrl} style={styles.cardImage} iconSize={54} />
-                <View style={styles.cardBody}>
-                  <View style={styles.cardTop}>
-                    <Text style={styles.cardCategory}>
-                      {CATEGORIAS[agente.categoria]?.label.toUpperCase() ?? 'CRIATIVO'}
-                    </Text>
-                    <Text style={styles.rating}>★ {agente.avaliacao.toFixed(1)}</Text>
-                  </View>
-                  <Text style={styles.cardName}>{agente.nome}</Text>
-                  <Text style={styles.cardCity}>{agente.cidade}</Text>
-                  <Text style={styles.cardDescription} numberOfLines={2}>{agente.descricao}</Text>
-                  <Text style={styles.cardAction} onPress={() => setSelecionado(agente)}>
-                    VER NO MAPA →
-                  </Text>
-                </View>
-              </View>
-            ))
-          )}
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerBrand}>Arthere</Text>
-          <Text style={styles.footerText}>Conectando agentes criativos e contratantes na Baixada Santista.</Text>
-        </View>
-      </ScrollView>
-    </View>
+      <AgentProfileCard
+        agente={agenteSelecionado}
+        visible={Boolean(agenteSelecionado)}
+        onClose={() => setSelecionado(null)}
+        onAgendar={() => Alert.alert('Agendamento indisponível', 'O agendamento direto ainda não está disponível. Use a conversa para combinar um projeto.')}
+        onChat={abrirChat}
+        chatLoading={conectando}
+        chatLabel={user ? 'Conversar' : 'Entrar para conversar'}
+        canChat={!(user?.tipo === 'AGENTE' && user.id === agenteSelecionado?.id)}
+        onVerPerfil={(agente) => {
+          setSelecionado(null);
+          navigation.navigate('PublicProfile', { profileType: 'AGENTE', profileId: agente.id });
+        }}
+      />
+    </ScreenContainer>
   );
 }
 
-function FilterChip({
-  label,
-  active,
-  dot,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  dot?: string;
-  onPress: () => void;
-}) {
+function AgentResult({ agente, onPress }: { agente: AgenteCriativo; onPress: () => void }) {
+  const { color, spacing, radius, dimensions } = useThemeTokens();
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      accessibilityLabel={`Filtrar por ${label}`}
-      onPress={onPress}
-      style={[
-        styles.chip,
-        active ? styles.chipActive : styles.chipInactive,
-      ]}
-    >
-      <Text style={active ? styles.chipTextActive : styles.chipText}>{dot ? <Text style={{ color: dot }}>• </Text> : null}{label.toUpperCase()}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={`Abrir perfil de ${agente.nome}`} onPress={onPress}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, minHeight: dimensions.control.large, backgroundColor: color.surface, borderWidth: 1, borderColor: color.border, borderRadius: radius.card, opacity: pressed ? 0.8 : 1 })}>
+      <Avatar uri={agente.avatarUrl} style={{ width: 68, height: 68, borderRadius: radius.control }} iconSize={28} />
+      <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+        <AppText variant="label" color="accentText" weight="bold">{categoryLabel(agente.categoria)}</AppText>
+        <AppText variant="title" weight="bold">{agente.nome}</AppText>
+        <AppText variant="bodySmall" color="textSecondary">{agente.especialidades[0]} · {agente.cidade}</AppText>
+        <AppText variant="label" color="textSecondary">{agente.avaliacao > 0 ? `★ ${agente.avaliacao.toFixed(1)}` : 'Sem avaliações'}</AppText>
+      </View>
+      <Ionicons name="chevron-forward" size={dimensions.icon.medium} color={color.textSecondary} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.brandPaper },
-  scroll: { flex: 1 },
-  content: { paddingBottom: 0 },
-  header: {
-    backgroundColor: colors.brandPaper,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    zIndex: 20,
-  },
-  headerInner: {
-    minHeight: 62,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  brandLine: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  brand: {
-    fontSize: 35,
-    color: colors.brandInk,
-    letterSpacing: -1.8,
-    lineHeight: 38,
-  },
-  region: {
-    marginTop: 1,
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: '600',
-    color: colors.muted,
-    letterSpacing: 0,
-  },
-  headerActions: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  headerLink: {
-    fontSize: 8,
-    fontWeight: '800',
-    color: colors.muted,
-    letterSpacing: 1.2,
-  },
-  loginButton: {
-    flex: 1,
-    minHeight: 44,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.brandPaper,
-  },
-  loginButtonText: {
-    color: colors.brandInk,
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 1.3,
-  },
-  profileButton: {
-    flex: 1,
-    minHeight: 44,
-    backgroundColor: colors.brandInk,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileButtonText: {
-    color: colors.brandPaper,
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 1.2,
-  },
-  buttonPressed: {
-    opacity: 0.72,
-    transform: [{ scale: 0.98 }],
-  },
-  hero: {
-    paddingHorizontal: 20,
-    paddingTop: 42,
-    paddingBottom: 30,
-  },
-  kicker: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: colors.muted,
-    letterSpacing: 2.1,
-    marginBottom: 17,
-  },
-  heroBrandBlock: {
-    gap: 4,
-  },
-  heroBrand: {
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif', default: 'serif' }),
-    fontSize: 44,
-    color: colors.brandCoral,
-    letterSpacing: -2,
-    lineHeight: 48,
-  },
-  heroRegion: {
-    color: colors.muted,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '600',
-  },
-  heroDescription: {
-    marginTop: 22,
-    color: colors.muted,
-    fontSize: 14,
-    lineHeight: 21,
-    maxWidth: 500,
-  },
-  stats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    marginTop: 24,
-    paddingTop: 17,
-    gap: 20,
-  },
-  statNumber: {
-    fontFamily: 'sans-serif',
-    fontWeight: '800',
-    color: colors.brandInk,
-    fontSize: 31,
-    lineHeight: 32,
-  },
-  statLabel: {
-    color: colors.muted,
-    fontSize: 8,
-    fontWeight: '800',
-    letterSpacing: 1.4,
-    marginTop: 2,
-  },
-  statDivider: { height: 34, width: 1, backgroundColor: colors.border },
-  controls: {
-    zIndex: 30,
-    elevation: 30,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-  },
-  searchRow: {
-    minHeight: 44,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    backgroundColor: colors.white,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-  },
-  searchInput: {
-    flex: 1,
-    color: colors.brandInk,
-    fontSize: 13,
-    paddingVertical: 7,
-  },
-  chips: { paddingTop: 11, paddingRight: 20, gap: 7 },
-  chip: {
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    minHeight: 40,
-    justifyContent: 'center',
-  },
-  chipActive: {
-    color: colors.brandPaper,
-    backgroundColor: colors.brandInk,
-    borderColor: colors.brandInk,
-  },
-  chipInactive: {
-    color: colors.muted,
-    backgroundColor: colors.brandPaper,
-    borderColor: colors.border,
-  },
-  chipText: { color: colors.muted, fontSize: 9, fontWeight: '800', letterSpacing: 0.8 },
-  chipTextActive: { color: colors.brandPaper, fontSize: 9, fontWeight: '800', letterSpacing: 0.8 },
-  mapSection: { paddingHorizontal: 20, paddingTop: 28 },
-  mapFrame: {
-    height: 520,
-    width: '100%',
-    overflow: 'hidden',
-    borderRadius: 24,
-    backgroundColor: colors.muted,
-    borderWidth: 1,
-    borderColor: colors.border,
-    position: 'relative',
-  },
-  mapBadge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    backgroundColor: colors.brandInk,
-    borderRadius: 999,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.brandCoral,
-  },
-  mapBadgeText: {
-    color: colors.brandPaper,
-    fontSize: 8,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-  },
-  mapMessage: { position: 'absolute', left: 12, right: 12, bottom: 12, backgroundColor: colors.brandPaper, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12 },
-  mapMessageText: { color: colors.brandInk, fontSize: 11, fontWeight: '700', lineHeight: 16 },
-  retryText: { color: colors.brandCoral, fontSize: 9, fontWeight: '900', letterSpacing: 0.8, marginTop: 7 },
-  profileOverlay: { marginTop: -200, marginHorizontal: 12, zIndex: 5 },
-  featured: { paddingHorizontal: 20, paddingTop: 42, paddingBottom: 38 },
-  featuredHeading: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    paddingBottom: 13,
-    marginBottom: 18,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  featuredTitle: {
-    fontFamily: 'sans-serif',
-    fontWeight: '800',
-    fontSize: 30,
-    color: colors.brandInk,
-  },
-  featuredCaption: {
-    color: colors.muted,
-    fontSize: 7,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 20,
-    backgroundColor: colors.white,
-    marginBottom: 14,
-    overflow: 'hidden',
-  },
-  cardImage: { width: '100%', height: 190, backgroundColor: colors.muted },
-  cardAvatarFallback: { width: '100%', height: 190, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceStrong },
-  cardAvatarInitials: { color: colors.brandInk, fontSize: 42, fontWeight: '900' },
-  cardBody: { padding: 16 },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardCategory: { color: colors.muted, fontSize: 7, fontWeight: '800', letterSpacing: 1.2 },
-  rating: { color: colors.brandInk, fontSize: 10, fontWeight: '700' },
-  cardName: { color: colors.brandInk, fontFamily: 'sans-serif', fontWeight: '800', fontSize: 25, marginTop: 6 },
-  cardCity: { color: colors.muted, fontSize: 10, marginTop: 2 },
-  cardDescription: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 10 },
-  cardAction: { color: colors.brandCoral, fontSize: 8, fontWeight: '800', letterSpacing: 1.1, marginTop: 15 },
-  empty: { color: colors.muted, textAlign: 'center', paddingVertical: 35, fontSize: 13 },
-  footer: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingHorizontal: 20,
-    paddingVertical: 34,
-    gap: 7,
-  },
-  footerBrand: { fontFamily: 'sans-serif', fontWeight: '800', color: colors.brandInk, fontSize: 22 },
-  footerText: { color: colors.muted, fontSize: 10, lineHeight: 16 },
-  pinContainer: { alignItems: 'center', width: 54, height: 65 },
-  pinActive: { transform: [{ scale: 1.16 }] },
-  pinImageContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2.5,
-    backgroundColor: colors.brandPaper,
-    overflow: 'hidden',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 7,
-  },
-  pinImage: { width: 40, height: 40, borderRadius: 20, alignSelf: 'center', marginTop: 2 },
-  pinInitials: { fontSize: 11, fontWeight: '900', alignSelf: 'center', marginTop: 13 },
-  pinStatus: {
-    position: 'absolute',
-    right: 2,
-    top: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: colors.brandPaper,
-  },
-  pinTail: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 10,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    marginTop: -1,
-  },
+  flex: { flex: 1, minWidth: 0 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  categoryStrip: { flexGrow: 0, flexShrink: 0 },
+  mapFrame: { flex: 1, minHeight: 0, overflow: 'hidden', borderWidth: 1 },
+  mapNotice: { position: 'absolute', bottom: 12, left: 12, right: 12 },
 });

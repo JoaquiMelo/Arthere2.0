@@ -1,7 +1,7 @@
 # Mobile UX — React Native + Expo
 
 ## Estrutura e navegação
-- Siga a estrutura Expo Router já existente; não criar um segundo sistema de navegação.
+- Siga React Navigation 7 (Bottom Tabs + Native Stack), arquitetura existente; não introduzir Expo Router nem um segundo sistema de navegação.
 - Preserve o comportamento de autenticação e o acesso condicionado por papel.
 - A navegação principal deve manter previsibilidade e contexto; evite destinos duplicados e telas sem saída.
 - Use back behavior consistente com iOS e Android.
@@ -39,3 +39,12 @@ Para cada consulta/mutação, prever conforme aplicável:
 
 ## Plataforma
 Verifique diferenças de comportamento e APIs nas versões instaladas. Não presumir que API web, CSS ou pacote nativo não instalado esteja disponível.
+
+## Mapa — etapa 3.4
+- A descoberta começa no mapa; busca e categorias são compartilhadas com a visualização em lista.
+- O mapa ocupa o espaço restante da tela, sem ScrollView vertical envolvendo gestos. A lista usa FlatList e atualização por gesto.
+- Marcadores nativos evitam depender da captura de avatares remotos no mapa. Fotos reais ficam nas linhas da lista e no cartão do profissional.
+- Enquadrar resultados usa somente coordenadas cadastradas válidas. A região inicial é uma referência geográfica, não a localização do dispositivo.
+- Não deduzir disponibilidade a partir de campos ausentes nem tratar todos os profissionais como designers. Outras especialidades são agrupadas em Outras áreas.
+- O modal de profissional tem rolagem, ações explícitas, safe area e feedback de conexão. Agendamento direto ainda não tem implementação real; a ação informativa não promete enviar uma solicitação.
+- A barra inferior preserva as cinco rotas e usa as áreas seguras calculadas pelo navegador, sem altura fixa. Testar fontes ampliadas, teclado, gestos, dispositivos pequenos e as três paletas.

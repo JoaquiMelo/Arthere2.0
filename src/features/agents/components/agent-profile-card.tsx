@@ -1,19 +1,13 @@
-import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { useEffect } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CATEGORIAS } from '../../../shared/config/categories';
+import { AppText, Avatar, Badge, Button, IconButton, MediaImage, SectionHeader } from '@/shared/components';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import type { AgenteCriativo } from '@/features/agents/types/agent';
-import { StarRating } from '../../reviews/components/star-rating';
-import { useReviews } from '../../../providers/reviews-provider';
-import { colors } from '@/shared/theme/colors';
+import { categoryLabel } from '@/features/map/utils/map-agents';
+import { useReviews } from '@/providers/reviews-provider';
 
 interface Props {
   agente: AgenteCriativo | null;
@@ -22,132 +16,101 @@ interface Props {
   onAgendar: (agente: AgenteCriativo) => void;
   onChat: (agente: AgenteCriativo) => void;
   onVerPerfil: (agente: AgenteCriativo) => void;
+  canChat?: boolean;
+  chatLoading?: boolean;
+  chatLabel?: string;
 }
 
-export function AgentProfileCard({
-  agente,
-  visible,
-  onClose,
-  onAgendar,
-  onChat,
-  onVerPerfil,
-}: Props) {
-  const { avaliacoesPorAgente, mediaPorAgente } = useReviews();
+export function AgentProfileCard({ agente, visible, onClose, onAgendar, onChat, onVerPerfil, canChat = true, chatLoading = false, chatLabel = 'Conversar' }: Props) {
+  const { color, spacing, radius, dimensions } = useThemeTokens();
+  const insets = useSafeAreaInsets();
+  const { avaliacoesPorAgente, mediaPorAgente, carregarAvaliacoes } = useReviews();
+  const agenteId = agente?.id;
+
+  useEffect(() => {
+    if (visible && agenteId) void carregarAvaliacoes(agenteId).catch(() => undefined);
+  }, [visible, agenteId, carregarAvaliacoes]);
 
   if (!agente) return null;
-
-  const categoria = CATEGORIAS[agente.categoria] ?? CATEGORIAS.design;
-  const avaliacao = typeof agente.avaliacao === 'number' ? agente.avaliacao : 0;
   const avaliacoes = avaliacoesPorAgente(agente.id);
-  const media = avaliacoes.length ? mediaPorAgente(agente.id) : avaliacao;
+  const media = avaliacoes.length ? mediaPorAgente(agente.id) : agente.avaliacao;
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-
-      <View style={styles.sheet}>
-        <View style={styles.topRule} />
-
-        <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityLabel="Fechar">
-          <Ionicons name="close" size={19} color={colors.muted} />
-        </TouchableOpacity>
-
-        <View style={styles.header}>
-          <View style={styles.avatarFrame}>
-            <Avatar uri={agente.avatarUrl} style={styles.avatar} iconSize={36} />
+      <View style={styles.modalRoot}>
+        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: color.overlay }]} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fechar detalhes do profissional" />
+        <View accessibilityViewIsModal style={[styles.sheet, { backgroundColor: color.surface, borderTopLeftRadius: radius.modal, borderTopRightRadius: radius.modal, paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+          <View style={{ alignItems: 'center', paddingTop: spacing.sm }}>
+            <View style={{ width: 36, height: 4, borderRadius: radius.pill, backgroundColor: color.border }} />
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
+            <AppText variant="label" color="accentText" weight="bold">PROFISSIONAL CRIATIVO</AppText>
+            <IconButton icon="close" accessibilityLabel="Fechar detalhes" variant="ghost" onPress={onClose} />
           </View>
 
-          <View style={styles.headerInfo}>
-            <View style={styles.categoryRow}>
-              <View style={[styles.categoryDot, { backgroundColor: categoria.cor }]} />
-              <Text style={[styles.categoryText, { color: categoria.cor }]}>
-                {categoria.label.toUpperCase()}
-              </Text>
-            </View>
-
-            <Text style={styles.nome}>{agente.nome}</Text>
-            <Text style={styles.especialidade}>{agente.especialidades?.[0] ?? 'Profissional criativo'}</Text>
-
-            {agente.disponivel === true ? (
-              <Text style={styles.disponivel}>DISPONÍVEL AGORA</Text>
-            ) : agente.disponivel === false ? (
-              <Text style={styles.indisponivel}>EM PROJETO</Text>
-            ) : null}
-          </View>
-        </View>
-
-        <View style={styles.metaRow}>
-          <View style={styles.metaItem}>
-            <StarRating value={media} size={12} />
-            <Text style={styles.metaStrong}>{media.toFixed(1)}</Text>
-            <Text style={styles.metaMuted}>({avaliacoes.length})</Text>
-          </View>
-          <View style={styles.metaSeparator} />
-          <View style={styles.metaItem}>
-            <Ionicons name="location-outline" size={13} color={colors.brandTerracotta} />
-            <Text style={styles.metaMuted}>{agente.cidade}</Text>
-          </View>
-        </View>
-
-        <Text style={styles.descricao}>{agente.descricao}</Text>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>PORTFÓLIO</Text>
-          <View style={styles.sectionRule} />
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.portfolioList}
-        >
-          {agente.portfolio.map((item) => (
-            <View key={item.id} style={styles.portfolioItem}>
-              <MediaImage uri={item.imagemUrl} style={styles.portfolioImagem} />
-              <Text style={styles.portfolioTexto} numberOfLines={1}>
-                {item.titulo}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
-
-        {avaliacoes.length > 0 ? (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>AVALIAÇÕES</Text>
-              <View style={styles.sectionRule} />
-            </View>
-
-            {avaliacoes.slice(0, 2).map((item) => (
-              <View key={item.id} style={styles.reviewItem}>
-                <View style={styles.reviewHeader}>
-                  <Text style={styles.reviewAutor}>{item.autorNome}</Text>
-                  <StarRating value={item.nota} size={11} />
-                </View>
-                {item.comentario ? (
-                  <Text style={styles.reviewTexto} numberOfLines={2}>
-                    {item.comentario}
-                  </Text>
-                ) : null}
+          <ScrollView style={styles.body} contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.lg }} showsVerticalScrollIndicator={false}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              <Avatar uri={agente.avatarUrl} style={{ width: 76, height: 76, borderRadius: radius.card }} iconSize={32} />
+              <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+                <AppText variant="label" color="accentText" weight="bold">{categoryLabel(agente.categoria)}</AppText>
+                <AppText variant="h2" weight="heavy" accessibilityRole="header">{agente.nome}</AppText>
+                <AppText variant="bodySmall" color="textSecondary">{agente.especialidades[0]}</AppText>
+                {agente.disponivel === true ? <Badge label="Disponível agora" tone="success" icon="checkmark-circle-outline" /> :
+                  agente.disponivel === false ? <Badge label="Indisponível no momento" tone="neutral" /> : null}
               </View>
-            ))}
-          </>
-        ) : null}
+            </View>
 
-        <View style={styles.acoes}>
-          <TouchableOpacity style={styles.chat} onPress={() => onVerPerfil(agente)}>
-            <Ionicons name="person-circle-outline" size={18} color={colors.brandInk} />
-            <Text style={styles.chatText}>VER PERFIL</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.agendar} onPress={() => onAgendar(agente)}>
-            <Text style={styles.agendarTexto}>AGENDAR</Text>
-            <Ionicons name="arrow-forward" size={15} color={colors.brandPaper} />
-          </TouchableOpacity>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, borderTopWidth: 1, borderBottomWidth: 1, borderColor: color.border }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                <Ionicons name="location-outline" size={dimensions.icon.small} color={color.accentText} />
+                <AppText variant="bodySmall" color="textSecondary">{agente.cidade}</AppText>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                <Ionicons name="star-outline" size={dimensions.icon.small} color={color.accentText} />
+                <AppText variant="bodySmall" weight="semibold">{media > 0 ? media.toFixed(1) : 'Sem avaliações'}</AppText>
+                {avaliacoes.length > 0 ? <AppText variant="bodySmall" color="textSecondary">({avaliacoes.length})</AppText> : null}
+              </View>
+            </View>
 
-          <TouchableOpacity style={styles.chat} onPress={() => onChat(agente)}>
-            <Ionicons name="chatbubble-ellipses-outline" size={19} color={colors.brandInk} />
-            <Text style={styles.chatText}>CONVERSAR</Text>
-          </TouchableOpacity>
+            {agente.descricao.trim() ? <AppText>{agente.descricao}</AppText> : null}
+
+            <View style={{ gap: spacing.sm }}>
+              <SectionHeader title="Portfólio" kicker="TRABALHOS" />
+              {agente.portfolio.length ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md }}>
+                  {agente.portfolio.map((item) => (
+                    <View key={item.id} style={{ width: 136, gap: spacing.xs }}>
+                      <MediaImage uri={item.imagemUrl} style={{ width: 136, height: 100, borderRadius: radius.control }} />
+                      <AppText variant="bodySmall" weight="medium" numberOfLines={2}>{item.titulo}</AppText>
+                    </View>
+                  ))}
+                </ScrollView>
+              ) : <AppText color="textSecondary" variant="bodySmall">Nenhum trabalho publicado ainda.</AppText>}
+            </View>
+
+            {avaliacoes.length > 0 ? (
+              <View style={{ gap: spacing.md }}>
+                <SectionHeader title="Avaliações" />
+                {avaliacoes.slice(0, 2).map((item) => (
+                  <View key={item.id} style={{ gap: spacing.xs, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                      <AppText weight="semibold" variant="bodySmall" style={{ flex: 1 }}>{item.autorNome}</AppText>
+                      <AppText variant="bodySmall" color="accentText" weight="semibold">★ {item.nota}</AppText>
+                    </View>
+                    {item.comentario ? <AppText variant="bodySmall" color="textSecondary">{item.comentario}</AppText> : null}
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </ScrollView>
+
+          <View style={{ paddingTop: spacing.md, paddingHorizontal: spacing.lg, gap: spacing.sm, borderTopWidth: 1, borderTopColor: color.border }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+              <Button variant="outline" style={{ flexGrow: 1 }} onPress={() => onVerPerfil(agente)}>Ver perfil completo</Button>
+              {canChat ? <Button style={{ flexGrow: 1 }} loading={chatLoading} onPress={() => onChat(agente)}>{chatLabel}</Button> : null}
+            </View>
+            {canChat ? <Button variant="ghost" size="small" fullWidth onPress={() => onAgendar(agente)}>Sobre agendamento</Button> : null}
+          </View>
         </View>
       </View>
     </Modal>
@@ -155,239 +118,7 @@ export function AgentProfileCard({
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(41,36,43,0.44)',
-  },
-  sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    maxHeight: '86%',
-    backgroundColor: colors.brandPaper,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 28,
-    borderTopWidth: 1,
-    borderTopColor: colors.brandInk,
-  },
-  topRule: {
-    width: 44,
-    height: 4,
-    backgroundColor: colors.border,
-    alignSelf: 'center',
-    marginBottom: 15,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 15,
-    right: 14,
-    width: 34,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    zIndex: 2,
-  },
-  header: {
-    flexDirection: 'row',
-    gap: 14,
-    paddingRight: 40,
-  },
-  avatarFrame: {
-    width: 70,
-    height: 70,
-    borderWidth: 2,
-    borderColor: colors.brandInk,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatar: {
-    width: 64,
-    height: 64,
-  },
-  headerInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  categoryDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  categoryText: {
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1.1,
-  },
-  nome: {
-    color: colors.brandInk,
-    fontSize: 24,
-    lineHeight: 27,
-    fontWeight: '900',
-    letterSpacing: -0.6,
-    marginTop: 3,
-  },
-  especialidade: {
-    color: colors.muted,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  disponivel: {
-    color: colors.brandGreen,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.9,
-    marginTop: 7,
-  },
-  indisponivel: {
-    color: colors.muted,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.9,
-    marginTop: 7,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 10,
-    marginTop: 16,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  metaStrong: {
-    color: colors.brandInk,
-    fontSize: 11,
-    fontWeight: '900',
-  },
-  metaMuted: {
-    color: colors.muted,
-    fontSize: 11,
-  },
-  metaSeparator: {
-    width: 1,
-    height: 16,
-    backgroundColor: colors.border,
-  },
-  descricao: {
-    color: colors.text,
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 13,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 17,
-    marginBottom: 9,
-  },
-  sectionTitle: {
-    color: colors.brandInk,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1.3,
-  },
-  sectionRule: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  portfolioList: {
-    paddingRight: 4,
-    gap: 10,
-  },
-  portfolioItem: {
-    width: 102,
-  },
-  portfolioImagem: {
-    width: 102,
-    height: 76,
-    backgroundColor: colors.surface,
-  },
-  placeholder: {
-    width: 102,
-    height: 76,
-    backgroundColor: colors.surface,
-  },
-  portfolioTexto: {
-    color: colors.muted,
-    fontSize: 9,
-    marginTop: 4,
-  },
-  reviewItem: {
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 10,
-    marginBottom: 7,
-  },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  reviewAutor: {
-    color: colors.brandInk,
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  reviewTexto: {
-    color: colors.muted,
-    fontSize: 11,
-    lineHeight: 16,
-    marginTop: 4,
-  },
-  acoes: {
-    flexDirection: 'row',
-    gap: 9,
-    marginTop: 18,
-  },
-  agendar: {
-    flex: 1,
-    minHeight: 46,
-    backgroundColor: colors.brandInk,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  agendarTexto: {
-    color: colors.brandPaper,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1.2,
-  },
-  chat: {
-    minHeight: 46,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: colors.brandInk,
-    backgroundColor: colors.brandSand,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  chatText: {
-    color: colors.brandInk,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.9,
-  },
+  modalRoot: { flex: 1, justifyContent: 'flex-end' },
+  sheet: { maxHeight: '90%', width: '100%', flexShrink: 1 },
+  body: { flexGrow: 0, flexShrink: 1 },
 });

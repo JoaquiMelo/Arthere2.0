@@ -40,20 +40,29 @@ export type TabParamList={Map:undefined;Profile:undefined;Opportunities:undefine
 const Stack=createNativeStackNavigator<RootStackParamList>();
 const Tab=createBottomTabNavigator<TabParamList>();
 
-const icons:Record<keyof TabParamList,keyof typeof Ionicons.glyphMap>={
- Map:'map-outline',Profile:'person-outline',Opportunities:'briefcase-outline',Events:'calendar-outline',Chat:'chatbubble-ellipses-outline'
+const icons:Record<keyof TabParamList, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
+ Map:{active:'map',inactive:'map-outline'},
+ Profile:{active:'person',inactive:'person-outline'},
+ Opportunities:{active:'briefcase',inactive:'briefcase-outline'},
+ Events:{active:'calendar',inactive:'calendar-outline'},
+ Chat:{active:'chatbubble-ellipses',inactive:'chatbubble-ellipses-outline'},
 };
 
 function AppTabs(){
- const tokens=useThemeTokens();
- return <Tab.Navigator screenOptions={({route})=>({
+ const {color,spacing,radius}=useThemeTokens();
+ return <Tab.Navigator initialRouteName="Map" screenOptions={({route})=>({
   headerShown:false,
-  tabBarActiveTintColor:tokens.color.accentOnInverse,
-  tabBarInactiveTintColor:tokens.color.textInverse,
-  tabBarLabelStyle:{fontSize:10,fontWeight:'700',letterSpacing:0.35,marginTop:2},
-  tabBarStyle:{height:78,paddingTop:8,paddingBottom:10,borderTopWidth:1,borderTopColor:tokens.color.border,backgroundColor:tokens.color.textPrimary,elevation:0},
-  tabBarItemStyle:{paddingVertical:0},tabBarHideOnKeyboard:true,
-  tabBarIcon:({color,focused})=><Ionicons name={focused?(icons[route.name].replace('-outline','') as keyof typeof Ionicons.glyphMap):icons[route.name]} size={focused?23:21} color={color}/>
+  tabBarActiveTintColor:color.accentOnInverse,
+  tabBarInactiveTintColor:color.textInverse,
+  tabBarLabelStyle:{fontSize:10,fontWeight:'600'},
+  // Sem altura fixa: React Navigation incorpora os insets do dispositivo.
+  tabBarStyle:{borderTopWidth:1,borderTopColor:color.border,backgroundColor:color.textPrimary,elevation:0},
+  tabBarHideOnKeyboard:true,
+  tabBarIcon:({color:foreground,focused})=>(
+   <View style={{minWidth:44,height:30,paddingHorizontal:spacing.sm,alignItems:'center',justifyContent:'center',borderRadius:radius.pill,backgroundColor:focused?color.accentSoft:'transparent'}}>
+    <Ionicons name={focused?icons[route.name].active:icons[route.name].inactive} size={22} color={focused?color.textPrimary:foreground}/>
+   </View>
+  )
  })}>
   <Tab.Screen name="Map" component={MapScreen} options={{title:'Mapa'}}/>
   <Tab.Screen name="Profile" component={ProfileScreen} options={{title:'Perfil'}}/>
