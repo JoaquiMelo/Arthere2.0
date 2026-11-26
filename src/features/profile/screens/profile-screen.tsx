@@ -1,17 +1,15 @@
-import { Badge, FeedbackState } from '@/shared/components';
+import { AppText, Badge, Button, FeedbackState, IconButton, ScreenContainer, SectionHeader } from '@/shared/components';
 import { formatarLocalizacao } from '@/shared/config/brazil-location';
 import { Avatar, MediaImage } from '@/shared/components/media-image';
-import { colors } from '@/shared/theme/colors';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import type { ThemeTokens } from '@/shared/theme/tokens';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
-  Dimensions,
-  SafeAreaView,
+  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
   RefreshControl,
 } from 'react-native';
@@ -21,9 +19,6 @@ import { useReviews } from '@/providers/reviews-provider';
 import { useManagement } from '@/providers/management-provider';
 import { useUser } from '@/providers/user-provider';
 import ContratanteProfileScreen from './contratante-profile-screen';
-
-const { width } = Dimensions.get('window');
-const galleryItemSize = (width - 52) / 3;
 
 export interface PortfolioItem {
   id: string;
@@ -69,19 +64,25 @@ export default function ProfileScreen() {
 
 function AgenteProfileScreenContent() {
   const navigation = useNavigation<any>();
+  const tokens = useThemeTokens();
+  const { color, spacing, radius, dimensions } = tokens;
+  const styles = useMemo(() => createStyles(tokens), [tokens]);
   const { user, refresh: refreshUser } = useUser();
   const { refresh: refreshManagement, solicitacoesEvento, loading: loadingEventos } = useManagement();
   const [atualizando, setAtualizando] = useState(false);
+  const { avaliacoesPorAgente, mediaPorAgente, carregarAvaliacoes } = useReviews();
+  const agenteId = user?.id;
+  const [erroAtualizacao, setErroAtualizacao] = useState(false);
   const recarregar = useCallback(async () => {
     setAtualizando(true);
     try {
-      await Promise.allSettled([refreshUser(), refreshManagement()]);
+      const results = await Promise.allSettled([refreshUser(), refreshManagement(), ...(agenteId ? [carregarAvaliacoes(agenteId)] : [])]);
+      setErroAtualizacao(results.some((result) => result.status === 'rejected'));
     } finally {
       setAtualizando(false);
     }
-  }, [refreshUser, refreshManagement]);
+  }, [refreshUser, refreshManagement, agenteId, carregarAvaliacoes]);
   const [abaAtiva, setAbaAtiva] = useState<'portfolio' | 'sobre' | 'avaliacoes' | 'eventos'>('portfolio');
-  const { avaliacoesPorAgente, mediaPorAgente } = useReviews();
 
   if (!user) {
     return null;
@@ -108,518 +109,185 @@ function AgenteProfileScreenContent() {
   const media = avaliacoes.length ? mediaPorAgente(agente.id) : agente.notaMedia;
   const totalAvaliacoes = avaliacoes.length || agente.totalAvaliacoes;
   const meusEventos = solicitacoesEvento.filter((item) => item.agenteId === user.id);
+  const localizacao = formatarLocalizacao(agente.cidade, user.estado);
 
   const abrirEdicaoPerfil = () => navigation.navigate('EditProfile', { agente });
   const abrirEdicaoPortfolio = () =>
     navigation.navigate('PortfolioCreation', { portfolio: agente.portfolio });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} />}>
-        <View style={styles.coverContainer}>
-          <MediaImage uri={user.bannerUrl} style={styles.coverImage} icon="image-outline" iconSize={40} />
-          <View style={styles.coverOverlay} />
-
-          <View style={styles.coverLabel}>
-            <Text style={styles.coverLabelText}>PERFIL · AGENTE CRIATIVO</Text>
-          </View>
-
-          <View style={styles.topActions}>
-            <TouchableOpacity
-              style={styles.topIcon}
-              onPress={() => navigation.navigate('Settings')}
-              accessibilityLabel="Abrir configurações"
-            >
-              <Ionicons name="settings-outline" size={19} color={colors.brandPaper} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.topIcon} accessibilityLabel="Compartilhar perfil">
-              <Ionicons name="share-social-outline" size={19} color={colors.brandPaper} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.profileIntro}>
-          <TouchableOpacity
-            style={styles.avatarFrame}
-            onPress={abrirEdicaoPerfil}
-            accessibilityLabel="Editar foto de perfil"
-          >
-            <Avatar uri={agente.avatarUrl} style={styles.avatar} iconSize={48} />
-            <View style={styles.cameraBadge}>
-              <Ionicons name="camera" size={13} color={colors.brandPaper} />
+    <ScreenContainer edges={['top', 'left', 'right']}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} tintColor={color.accentText} colors={[color.accentText]} />}
+      >
+        <View style={styles.hero}>
+          <View style={styles.topBar}>
+            <View style={styles.headerCopy}>
+              <AppText variant="label" color="accentText" weight="bold">ARTHERE / MEU PERFIL</AppText>
+              <AppText variant="h2" weight="heavy" accessibilityRole="header">Seu espaço criativo.</AppText>
             </View>
-          </TouchableOpacity>
-
-          <Text style={styles.name}>{agente.nome}</Text>
-          <View style={styles.roleRow}>
-            <View style={styles.roleDot} />
-            <Text style={styles.role}>{agente.especialidade}</Text>
+            <IconButton icon="settings-outline" variant="outline" accessibilityLabel="Abrir configurações" onPress={() => navigation.navigate('Settings')} />
           </View>
-
-          <View style={styles.locationRow}>
-            <Ionicons name="location-outline" size={14} color={colors.brandTerracotta} />
-            <Text style={styles.location}>{formatarLocalizacao(agente.cidade, user.estado)}</Text>
+          {user.bannerUrl ? (
+            <Pressable accessibilityRole="button" accessibilityLabel="Editar capa do perfil" onPress={abrirEdicaoPerfil} style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
+              <MediaImage uri={user.bannerUrl} style={styles.coverImage} />
+            </Pressable>
+          ) : (
+            <Pressable accessibilityRole="button" accessibilityLabel="Adicionar capa ao perfil" onPress={abrirEdicaoPerfil} style={({ pressed }) => [styles.coverEmpty, { opacity: pressed ? 0.8 : 1 }]}>
+              <Ionicons name="image-outline" size={dimensions.icon.large} color={color.accentText} />
+              <AppText weight="semibold">Adicionar capa</AppText>
+              <AppText variant="bodySmall" color="textSecondary">Apresente sua identidade visual.</AppText>
+            </Pressable>
+          )}
+          <View style={styles.identity}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Editar foto de perfil" onPress={abrirEdicaoPerfil} style={({ pressed }) => [styles.avatarFrame, { opacity: pressed ? 0.8 : 1 }]}>
+              <Avatar uri={agente.avatarUrl} style={styles.avatar} iconSize={36} />
+              <View style={styles.cameraBadge}>
+                <Ionicons name="camera-outline" size={dimensions.icon.small} color={color.onAccent} />
+              </View>
+            </Pressable>
+            <View style={styles.identityCopy}>
+              <AppText variant="label" color="accentText" weight="semibold">Agente criativo</AppText>
+              <AppText variant="h2" weight="heavy" accessibilityRole="header">{agente.nome}</AppText>
+              <AppText variant="bodySmall">{agente.especialidade}</AppText>
+              {localizacao ? (
+                <View style={styles.locationRow}>
+                  <Ionicons name="location-outline" size={dimensions.icon.small} color={color.accentText} />
+                  <AppText variant="bodySmall" color="textSecondary" style={styles.flexText}>{localizacao}</AppText>
+                </View>
+              ) : null}
+            </View>
           </View>
-
           <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <Text style={styles.statNumber}>{agente.totalProjetos}</Text>
-              <Text style={styles.statLabel}>PROJETOS</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text style={styles.statNumber}>{totalAvaliacoes}</Text>
-              <Text style={styles.statLabel}>AVALIAÇÕES</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text style={styles.statNumber}>{media.toFixed(1)}</Text>
-              <Text style={styles.statLabel}>NOTA MÉDIA</Text>
-            </View>
+            {[
+              { label: 'Projetos', value: agente.totalProjetos },
+              { label: 'Avaliações', value: totalAvaliacoes },
+              { label: 'Nota média', value: totalAvaliacoes > 0 ? media.toFixed(1) : '—' },
+            ].map((stat) => (
+              <View key={stat.label} style={styles.stat}>
+                <AppText variant="h3" weight="bold">{stat.value}</AppText>
+                <AppText variant="label" color="textSecondary" style={styles.centerText}>{stat.label}</AppText>
+              </View>
+            ))}
           </View>
-
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.primaryButton} onPress={abrirEdicaoPerfil}>
-              <Ionicons name="create-outline" size={16} color={colors.brandPaper} />
-              <Text style={styles.primaryButtonText}>EDITAR PERFIL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryButton} onPress={abrirEdicaoPortfolio}>
-              <Ionicons name="images-outline" size={16} color={colors.brandInk} />
-              <Text style={styles.secondaryButtonText}>PORTFÓLIO</Text>
-            </TouchableOpacity>
+            <Button style={styles.actionButton} onPress={abrirEdicaoPerfil}>Editar perfil</Button>
+            <Button variant="secondary" style={styles.actionButton} onPress={abrirEdicaoPortfolio}>Gerenciar portfólio</Button>
           </View>
+          <Button variant="outline" fullWidth style={{ borderRadius: radius.control }} onPress={() => navigation.navigate('PublicProfile', { profileType: 'AGENTE', profileId: agente.id })}>Ver meu perfil público</Button>
+          {erroAtualizacao ? (
+            <View style={styles.inlineError} accessibilityLiveRegion="polite">
+              <AppText variant="bodySmall" color="dangerText">Algumas informações não puderam ser atualizadas.</AppText>
+              <Button variant="ghost" size="small" onPress={recarregar} disabled={atualizando}>Tentar novamente</Button>
+            </View>
+          ) : null}
         </View>
 
-        <View style={styles.tabs}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={styles.tabStrip}>
           {([
-            ['portfolio', 'FOTOS'],
-            ['sobre', 'SOBRE'],
-            ['avaliacoes', 'AVALIAÇÕES'],
-            ['eventos', 'EVENTOS'],
+            ['portfolio', 'Portfólio'],
+            ['sobre', 'Sobre'],
+            ['avaliacoes', 'Avaliações'],
+            ['eventos', 'Eventos'],
           ] as const).map(([id, label]) => (
-            <TouchableOpacity
-              key={id}
-              style={[styles.tab, abaAtiva === id && styles.tabActive]}
-              onPress={() => setAbaAtiva(id)}
-            >
-              <Text style={[styles.tabText, abaAtiva === id && styles.tabTextActive]}>
-                {label}
-              </Text>
-            </TouchableOpacity>
+            <Pressable key={id} accessibilityRole="tab" accessibilityState={{ selected: abaAtiva === id }} onPress={() => setAbaAtiva(id)}
+              style={({ pressed }) => [styles.tab, abaAtiva === id && styles.tabActive, { opacity: pressed ? 0.75 : 1 }]}>
+              <AppText variant="bodySmall" color={abaAtiva === id ? 'accentText' : 'textSecondary'} weight={abaAtiva === id ? 'bold' : 'medium'}>{label}</AppText>
+            </Pressable>
           ))}
-        </View>
+        </ScrollView>
 
         {abaAtiva === 'portfolio' ? (
-          <View style={styles.gallerySection}>
-            <View style={styles.sectionHeader}>
-              <View>
-                <Text style={styles.sectionKicker}>PORTFÓLIO</Text>
-                <Text style={styles.sectionTitle}>Trabalhos recentes</Text>
+          <View style={styles.section}>
+            <SectionHeader title="Seus trabalhos" description={agente.portfolio.length === 1 ? '1 trabalho publicado' : `${agente.portfolio.length} trabalhos publicados`} />
+            {agente.portfolio.length === 0 ? (
+              <FeedbackState kind="empty" title="Seu portfólio começa aqui" description="Publique seus trabalhos para apresentar o que você cria." icon="images-outline" />
+            ) : (
+              <View style={styles.gallery}>
+                {agente.portfolio.map((item) => (
+                  <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Gerenciar trabalho: ${item.titulo || 'Trabalho criativo'}`} onPress={abrirEdicaoPortfolio}
+                    style={({ pressed }) => [styles.galleryItem, { opacity: pressed ? 0.8 : 1 }]}>
+                    <MediaImage uri={item.imageUrl} style={styles.galleryImage} />
+                    <AppText variant="bodySmall" weight="semibold">{item.titulo || 'Trabalho criativo'}</AppText>
+                    {item.descricao ? <AppText variant="label" color="textSecondary" numberOfLines={2}>{item.descricao}</AppText> : null}
+                  </Pressable>
+                ))}
               </View>
-              <TouchableOpacity onPress={abrirEdicaoPortfolio}>
-                <Text style={styles.actionText}>GERENCIAR</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.gallery}>
-              {agente.portfolio.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.galleryItem}
-                  onPress={abrirEdicaoPortfolio}
-                >
-                  <MediaImage uri={item.imageUrl} style={styles.galleryImage} />
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity
-                style={styles.addWork}
-                onPress={abrirEdicaoPortfolio}
-                accessibilityLabel="Adicionar trabalho ao portfólio"
-              >
-                <Ionicons name="add" size={26} color={colors.brandInk} />
-                <Text style={styles.addWorkText}>NOVO</Text>
-              </TouchableOpacity>
-            </View>
+            )}
+            <Button variant="outline" fullWidth style={{ borderRadius: radius.control }} onPress={abrirEdicaoPortfolio}>Adicionar trabalho</Button>
           </View>
         ) : null}
 
         {abaAtiva === 'sobre' ? (
-          <View style={styles.aboutCard}>
-            <Text style={styles.sectionKicker}>APRESENTAÇÃO</Text>
-            <Text style={styles.aboutTitle}>Sobre meu trabalho</Text>
-            <Text style={styles.aboutText}>{agente.bio}</Text>
-
-            <TouchableOpacity style={styles.editBio} onPress={abrirEdicaoPerfil}>
-              <Text style={styles.editBioText}>EDITAR APRESENTAÇÃO</Text>
-              <Ionicons name="arrow-forward" size={15} color={colors.brandCoral} />
-            </TouchableOpacity>
+          <View style={styles.section}>
+            <SectionHeader title="Sobre meu trabalho" />
+            <AppText color={user.bio?.trim() ? 'textPrimary' : 'textSecondary'}>{agente.bio}</AppText>
+            <Button variant="outline" fullWidth style={{ borderRadius: radius.control }} onPress={abrirEdicaoPerfil}>Editar apresentação</Button>
           </View>
         ) : null}
 
         {abaAtiva === 'eventos' ? (
-          <View style={styles.gallerySection}>
-            <Text style={styles.sectionTitle}>Minhas participações</Text>
+          <View style={styles.section}>
+            <SectionHeader title="Minhas participações" />
             {meusEventos.length ? meusEventos.map((item) => (
-              <TouchableOpacity key={item.id} accessibilityRole="button"
-                accessibilityLabel={`Abrir evento ${item.eventoTitulo}`}
+              <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Abrir evento ${item.eventoTitulo}`}
                 onPress={() => navigation.navigate('EventDetails', { eventId: item.eventId })}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                <Ionicons name="calendar-outline" size={24} color={colors.brandInk} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.brandInk, fontSize: 15, fontWeight: '700' }}>{item.eventoTitulo}</Text>
+                style={({ pressed }) => [styles.eventRow, { opacity: pressed ? 0.75 : 1 }]}>
+                <View style={styles.eventIcon}><Ionicons name="calendar-outline" size={dimensions.icon.large} color={color.accentText} /></View>
+                <View style={styles.eventCopy}>
+                  <AppText weight="bold">{item.eventoTitulo}</AppText>
                   <Badge label={item.status === 'ACEITA' ? 'Participação aceita' : item.status === 'RECUSADA' ? 'Solicitação recusada' : 'Aguardando resposta'} tone={item.status === 'ACEITA' ? 'success' : item.status === 'RECUSADA' ? 'danger' : 'warning'} />
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.muted} />
-              </TouchableOpacity>
+                <Ionicons name="chevron-forward" size={dimensions.icon.medium} color={color.textSecondary} />
+              </Pressable>
             )) : <FeedbackState kind={loadingEventos ? 'loading' : 'empty'} title={loadingEventos ? 'Carregando participações…' : 'Nenhuma participação ainda'} description={loadingEventos ? undefined : 'Você ainda não solicitou participação em eventos.'} icon="calendar-outline" />}
           </View>
         ) : null}
 
         {abaAtiva === 'avaliacoes' ? (
-          <View style={styles.reviewsSection}>
-            <View style={styles.sectionHeader}>
-              <View>
-                <Text style={styles.sectionKicker}>FEEDBACK</Text>
-                <Text style={styles.sectionTitle}>O que dizem sobre você</Text>
-              </View>
-            </View>
-            <ReviewList avaliacoes={avaliacoes} />
+          <View style={styles.section}>
+            <SectionHeader title="O que dizem sobre você" />
+            <ReviewList avaliacoes={avaliacoes} editorial />
           </View>
         ) : null}
       </ScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.brandPaper,
-  },
-  scrollContent: {
-    paddingBottom: 42,
-  },
-  coverContainer: {
-    height: 198,
-    overflow: 'hidden',
-    backgroundColor: colors.brandInk,
-    position: 'relative',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-  },
-  coverImage: {
-    width: '100%',
-    height: '100%',
-  },
-  coverOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-  },
-  coverLabel: {
-    position: 'absolute',
-    left: 16,
-    bottom: 14,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    backgroundColor: colors.brandInk,
-    borderRadius: 10,
-  },
-  coverLabelText: {
-    color: colors.brandSand,
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 1.25,
-  },
-  topActions: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
-    flexDirection: 'row',
-    gap: 7,
-  },
-  topIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(246,241,232,0.36)',
-    backgroundColor: 'rgba(41,36,43,0.55)',
-  },
-  profileIntro: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  avatarFrame: {
-    marginTop: -54,
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    borderWidth: 4,
-    borderColor: colors.brandPaper,
-    backgroundColor: colors.white,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  avatar: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-  },
-  cameraBadge: {
-    position: 'absolute',
-    right: -1,
-    bottom: 4,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.brandCoral,
-    borderWidth: 2,
-    borderColor: colors.brandPaper,
-  },
-  name: {
-    marginTop: 12,
-    color: colors.brandInk,
-    fontSize: 25,
-    lineHeight: 29,
-    fontWeight: '900',
-    letterSpacing: -0.7,
-  },
-  roleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
-  roleDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.brandCoral,
-  },
-  role: {
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 7,
-  },
-  location: {
-    color: colors.muted,
-    fontSize: 12,
-  },
-  statsRow: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-    marginTop: 20,
-    paddingVertical: 13,
-    borderRadius: 16,
-  },
-  stat: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statNumber: {
-    color: colors.brandInk,
-    fontSize: 19,
-    fontWeight: '900',
-  },
-  statLabel: {
-    marginTop: 2,
-    color: colors.muted,
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: colors.border,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 9,
-    width: '100%',
-    marginTop: 17,
-  },
-  primaryButton: {
-    flex: 1,
-    minHeight: 44,
-    paddingHorizontal: 10,
-    borderRadius: 14,
-    backgroundColor: colors.brandInk,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  primaryButtonText: {
-    color: colors.brandPaper,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  secondaryButton: {
-    flex: 1,
-    minHeight: 44,
-    paddingHorizontal: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.brandInk,
-    backgroundColor: colors.brandSand,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  secondaryButtonText: {
-    color: colors.brandInk,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  tabs: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    marginTop: 4,
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
-  },
-  tabActive: {
-    borderBottomColor: colors.brandCoral,
-  },
-  tabText: {
-    color: colors.muted,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  tabTextActive: {
-    color: colors.brandInk,
-  },
-  gallerySection: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    gap: 12,
-    marginBottom: 12,
-  },
-  sectionKicker: {
-    color: colors.brandCoral,
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 1.4,
-    marginBottom: 3,
-  },
-  sectionTitle: {
-    color: colors.brandInk,
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  actionText: {
-    color: colors.brandCoral,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  gallery: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  galleryItem: {
-    width: galleryItemSize,
-    height: galleryItemSize,
-    overflow: 'hidden',
-    borderRadius: 14,
-    backgroundColor: colors.surface,
-  },
-  galleryImage: {
-    width: '100%',
-    height: '100%',
-  },
-  addWork: {
-    width: galleryItemSize,
-    height: galleryItemSize,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: colors.brandInk,
-    backgroundColor: colors.brandBlue,
-  },
-  addWorkText: {
-    color: colors.brandInk,
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 1,
-    marginTop: 2,
-  },
-  aboutCard: {
-    margin: 20,
-    padding: 18,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-  },
-  aboutTitle: {
-    color: colors.brandInk,
-    fontSize: 19,
-    fontWeight: '900',
-  },
-  aboutText: {
-    marginTop: 11,
-    color: colors.muted,
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  editBio: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    marginTop: 18,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: colors.brandSand,
-  },
-  editBioText: {
-    color: colors.brandCoral,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  reviewsSection: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-});
+function createStyles({ color, spacing, radius, dimensions }: ThemeTokens) {
+  return StyleSheet.create({
+    scrollContent: { paddingBottom: spacing['3xl'] },
+    hero: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.lg, gap: spacing.md },
+    topBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    headerCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
+    coverImage: { width: '100%', aspectRatio: 16 / 9, borderRadius: radius.cardCompact },
+    coverEmpty: { minHeight: 104, padding: spacing.md, borderRadius: radius.cardCompact, borderWidth: 1, borderColor: color.border, backgroundColor: color.surfaceSubtle, gap: spacing.xs, alignItems: 'flex-start', justifyContent: 'center' },
+    identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    avatarFrame: { width: 88, height: 88, position: 'relative' },
+    avatar: { width: 88, height: 88, borderRadius: radius.cardCompact },
+    cameraBadge: { position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: color.accent, borderWidth: 2, borderColor: color.background },
+    identityCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
+    locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+    flexText: { flex: 1 },
+    centerText: { textAlign: 'center' },
+    statsRow: { flexDirection: 'row', flexWrap: 'wrap', padding: spacing.md, gap: spacing.sm, borderRadius: radius.control, backgroundColor: color.surfaceSubtle },
+    stat: { flexGrow: 1, flexBasis: 76, alignItems: 'center', gap: spacing.xs },
+    buttonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    actionButton: { flexGrow: 1, flexBasis: 138, borderRadius: radius.control },
+    inlineError: { gap: spacing.xs, padding: spacing.sm, borderWidth: 1, borderColor: color.border, borderRadius: radius.sm },
+    tabStrip: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: color.border },
+    tabs: { paddingHorizontal: spacing.lg, gap: spacing.sm },
+    tab: { minHeight: dimensions.touchTarget, paddingHorizontal: spacing.sm, justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+    tabActive: { borderBottomColor: color.accent },
+    section: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, gap: spacing.md },
+    gallery: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: spacing.xl },
+    galleryItem: { width: '48%', gap: spacing.xs },
+    galleryImage: { width: '100%', aspectRatio: 4 / 3, borderRadius: radius.control },
+    eventRow: { flexDirection: 'row', alignItems: 'center', minHeight: dimensions.control.large, gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border },
+    eventIcon: { width: 44, height: 44, borderRadius: radius.control, backgroundColor: color.surfaceSubtle, alignItems: 'center', justifyContent: 'center' },
+    eventCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
+  });
+}
