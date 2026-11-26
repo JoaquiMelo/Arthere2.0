@@ -73,10 +73,17 @@ export default function PublicProfileScreen() {
             <IconButton icon="arrow-back" variant="outline" accessibilityLabel="Voltar" onPress={() => navigation.goBack()} />
             <AppText variant="label" color="accentText" weight="bold">ARTHERE / PERFIL</AppText>
           </View>
-          {!!perfil.bannerUrl && <MediaImage uri={perfil.bannerUrl} style={styles.heroBanner} />}
+          {agente ? (
+            <View style={styles.agentCover}>
+              {perfil.bannerUrl ? <MediaImage uri={perfil.bannerUrl} style={styles.agentBanner} /> : null}
+              <View style={styles.agentAvatarFrame}>
+                <Avatar uri={perfil.avatarUrl} style={styles.agentAvatar} iconSize={36} />
+              </View>
+            </View>
+          ) : perfil.bannerUrl ? <MediaImage uri={perfil.bannerUrl} style={styles.heroBanner} /> : null}
           {!agente ? <Text style={styles.kicker}>{perfil.usuario?.tipo === 'CONTRATANTE_EVENTOS' ? 'CONTRATANTE DE EVENTOS' : 'CONTRATANTE DE OPORTUNIDADES'}</Text> : null}
-          <View style={[styles.identity, agente && styles.agentIdentity, agente && perfil.bannerUrl ? { marginTop: -spacing['4xl'] } : undefined]}>
-            <Avatar uri={perfil.avatarUrl} style={agente ? styles.agentAvatar : styles.avatar} iconSize={36} />
+          <View style={[styles.identity, agente && styles.agentIdentity]}>
+            {!agente ? <Avatar uri={perfil.avatarUrl} style={styles.avatar} iconSize={36} /> : null}
             <View style={agente ? styles.agentIdentityCopy : styles.identityCopy}>
               {agente ? <AppText variant="label" color="accentText" weight="semibold" style={styles.centerText}>Profissional criativo</AppText> : null}
               <AppText variant="h2" weight="heavy" accessibilityRole="header" style={agente ? styles.centerText : undefined}>{nome}</AppText>
@@ -128,7 +135,10 @@ function createStyles({ color, radius, spacing, typography, dimensions }: ThemeT
     avatar: { width: 88, height: 88, borderRadius: radius.cardCompact, backgroundColor: color.surface },
     identityCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
     agentIdentity: { flexDirection: 'column', alignItems: 'center', gap: spacing.sm },
-    agentAvatar: { width: 108, height: 108, borderWidth: 4, borderColor: color.background, borderRadius: radius.sheetCompact },
+    agentCover: { width: '100%', aspectRatio: 16 / 9, minHeight: 156, position: 'relative', alignItems: 'center', justifyContent: 'center', borderRadius: radius.cardCompact, backgroundColor: color.accentSecondary, overflow: 'hidden' },
+    agentBanner: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', borderRadius: radius.cardCompact },
+    agentAvatarFrame: { width: 108, height: 108, borderWidth: 4, borderColor: color.background, backgroundColor: color.background, borderRadius: radius.sheetCompact },
+    agentAvatar: { width: 100, height: 100, borderRadius: radius.card },
     agentIdentityCopy: { width: '100%', alignItems: 'center', gap: spacing.xs },
     centerText: { textAlign: 'center' },
     subtitle: { color: color.textPrimary, fontSize: typography.size.body, lineHeight: typography.lineHeight.body },
