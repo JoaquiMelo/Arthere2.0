@@ -72,7 +72,8 @@ export default function EventDetailsScreen() {
   const statusSolicitacao = solicitacao?.status;
 
   const solicitarParticipacao = () => {
-    if (statusSolicitacao === 'PENDENTE' || statusSolicitacao === 'ACEITA' || enviando) return;
+    const agente = user;
+    if (!agente || statusSolicitacao === 'PENDENTE' || statusSolicitacao === 'ACEITA' || enviando) return;
 
     Alert.alert(
       'Enviar solicitação',
@@ -87,9 +88,9 @@ export default function EventDetailsScreen() {
               await enviarSolicitacaoEvento({
                 eventId: evento.id,
                 eventoTitulo: evento.titulo,
-                agenteId: user.id,
-                agenteNome: user.nomeSocial || user.nome,
-                agenteEspecialidade: user.especialidade || 'Profissional criativo',
+                agenteId: agente.id,
+                agenteNome: agente.nomeSocial || agente.nome,
+                agenteEspecialidade: agente.especialidade || 'Profissional criativo',
                 mensagem: 'Olá! Gostaria de participar deste projeto como agente criativo.',
               });
               Alert.alert('Solicitação enviada', 'O contratante recebeu seu pedido de participação.');
