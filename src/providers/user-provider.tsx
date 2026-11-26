@@ -113,9 +113,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
         }
       }
-    } catch {
-      // Falhas de leitura do armazenamento não autorizam apagar dados locais.
-      setUser(null);
+    } catch (error) {
+      // Uma falha de leitura não equivale a logout. Preserve a identidade atual;
+      // a sessão será revalidada na próxima tentativa de refresh.
+      if (error instanceof api.SessaoStorageError) return;
+      throw error;
     }
   }, []);
 
