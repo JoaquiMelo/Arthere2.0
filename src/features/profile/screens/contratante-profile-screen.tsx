@@ -63,7 +63,9 @@ export default function ContratanteProfileScreen() {
   const emAndamento = vagas.filter((vaga) => vaga.status === 'EM_ANDAMENTO').length;
   const abertas = vagas.filter((vaga) => vaga.status === 'ABERTA').length;
   const totalCandidaturas = vagas.reduce((soma, vaga) => soma + vaga.candidatos.length, 0);
-  const editarPerfil = () => navigation.navigate('EditContractorProfile');
+  const editarPerfil = () => navigation.navigate(isEvents ? 'EditContractorProfile' : 'EditOpportunityContractorProfile');
+  const editarApresentacao = () => isEvents ? editarPerfil() : navigation.navigate('EditOpportunityContractorProfile', { mode: 'presentation' });
+  const criarVaga = () => navigation.navigate('CreateOpportunity');
   const abrirEdicao = () => {
     setRascunhoEmpresa(empresa);
     setEditando(true);
@@ -124,6 +126,7 @@ export default function ContratanteProfileScreen() {
             <Button style={{ flexGrow: 1, flexBasis: 138, borderRadius: radius.control }} onPress={editarPerfil}>Editar perfil</Button>
             <Button variant="outline" style={{ flexGrow: 1, flexBasis: 138, borderRadius: radius.control }} onPress={() => navigation.navigate('PublicProfile', { profileType: 'CONTRATANTE', profileId: user.id })}>Ver perfil público</Button>
           </View>
+          {!isEvents ? <Button fullWidth style={{ borderRadius: radius.control }} onPress={criarVaga}>Criar nova vaga</Button> : null}
           {erro ? <View style={{ gap: spacing.xs }}><AppText color="dangerText" variant="bodySmall" accessibilityLiveRegion="polite">Não foi possível atualizar todas as informações.</AppText><Button variant="ghost" onPress={recarregar} disabled={atualizando}>Tentar novamente</Button></View> : null}
         </View>
 
@@ -149,7 +152,7 @@ export default function ContratanteProfileScreen() {
         </View> : null}
 
         {aba === 'publicacoes' && !isEvents ? <View style={section}>
-          <SectionHeader title="Minhas oportunidades" description={`${vagas.length} ${vagas.length === 1 ? 'vaga publicada' : 'vagas publicadas'}`} />
+          <SectionHeader title="Minhas oportunidades" description={`${vagas.length} ${vagas.length === 1 ? 'vaga publicada' : 'vagas publicadas'}`} action={<IconButton icon="add" variant="outline" accessibilityLabel="Criar vaga" onPress={criarVaga} />} />
           {loading && vagas.length === 0 ? <FeedbackState kind="loading" title="Carregando vagas…" /> : vagas.length === 0 ? <FeedbackState kind="empty" title="Nenhuma vaga publicada" description="As oportunidades que você publicar aparecerão aqui." icon="briefcase-outline" /> : vagas.map((vaga) => (
             <Pressable key={vaga.id} accessibilityRole="button" accessibilityLabel={`Gerenciar vaga ${vaga.titulo}`} onPress={() => navigation.navigate('ManageOpportunities')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border, opacity: pressed ? 0.8 : 1 })}>
               <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
@@ -184,7 +187,8 @@ export default function ContratanteProfileScreen() {
               </View>
             ))}
           </> : <>
-            <Button fullWidth onPress={() => navigation.navigate('ManageOpportunities')}>Candidaturas ({totalCandidaturas})</Button>
+            <Button fullWidth onPress={criarVaga}>Criar vaga</Button>
+            <Button variant="secondary" fullWidth onPress={() => navigation.navigate('ManageOpportunities')}>Candidaturas ({totalCandidaturas})</Button>
             <Button variant="outline" fullWidth onPress={() => navigation.navigate('Opportunities')}>Ir para oportunidades</Button>
           </>}
         </View> : null}
@@ -193,7 +197,7 @@ export default function ContratanteProfileScreen() {
           <SectionHeader title={isEvents ? 'Sobre a organização' : 'Apresentação profissional'} />
           <AppText color={user.descricao?.trim() ? 'textPrimary' : 'textSecondary'}>{user.descricao?.trim() || 'Adicione uma apresentação ao seu perfil.'}</AppText>
           {user.site ? <AppText variant="bodySmall" color="textSecondary">{user.site}</AppText> : null}
-          <Button variant="outline" fullWidth onPress={editarPerfil}>Editar apresentação</Button>
+          <Button variant="outline" fullWidth onPress={editarApresentacao}>Editar apresentação</Button>
         </View> : null}
       </ScrollView>
       <Modal visible={editando && isEvents} transparent animationType="none" onRequestClose={() => { if (!salvando) setEditando(false); }}>
