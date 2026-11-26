@@ -31,6 +31,13 @@ export default function ChatConversationScreen() {
 
   if (!conversation) return null;
 
+  const iniciais = conversation.participant.nome
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((parte) => parte.charAt(0).toUpperCase())
+    .join('');
+
   const submit = async () => {
     const texto = draft.trim();
     if (!texto) return;
@@ -54,7 +61,11 @@ export default function ChatConversationScreen() {
             <Ionicons name="arrow-back" size={20} color={colors.brandInk} />
           </TouchableOpacity>
           <View style={styles.avatarFrame}>
-            <Image source={{ uri: conversation.participant.avatarUrl }} style={styles.avatar} />
+            {conversation.participant.avatarUrl ? (
+              <Image source={{ uri: conversation.participant.avatarUrl }} style={styles.avatar} />
+            ) : (
+              <Text style={styles.avatarInitials}>{iniciais || "A"}</Text>
+            )}
           </View>
           <View style={styles.headerInfo}>
             <Text style={styles.kicker}>CONVERSA</Text>
@@ -155,6 +166,12 @@ const styles = StyleSheet.create({
   avatar: {
     width: 38,
     height: 38,
+  },
+  avatarInitials: {
+    color: colors.brandInk,
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   headerInfo: {
     marginLeft: 10,
