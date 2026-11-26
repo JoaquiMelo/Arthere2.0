@@ -14,8 +14,13 @@ module.exports = ({ config }) => ({
     ...config.android,
     package: 'com.anonymous.ArtherePush',
   },
+  
   plugins: [
     ...(config.plugins || []),
+
+    '@react-native-community/datetimepicker',
+    'expo-splash-screen',
+
     [
       'expo-location',
       {
@@ -23,6 +28,7 @@ module.exports = ({ config }) => ({
           'O Arthere usa sua localização para centralizar o mapa onde você atende.',
       },
     ],
+
     [
       'react-native-maps',
       {
@@ -30,4 +36,5 @@ module.exports = ({ config }) => ({
       },
     ],
   ],
+
 });
