@@ -105,7 +105,7 @@ export default function SettingsScreen() {
             palette={palette}
             icon="person-outline"
             label="Editar perfil"
-            onPress={() => navigation.navigate(user?.tipo === "CONTRATANTE" ? "EditContractorProfile" : "EditProfile")}
+            onPress={() => navigation.navigate(user?.tipo === "CONTRATANTE_EVENTOS" || user?.tipo === "CONTRATANTE_OPORTUNIDADES" ? "EditContractorProfile" : "EditProfile")}
           />
           <SettingRow
             palette={palette}
