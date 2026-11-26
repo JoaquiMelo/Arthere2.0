@@ -132,24 +132,25 @@ function AgenteProfileScreenContent() {
             </View>
             <IconButton icon="settings-outline" variant="outline" accessibilityLabel="Abrir configurações" onPress={() => navigation.navigate('Settings')} />
           </View>
-          {user.bannerUrl ? (
-            <Pressable accessibilityRole="button" accessibilityLabel="Editar capa do perfil" onPress={abrirEdicaoPerfil} style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
-              <MediaImage uri={user.bannerUrl} style={styles.coverImage} />
-            </Pressable>
-          ) : (
-            <Pressable accessibilityRole="button" accessibilityLabel="Adicionar capa ao perfil" onPress={abrirEdicaoPerfil} style={({ pressed }) => [styles.coverEmpty, { opacity: pressed ? 0.8 : 1 }]}>
-              <Ionicons name="image-outline" size={dimensions.icon.large} color={color.accentText} />
-              <AppText weight="semibold">Adicionar capa</AppText>
-              <AppText variant="bodySmall" color="textSecondary">Apresente sua identidade visual.</AppText>
-            </Pressable>
-          )}
-          <View style={[styles.identity, user.bannerUrl ? { marginTop: -spacing['4xl'] } : undefined]}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Editar foto de perfil" onPress={abrirEdicaoPerfil} style={({ pressed }) => [styles.avatarFrame, { opacity: pressed ? 0.8 : 1 }]}>
+          <View style={styles.coverStage}>
+            {user.bannerUrl ? (
+              <Pressable accessibilityRole="button" accessibilityLabel="Editar capa do perfil" onPress={abrirEdicaoPerfil} style={({ pressed }) => [styles.coverLayer, { opacity: pressed ? 0.85 : 1 }]}>
+                <MediaImage uri={user.bannerUrl} style={styles.coverImage} />
+              </Pressable>
+            ) : (
+              <View style={[styles.coverLayer, styles.coverEmpty]} />
+            )}
+            <Pressable accessibilityRole="button" accessibilityLabel="Editar foto de perfil" onPress={abrirEdicaoPerfil} style={({ pressed }) => [styles.avatarFrame, { opacity: pressed ? 0.85 : 1 }]}>
               <Avatar uri={agente.avatarUrl} style={styles.avatar} iconSize={36} />
               <View style={styles.cameraBadge}>
                 <Ionicons name="camera-outline" size={dimensions.icon.small} color={color.onAccent} />
               </View>
             </Pressable>
+            <View style={styles.coverAction}>
+              <IconButton icon={user.bannerUrl ? 'create-outline' : 'image-outline'} variant="outline" accessibilityLabel={user.bannerUrl ? 'Editar capa' : 'Adicionar capa'} onPress={abrirEdicaoPerfil} />
+            </View>
+          </View>
+          <View style={styles.identity}>
             <View style={styles.identityCopy}>
               <AppText variant="label" color="accentText" weight="semibold" style={styles.centerText}>Agente criativo</AppText>
               <AppText variant="h2" weight="heavy" accessibilityRole="header" style={styles.centerText}>{agente.nome}</AppText>
@@ -275,11 +276,14 @@ function createStyles({ color, spacing, radius, dimensions }: ThemeTokens) {
     hero: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.lg, gap: spacing.md },
     topBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     headerCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
-    coverImage: { width: '100%', aspectRatio: 16 / 9, borderRadius: radius.cardCompact },
-    coverEmpty: { minHeight: 104, padding: spacing.md, borderRadius: radius.cardCompact, borderWidth: 1, borderColor: color.border, backgroundColor: color.surfaceSubtle, gap: spacing.xs, alignItems: 'flex-start', justifyContent: 'center' },
+    coverStage: { width: '100%', aspectRatio: 16 / 9, minHeight: 156, position: 'relative', alignItems: 'center', justifyContent: 'center', borderRadius: radius.cardCompact },
+    coverLayer: { ...StyleSheet.absoluteFillObject, borderRadius: radius.cardCompact, overflow: 'hidden' },
+    coverImage: { width: '100%', height: '100%', borderRadius: radius.cardCompact },
+    coverEmpty: { backgroundColor: color.accentSecondary },
+    coverAction: { position: 'absolute', right: spacing.sm, bottom: spacing.sm, backgroundColor: color.surface, borderRadius: radius.control },
     identity: { alignItems: 'center', gap: spacing.sm },
-    avatarFrame: { width: 108, height: 108, position: 'relative', borderWidth: 4, borderColor: color.background, backgroundColor: color.background, borderRadius: 24 },
-    avatar: { width: 100, height: 100, borderRadius: 20 },
+    avatarFrame: { width: 108, height: 108, position: 'relative', borderWidth: 4, borderColor: color.background, backgroundColor: color.background, borderRadius: radius.sheetCompact },
+    avatar: { width: 100, height: 100, borderRadius: radius.card },
     cameraBadge: { position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: color.accent, borderWidth: 2, borderColor: color.background },
     identityCopy: { width: '100%', alignItems: 'center', gap: spacing.xs },
     locationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
