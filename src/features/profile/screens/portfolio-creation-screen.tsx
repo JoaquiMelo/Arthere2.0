@@ -1,56 +1,220 @@
-import { MediaImage } from '@/shared/components/media-image';
-import React,{useCallback,useState} from 'react';
-import {ActivityIndicator,Alert,Image,KeyboardAvoidingView,Platform,SafeAreaView,ScrollView,StyleSheet,Text,TextInput,TouchableOpacity,View,RefreshControl} from 'react-native';
-import {Ionicons} from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import {useFocusEffect,useNavigation} from '@react-navigation/native';
-import {useUser} from '@/providers/user-provider';
-import {addPortfolio,deletePortfolio,portfolio as fetchPortfolio,updatePortfolio,uploadImage} from '@/services/api';
-import {colors} from '@/shared/theme/colors';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { AppText, Button, FeedbackState, IconButton, MediaImage, ScreenContainer, SectionHeader, TextField } from '@/shared/components';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { useUser } from '@/providers/user-provider';
+import { addPortfolio, deletePortfolio, portfolio as fetchPortfolio, updatePortfolio, uploadImage } from '@/services/api';
+import type { RootStackParamList } from '@/navigation/app-navigator';
+import type { GalleryWork } from '../components/portfolio-gallery';
 
-type Item={id:string;imageUrl:string;titulo?:string;descricao?:string};
+type Mode = 'manage' | 'add' | 'edit';
+type Draft = { image: string; titulo: string; descricao: string };
+const emptyDraft: Draft = { image: '', titulo: '', descricao: '' };
 
-export default function PortfolioCreationScreen(){
- const navigation=useNavigation<any>(); const {user}=useUser();
- const [itens,setItens]=useState<Item[]>([]); const [novaUrl,setNovaUrl]=useState(''); const [novoTitulo,setNovoTitulo]=useState(''); const [novaDescricao,setNovaDescricao]=useState('');
- const [preview,setPreview]=useState<string|null>(null); const [carregando,setCarregando]=useState(true); const [salvando,setSalvando]=useState(false);
+export default function PortfolioCreationScreen() {
+  const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<RootStackParamList, 'PortfolioCreation'>>();
+  const { user } = useUser();
+  const id = user?.tipo === 'AGENTE' ? user.id : undefined;
+  const { color, spacing, radius, dimensions } = useThemeTokens();
+  const [items, setItems] = useState<GalleryWork[]>([]);
+  const [mode, setMode] = useState<Mode>(route.params?.mode ?? 'manage');
+  const [editId, setEditId] = useState<string | null>(route.params?.itemId ?? null);
+  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [urlVisible, setUrlVisible] = useState(false);
+  const pending = useRef(false);
+  const initialEdit = useRef(route.params?.mode === 'edit' ? route.params.itemId : undefined);
+  const request = useRef(0);
 
- const carregarPortfolio=useCallback(async()=>{
-  if(!user?.id){setCarregando(false);return;}
-  setCarregando(true);
-  try{
-   const lista=await fetchPortfolio(user.id);
-   setItens((lista??[]).map((x:any)=>({id:x.id,imageUrl:x.imageUrl,titulo:x.titulo,descricao:x.descricao})));
-  }catch(e){
-   Alert.alert('Portfólio',e instanceof Error?e.message:'Não foi possível carregar o portfólio.');
-  }finally{
-   setCarregando(false);
-  }
- },[user]);
+  const load = useCallback(async () => {
+    if (!id || pending.current) { setLoading(false); return; }
+    const version = ++request.current;
+    setLoading(true);
+    setError('');
+    try {
+      const data = await fetchPortfolio(id);
+      if (version !== request.current) return;
+      const list: GalleryWork[] = (data ?? []).map((item) => ({ id: item.id, imageUrl: item.imageUrl, titulo: item.titulo, descricao: item.descricao }));
+      setItems(list);
+      if (initialEdit.current) {
+        const work = list.find((item) => item.id === initialEdit.current);
+        initialEdit.current = undefined;
+        if (work) {
+          setEditId(work.id);
+          setDraft({ image: work.imageUrl, titulo: work.titulo ?? '', descricao: work.descricao ?? '' });
+          setMode('edit');
+        } else {
+          setMode('manage');
+          setNotice('Este trabalho não está mais disponível.');
+        }
+      }
+    } catch (e) {
+      if (version === request.current) setError(e instanceof Error ? e.message : 'Não foi possível carregar os trabalhos.');
+    } finally {
+      if (version === request.current) setLoading(false);
+    }
+  }, [id]);
 
- useFocusEffect(
-  useCallback(()=>{void carregarPortfolio();},[carregarPortfolio]),
- );
+  useFocusEffect(useCallback(() => {
+    void load();
+    return () => { request.current += 1; };
+  }, [load]));
 
- const escolherImagem=async()=>{const p=await ImagePicker.requestMediaLibraryPermissionsAsync();if(!p.granted){Alert.alert('Permissão necessária','Autorize o acesso à galeria para selecionar uma imagem.');return;}const r=await ImagePicker.launchImageLibraryAsync({mediaTypes:['images'],allowsEditing:true,aspect:[1,1],quality:.8});if(!r.canceled&&r.assets?.[0]){setPreview(r.assets[0].uri);Alert.alert('Imagem selecionada','Para que a imagem fique acessível em outros dispositivos, informe também uma URL pública.');}};
- const adicionar=async()=>{const image=(novaUrl.trim()||preview||'').trim();if(!image){Alert.alert('Escolha uma imagem','Selecione uma imagem ou informe uma URL pública.');return;}if(!user?.id)return;setSalvando(true);try{const imagePersistida=image.startsWith('file:')||image.startsWith('content:')?await uploadImage(image):image;if(!/^https?:\/\//i.test(imagePersistida)){Alert.alert('URL inválida','A imagem precisa ser enviada ou possuir uma URL pública.');return;}const criado=await addPortfolio({agenteId:user.id,imageUrl:imagePersistida,titulo:novoTitulo.trim()||undefined,descricao:novaDescricao.trim()||undefined});setItens(current=>[{id:criado.id,imageUrl:criado.imageUrl,titulo:criado.titulo,descricao:criado.descricao},...current]);setNovaUrl('');setNovoTitulo('');setNovaDescricao('');setPreview(null);}catch(e){Alert.alert('Não foi possível adicionar',e instanceof Error?e.message:'Tente novamente.');}finally{setSalvando(false);}};
- const atualizar=async(item:Item)=>{setSalvando(true);try{await updatePortfolio(item.id,{imageUrl:item.imageUrl,titulo:item.titulo||undefined,descricao:item.descricao||undefined});}catch(e){Alert.alert('Não foi possível salvar',e instanceof Error?e.message:'Tente novamente.');}finally{setSalvando(false);}};
- const remover=(id:string)=>Alert.alert('Remover trabalho','Deseja remover este item?', [{text:'Cancelar',style:'cancel'},{text:'Remover',style:'destructive',onPress:async()=>{try{await deletePortfolio(id);setItens(current=>current.filter(x=>x.id!==id));}catch(e){Alert.alert('Erro',e instanceof Error?e.message:'Não foi possível remover.');}}}]);
+  const openAdd = () => {
+    setDraft(emptyDraft);
+    setEditId(null);
+    setNotice('');
+    setUrlVisible(false);
+    setMode('add');
+  };
+  const openEdit = (work: GalleryWork) => {
+    setEditId(work.id);
+    setDraft({ image: work.imageUrl, titulo: work.titulo ?? '', descricao: work.descricao ?? '' });
+    setNotice('');
+    setUrlVisible(false);
+    setMode('edit');
+  };
+  const returnToList = () => {
+    setDraft(emptyDraft);
+    setEditId(null);
+    setUrlVisible(false);
+    setMode('manage');
+  };
 
- return <SafeAreaView style={styles.container}>
-  <View style={styles.header}><TouchableOpacity style={styles.back} onPress={()=>navigation.goBack()}><Ionicons name="chevron-back" size={24} color={colors.brandInk}/></TouchableOpacity><View style={styles.headerCopy}><Text style={styles.kicker}>PORTFÓLIO</Text><Text style={styles.title}>Seus trabalhos</Text></View><View style={styles.count}><Text style={styles.countText}>{itens.length}</Text></View></View>
-  <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS==='ios'?'padding':undefined}><ScrollView refreshControl={<RefreshControl refreshing={carregando} onRefresh={carregarPortfolio} />} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-   <View style={styles.intro}><Text style={styles.introTitle}>Mostre o que você cria</Text><Text style={styles.introText}>Os trabalhos ficam vinculados ao seu perfil e são lidos diretamente do banco.</Text></View>
-   <View style={styles.addCard}><Text style={styles.cardKicker}>NOVO TRABALHO</Text><Text style={styles.cardTitle}>Adicionar ao portfólio</Text>
-    <TouchableOpacity style={styles.imagePicker} onPress={escolherImagem}>{preview?<Image source={{uri:preview}} style={styles.newImage}/>:<><View style={styles.addIcon}><Ionicons name="image-outline" size={25} color={colors.primaryDark}/></View><Text style={styles.imageTitle}>Selecionar imagem</Text><Text style={styles.imageHint}>A seleção local é usada como prévia</Text></>}</TouchableOpacity>
-    <TextInput style={styles.input} value={novaUrl} onChangeText={setNovaUrl} placeholder="URL pública da imagem (https://...)" placeholderTextColor={colors.muted} autoCapitalize="none" autoCorrect={false}/>
-    <TextInput style={styles.input} value={novoTitulo} onChangeText={setNovoTitulo} placeholder="Título do trabalho" placeholderTextColor={colors.muted}/>
-    <TextInput style={[styles.input,styles.multiline]} value={novaDescricao} onChangeText={setNovaDescricao} placeholder="Descrição opcional" placeholderTextColor={colors.muted} multiline textAlignVertical="top"/>
-    <TouchableOpacity style={[styles.primaryButton,salvando&&styles.disabled]} onPress={adicionar} disabled={salvando}>{salvando?<ActivityIndicator color={colors.brandPaper}/>:<><Ionicons name="add" size={18} color={colors.brandPaper}/><Text style={styles.primaryText}>ADICIONAR TRABALHO</Text></>}</TouchableOpacity>
-   </View>
-   <View style={styles.listHeader}><Text style={styles.sectionKicker}>PUBLICADOS</Text><Text style={styles.sectionTitle}>Seu portfólio</Text></View>
-   {carregando?<ActivityIndicator color={colors.brandCoral} style={{marginTop:25}}/>:itens.length===0?<View style={styles.empty}><Ionicons name="images-outline" size={31} color={colors.brandCoral}/><Text style={styles.emptyTitle}>Nenhum trabalho ainda</Text><Text style={styles.emptyText}>Adicione uma imagem pública para começar a montar seu portfólio.</Text></View>:itens.map(item=><View key={item.id} style={styles.itemCard}><MediaImage uri={item.imageUrl} style={styles.itemImage}/><View style={styles.itemBody}><TextInput style={styles.itemTitle} value={item.titulo||''} onChangeText={v=>setItens(c=>c.map(x=>x.id===item.id?{...x,titulo:v}:x))} placeholder="Título" placeholderTextColor={colors.muted}/><TextInput style={styles.itemDescription} value={item.descricao||''} onChangeText={v=>setItens(c=>c.map(x=>x.id===item.id?{...x,descricao:v}:x))} placeholder="Descrição" placeholderTextColor={colors.muted} multiline/><View style={styles.itemActions}><TouchableOpacity onPress={()=>atualizar(item)}><Text style={styles.saveText}>SALVAR</Text></TouchableOpacity><TouchableOpacity onPress={()=>remover(item.id)}><Text style={styles.deleteText}>REMOVER</Text></TouchableOpacity></View></View></View>)}
-  </ScrollView></KeyboardAvoidingView>
- </SafeAreaView>;
+  const chooseImage = async () => {
+    if (pending.current) return;
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permissão necessária', 'Autorize o acesso à galeria para escolher a imagem.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 0.85 });
+      if (!result.canceled && result.assets?.[0]) {
+        const image = result.assets[0].uri;
+        setDraft((current) => ({ ...current, image }));
+      }
+    } catch (e) {
+      Alert.alert('Não foi possível selecionar a imagem', e instanceof Error ? e.message : 'Tente novamente.');
+    }
+  };
+
+  const save = async () => {
+    if (!id || pending.current || loading || error || mode === 'manage' || (mode === 'edit' && !editId)) return;
+    const image = draft.image.trim();
+    if (!image) { Alert.alert('Escolha uma imagem', 'Selecione uma foto ou informe uma URL pública.'); return; }
+    const original = items.find((item) => item.id === editId);
+    const unchanged = mode === 'edit' && original?.imageUrl === image;
+    const local = /^(file|content):/i.test(image);
+    if (!unchanged && !local && !/^https?:\/\/[^\s]+$/i.test(image)) {
+      Alert.alert('URL inválida', 'Use uma URL pública HTTP ou HTTPS, ou selecione uma imagem.');
+      return;
+    }
+    pending.current = true;
+    setBusy(true);
+    setNotice('');
+    try {
+      const imageUrl = local && !unchanged ? await uploadImage(image) : image;
+      if (local && !unchanged) setDraft((current) => ({ ...current, image: imageUrl }));
+      const payload = { imageUrl, titulo: draft.titulo.trim(), descricao: draft.descricao.trim() };
+      const saved = mode === 'edit' && editId
+        ? await updatePortfolio(editId, payload)
+        : await addPortfolio({ agenteId: id, ...payload });
+      const work: GalleryWork = { id: saved.id, imageUrl: saved.imageUrl, titulo: saved.titulo, descricao: saved.descricao };
+      setItems((current) => mode === 'edit' ? current.map((item) => item.id === work.id ? work : item) : [work, ...current]);
+      setNotice(mode === 'edit' ? 'Alterações salvas.' : 'Trabalho publicado.');
+      returnToList();
+    } catch (e) {
+      Alert.alert('Não foi possível salvar', e instanceof Error ? e.message : 'Tente novamente.');
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
+  };
+
+  const remove = (work: GalleryWork) => {
+    if (pending.current) return;
+    Alert.alert('Remover trabalho?', 'A obra será retirada do seu portfólio.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Remover', style: 'destructive', onPress: async () => {
+        if (pending.current) return;
+        pending.current = true;
+        setBusy(true);
+        try {
+          await deletePortfolio(work.id);
+          setItems((current) => current.filter((item) => item.id !== work.id));
+          setNotice('Trabalho removido.');
+          if (editId === work.id) returnToList();
+        } catch (e) {
+          Alert.alert('Não foi possível remover', e instanceof Error ? e.message : 'Tente novamente.');
+        } finally {
+          pending.current = false;
+          setBusy(false);
+        }
+      } },
+    ]);
+  };
+
+  if (!id) return <ScreenContainer><FeedbackState kind="error" title="Portfólio indisponível" description="Somente agentes criativos podem gerenciar trabalhos." /><Button variant="ghost" onPress={() => navigation.goBack()}>Voltar</Button></ScreenContainer>;
+
+  const title = mode === 'manage' ? 'Seu ateliê' : mode === 'add' ? 'Novo trabalho' : 'Editar trabalho';
+  const selected = items.find((item) => item.id === editId);
+  return (
+    <ScreenContainer>
+      <View style={{ padding: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border }}>
+        <IconButton icon="arrow-back" variant="outline" accessibilityLabel="Voltar" disabled={busy} onPress={() => mode === 'manage' ? navigation.goBack() : returnToList()} />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <AppText variant="label" color="accentText" weight="bold">ARTHERE / ATELIÊ</AppText>
+          <AppText variant="h2" weight="heavy" accessibilityRole="header">{title}</AppText>
+        </View>
+      </View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing['3xl'], gap: spacing.lg }}
+          refreshControl={mode === 'manage' ? <RefreshControl refreshing={loading} onRefresh={load} tintColor={color.accentText} colors={[color.accentText]} /> : undefined}>
+          {notice ? <AppText color="successText" accessibilityLiveRegion="polite">{notice}</AppText> : null}
+          {loading ? <FeedbackState kind="loading" title="Carregando trabalhos…" /> : error ? <FeedbackState kind="error" title="Não foi possível carregar" description={error} onRetry={load} /> : mode === 'manage' ? (
+            <>
+              <SectionHeader title="Gerencie sua coleção" description={`${items.length} ${items.length === 1 ? 'trabalho publicado' : 'trabalhos publicados'}`} />
+              <Button fullWidth style={{ borderRadius: radius.control }} onPress={openAdd} disabled={busy}>Adicionar trabalho</Button>
+              {items.length === 0 ? <FeedbackState kind="empty" title="Sua coleção está vazia" description="Adicione uma obra para começar." icon="images-outline" /> : items.map((work) => (
+                <View key={work.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border }}>
+                  <MediaImage uri={work.imageUrl} style={{ width: 88, height: 96, borderRadius: radius.control }} />
+                  <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+                    <AppText weight="bold">{work.titulo || 'Trabalho criativo'}</AppText>
+                    {work.descricao ? <AppText variant="bodySmall" color="textSecondary" numberOfLines={2}>{work.descricao}</AppText> : null}
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+                      <IconButton icon="create-outline" accessibilityLabel={`Editar ${work.titulo || 'trabalho'}`} variant="outline" disabled={busy} onPress={() => openEdit(work)} />
+                      <IconButton icon="trash-outline" accessibilityLabel={`Remover ${work.titulo || 'trabalho'}`} variant="ghost" disabled={busy} onPress={() => remove(work)} />
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </>
+          ) : (
+            <>
+              <SectionHeader title={mode === 'edit' ? 'Refine sua obra' : 'Apresente sua criação'} description="Escolha uma imagem e descreva o trabalho." />
+              <Pressable onPress={chooseImage} disabled={busy} accessibilityRole="button" accessibilityLabel={draft.image ? 'Trocar imagem' : 'Selecionar imagem'} style={({ pressed }) => ({ borderWidth: 1, borderColor: color.border, borderRadius: radius.cardCompact, backgroundColor: color.surface, padding: spacing.sm, gap: spacing.sm, opacity: pressed ? 0.8 : 1 })}>
+                {draft.image && !urlVisible ? <MediaImage uri={draft.image} resizeMode="contain" style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.control }} /> : <View style={{ minHeight: 132, justifyContent: 'center', alignItems: 'center', gap: spacing.sm }}><Ionicons name="image-outline" size={dimensions.icon.extraLarge} color={color.accentText} /><AppText weight="semibold">Selecionar imagem</AppText></View>}
+                <AppText variant="bodySmall" color="accentText" weight="semibold" style={{ textAlign: 'center' }}>{draft.image ? 'Escolher outra imagem da galeria' : 'Escolher da galeria'}</AppText>
+              </Pressable>
+              <Button variant="ghost" size="small" disabled={busy} onPress={() => setUrlVisible((current) => !current)}>{urlVisible ? 'Ocultar campo de URL' : 'Usar URL pública'}</Button>
+              {urlVisible ? <TextField label="URL da imagem" value={draft.image} onChangeText={(image) => setDraft((current) => ({ ...current, image }))} autoCapitalize="none" autoCorrect={false} keyboardType="url" editable={!busy} /> : null}
+              <TextField label="Título do trabalho" value={draft.titulo} onChangeText={(titulo) => setDraft((current) => ({ ...current, titulo }))} editable={!busy} />
+              <TextField label="Descrição" value={draft.descricao} onChangeText={(descricao) => setDraft((current) => ({ ...current, descricao }))} multiline numberOfLines={4} textAlignVertical="top" editable={!busy} />
+              <Button fullWidth style={{ borderRadius: radius.control }} loading={busy} onPress={save}>{mode === 'edit' ? 'Salvar alterações' : 'Publicar trabalho'}</Button>
+              {mode === 'edit' && selected ? <Button variant="ghost" disabled={busy} onPress={() => remove(selected)}>Remover trabalho</Button> : null}
+              <Button variant="outline" disabled={busy} onPress={returnToList}>Cancelar</Button>
+            </>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ScreenContainer>
+  );
 }
-const styles=StyleSheet.create({container:{flex:1,backgroundColor:colors.brandPaper},flex:{flex:1},header:{minHeight:72,paddingHorizontal:16,paddingVertical:10,flexDirection:'row',alignItems:'center',borderBottomWidth:1,borderBottomColor:colors.border,gap:10},back:{width:40,height:40,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:colors.border,backgroundColor:colors.white,borderRadius:12},headerCopy:{flex:1},kicker:{fontSize:8,fontWeight:'900',letterSpacing:1.5,color:colors.brandCoral},title:{fontSize:23,fontWeight:'900',color:colors.brandInk,marginTop:2},count:{width:36,height:36,alignItems:'center',justifyContent:'center',backgroundColor:colors.brandInk,borderRadius:18},countText:{fontSize:12,fontWeight:'900',color:colors.brandPaper},content:{padding:18,paddingBottom:42},intro:{marginBottom:16},introTitle:{fontSize:22,fontWeight:'900',color:colors.brandInk},introText:{fontSize:12,lineHeight:18,color:colors.muted,marginTop:4},addCard:{backgroundColor:colors.white,borderWidth:1,borderColor:colors.border,borderRadius:18,padding:15},cardKicker:{fontSize:8,fontWeight:'900',letterSpacing:1.3,color:colors.brandCoral},cardTitle:{fontSize:17,fontWeight:'900',color:colors.brandInk,marginTop:3,marginBottom:12},imagePicker:{height:160,borderWidth:1.5,borderStyle:'dashed',borderColor:colors.brandCoral,backgroundColor:colors.surface,alignItems:'center',justifyContent:'center',borderRadius:14,overflow:'hidden'},newImage:{width:'100%',height:'100%'},addIcon:{width:48,height:48,borderRadius:24,backgroundColor:colors.brandPaper,alignItems:'center',justifyContent:'center'},imageTitle:{marginTop:8,fontSize:13,fontWeight:'900',color:colors.brandInk},imageHint:{fontSize:10,color:colors.muted,marginTop:3},input:{minHeight:47,borderWidth:1,borderColor:colors.border,borderRadius:10,backgroundColor:colors.brandPaper,paddingHorizontal:12,color:colors.brandInk,fontSize:13,marginTop:10},multiline:{height:82,paddingTop:11},primaryButton:{minHeight:46,backgroundColor:colors.brandInk,borderRadius:12,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:7,marginTop:12},primaryText:{fontSize:9,fontWeight:'900',letterSpacing:1,color:colors.brandPaper},disabled:{opacity:.6},listHeader:{marginTop:25,marginBottom:10},sectionKicker:{fontSize:8,fontWeight:'900',letterSpacing:1.3,color:colors.brandCoral},sectionTitle:{fontSize:19,fontWeight:'900',color:colors.brandInk,marginTop:2},empty:{padding:25,borderWidth:1,borderColor:colors.border,backgroundColor:colors.white,borderRadius:16,alignItems:'center'},emptyTitle:{fontSize:15,fontWeight:'900',color:colors.brandInk,marginTop:9},emptyText:{fontSize:11.5,lineHeight:17,color:colors.muted,textAlign:'center',marginTop:5},itemCard:{flexDirection:'row',padding:10,borderWidth:1,borderColor:colors.border,backgroundColor:colors.white,borderRadius:15,marginBottom:10,gap:10},itemImage:{width:88,height:88,borderRadius:10,backgroundColor:colors.surface},itemBody:{flex:1,minWidth:0},itemTitle:{fontSize:14,fontWeight:'900',color:colors.brandInk,paddingVertical:4},itemDescription:{fontSize:11.5,lineHeight:16,color:colors.muted,minHeight:42,paddingVertical:3},itemActions:{flexDirection:'row',gap:16,marginTop:5},saveText:{fontSize:8,fontWeight:'900',letterSpacing:1,color:colors.brandCoral},deleteText:{fontSize:8,fontWeight:'900',letterSpacing:1,color:colors.danger}});
