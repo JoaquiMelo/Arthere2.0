@@ -13,8 +13,7 @@ const PORTA_API = 3000;
 function obterHostDoExpo(): string | undefined {
   const hostUri =
     Constants.expoConfig?.hostUri ??
-    Constants.manifest2?.extra?.expoGo?.debuggerHost ??
-    Constants.manifest?.debuggerHost;
+    Constants.manifest2?.extra?.expoGo?.debuggerHost;
 
   if (!hostUri) return undefined;
 
