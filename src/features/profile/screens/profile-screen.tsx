@@ -79,6 +79,12 @@ function AgenteProfileScreenContent() {
     }
   }, [refreshUser, refreshManagement]);
   const [abaAtiva, setAbaAtiva] = useState<'portfolio' | 'sobre' | 'avaliacoes'>('portfolio');
+  const { avaliacoesPorAgente, mediaPorAgente } = useReviews();
+
+  if (!user) {
+    return null;
+  }
+
   const agente: AgentePerfil = {
     id: user.id,
     nome: user.nome || 'Seu nome',
@@ -96,7 +102,6 @@ function AgenteProfileScreenContent() {
       descricao: item.descricao ?? undefined,
     })) : [],
   };
-  const { avaliacoesPorAgente, mediaPorAgente } = useReviews();
   const avaliacoes = avaliacoesPorAgente(agente.id);
   const media = avaliacoes.length ? mediaPorAgente(agente.id) : agente.notaMedia;
   const totalAvaliacoes = avaliacoes.length || agente.totalAvaliacoes;
