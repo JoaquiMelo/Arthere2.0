@@ -8,13 +8,16 @@ type Palette = { [Key in keyof typeof baseColors]: string };
 export function createThemeTokens(palette: Palette) {
   return {
     color: {
-      background: palette.brandPaper,
+      ...palette,
+      background: palette.background,
       surface: palette.white,
+      surfaceElevated: palette.white,
       surfaceSubtle: palette.surface,
       surfaceStrong: palette.surfaceStrong,
       textPrimary: palette.brandInk,
       textSecondary: palette.muted,
       textInverse: palette.brandPaper,
+      textDisabled: palette.muted,
       border: palette.border,
       accent: palette.brandCoral,
       accentStrong: palette.primaryDark,
@@ -25,7 +28,6 @@ export function createThemeTokens(palette: Palette) {
       danger: palette.danger,
       disabled: palette.border,
       overlay: 'rgba(41, 36, 43, 0.56)',
-      ...palette,
     },
     typography,
     spacing,
