@@ -225,7 +225,7 @@ export function MapScreen() {
               <AppText variant="label" color="textSecondary">PROFISSIONAIS · ORDENADOS POR AVALIAÇÃO</AppText>
               {erro ? <AppText color="dangerText" variant="bodySmall">{erro}</AppText> : null}
             </View>
-          ) : null}
+          ) : undefined}
           ListEmptyComponent={carregando ? <FeedbackState kind="loading" title="Buscando profissionais…" /> :
             erro ? <FeedbackState kind="error" title="Profissionais indisponíveis" description={erro} onRetry={() => void carregarAgentes()} /> :
             <View style={{ gap: spacing.sm }}>
