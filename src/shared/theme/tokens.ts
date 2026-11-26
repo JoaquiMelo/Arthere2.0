@@ -1,4 +1,6 @@
 import type { colors as baseColors } from './colors';
+import { elevation } from './elevation';
+import { motion } from './motion';
 import { radius } from './radius';
 import { spacing } from './spacing';
 import { typography } from './typography';
@@ -32,6 +34,8 @@ export function createThemeTokens(palette: Palette) {
     typography,
     spacing,
     radius,
+    elevation,
+    motion,
   } as const;
 }
 
