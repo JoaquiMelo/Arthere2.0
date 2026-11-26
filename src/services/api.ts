@@ -44,7 +44,12 @@ function normalizarApiUrl(valor?: string) {
 }
 
 function obterApiUrl(): string {
-  // Em desenvolvimento, prioriza o IP do computador detectado pelo Expo.
+  // Prioriza a URL explicitamente configurada, inclusive no desenvolvimento.
+  if (configuracaoApi) {
+    return normalizarApiUrl(configuracaoApi);
+  }
+
+  // Sem URL configurada, permite usar a API local durante o desenvolvimento.
   if (__DEV__) {
     const host = obterHostDoExpo();
 
@@ -53,8 +58,8 @@ function obterApiUrl(): string {
     }
   }
 
-  // Em builds de produção, utiliza a URL pública configurada no ambiente.
-  return normalizarApiUrl(configuracaoApi);
+  // Fallback para a URL padrão quando nenhuma configuração estiver disponível.
+  return normalizarApiUrl();
 }
 
 export const API_URL = obterApiUrl();
