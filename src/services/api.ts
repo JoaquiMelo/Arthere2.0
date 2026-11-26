@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 
 // URL pública configurada para builds de produção.
 const configuracaoApi = process.env.EXPO_PUBLIC_API_URL?.trim();
-const API_URL_PADRAO = 'http://2.24.65.149:3000';
+const API_URL_PADRAO = 'https://arthere-api.onrender.com';
 const PORTA_API = 3000;
 
 /**
@@ -32,10 +32,7 @@ function normalizarApiUrl(valor?: string) {
 
   if (!/^https?:\/\/[^\s/]+(?::\d+)?(?:\/.*)?$/i.test(url)) {
     if (valor) {
-      console.warn(
-        'EXPO_PUBLIC_API_URL inválida. Usando o endereço padrão da API:',
-        API_URL_PADRAO,
-      );
+      console.warn('EXPO_PUBLIC_API_URL inválida. Usando a API padrão de produção.');
     }
     return API_URL_PADRAO;
   }
@@ -113,7 +110,6 @@ async function request<T>(
 ): Promise<T> {
   const url = `${API_URL}${path}`;
 
-  console.log('➡️ Requisição:', options.method ?? 'GET', url);
 
   try {
     const response = await fetch(url, {
@@ -124,11 +120,9 @@ async function request<T>(
       },
     });
 
-    console.log('⬅️ Status:', response.status);
 
     const body = await response.json().catch(() => null);
 
-    console.log('📦 Resposta:', body);
 
     if (!response.ok) {
       const message = Array.isArray(body?.message)
@@ -140,7 +134,6 @@ async function request<T>(
 
     return body as T;
   } catch (error) {
-    console.error('❌ Erro na requisição:', error);
     throw error;
   }
 }
@@ -185,6 +178,14 @@ async function salvarSessao(result: AuthResponse) {
 /**
  * Recupera a sessão salva.
  */
+export class SessaoStorageError extends Error {
+  constructor(cause?: unknown) {
+    super('Não foi possível acessar a sessão armazenada.');
+    this.name = 'SessaoStorageError';
+    if (cause !== undefined) Object.defineProperty(this, 'cause', { value: cause });
+  }
+}
+
 export async function obterSessao(): Promise<Sessao | null> {
   try {
     const [accessToken, usuario] = await Promise.all([
@@ -200,8 +201,8 @@ export async function obterSessao(): Promise<Sessao | null> {
       accessToken,
       usuario: JSON.parse(usuario),
     };
-  } catch {
-    return null;
+  } catch (error) {
+    throw new SessaoStorageError(error);
   }
 }
 
@@ -259,8 +260,6 @@ export async function login(
 export async function register(
   data: Record<string, unknown>,
 ) {
-  console.log('📝 Dados enviados no cadastro:', data);
-
   const result = await request<AuthResponse>(
     '/auth/register',
     {
