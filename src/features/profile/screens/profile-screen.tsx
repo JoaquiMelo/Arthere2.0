@@ -19,6 +19,7 @@ import { useReviews } from '@/providers/reviews-provider';
 import { useManagement } from '@/providers/management-provider';
 import { useUser } from '@/providers/user-provider';
 import ContratanteProfileScreen from './contratante-profile-screen';
+import { PortfolioGallery, type GalleryWork } from '../components/portfolio-gallery';
 
 export interface PortfolioItem {
   id: string;
@@ -82,7 +83,7 @@ function AgenteProfileScreenContent() {
       setAtualizando(false);
     }
   }, [refreshUser, refreshManagement, agenteId, carregarAvaliacoes]);
-  const [abaAtiva, setAbaAtiva] = useState<'portfolio' | 'sobre' | 'avaliacoes' | 'eventos'>('portfolio');
+  const [abaAtiva, setAbaAtiva] = useState<'portfolio' | 'atelier' | 'sobre' | 'avaliacoes' | 'eventos'>('portfolio');
 
   if (!user) {
     return null;
@@ -112,8 +113,9 @@ function AgenteProfileScreenContent() {
   const localizacao = formatarLocalizacao(agente.cidade, user.estado);
 
   const abrirEdicaoPerfil = () => navigation.navigate('EditProfile', { agente });
-  const abrirEdicaoPortfolio = () =>
-    navigation.navigate('PortfolioCreation', { portfolio: agente.portfolio });
+  const abrirEdicaoPortfolio = () => navigation.navigate('PortfolioCreation', { mode: 'manage' });
+  const adicionarTrabalho = () => navigation.navigate('PortfolioCreation', { mode: 'add' });
+  const editarTrabalho = (item: GalleryWork) => navigation.navigate('PortfolioCreation', { mode: 'edit', itemId: item.id });
 
   return (
     <ScreenContainer edges={['top', 'left', 'right']}>
@@ -141,7 +143,7 @@ function AgenteProfileScreenContent() {
               <AppText variant="bodySmall" color="textSecondary">Apresente sua identidade visual.</AppText>
             </Pressable>
           )}
-          <View style={styles.identity}>
+          <View style={[styles.identity, user.bannerUrl ? { marginTop: -spacing['4xl'] } : undefined]}>
             <Pressable accessibilityRole="button" accessibilityLabel="Editar foto de perfil" onPress={abrirEdicaoPerfil} style={({ pressed }) => [styles.avatarFrame, { opacity: pressed ? 0.8 : 1 }]}>
               <Avatar uri={agente.avatarUrl} style={styles.avatar} iconSize={36} />
               <View style={styles.cameraBadge}>
@@ -149,13 +151,13 @@ function AgenteProfileScreenContent() {
               </View>
             </Pressable>
             <View style={styles.identityCopy}>
-              <AppText variant="label" color="accentText" weight="semibold">Agente criativo</AppText>
-              <AppText variant="h2" weight="heavy" accessibilityRole="header">{agente.nome}</AppText>
-              <AppText variant="bodySmall">{agente.especialidade}</AppText>
+              <AppText variant="label" color="accentText" weight="semibold" style={styles.centerText}>Agente criativo</AppText>
+              <AppText variant="h2" weight="heavy" accessibilityRole="header" style={styles.centerText}>{agente.nome}</AppText>
+              <AppText variant="bodySmall" style={styles.centerText}>{agente.especialidade}</AppText>
               {localizacao ? (
                 <View style={styles.locationRow}>
                   <Ionicons name="location-outline" size={dimensions.icon.small} color={color.accentText} />
-                  <AppText variant="bodySmall" color="textSecondary" style={styles.flexText}>{localizacao}</AppText>
+                  <AppText variant="bodySmall" color="textSecondary" style={styles.locationText}>{localizacao}</AppText>
                 </View>
               ) : null}
             </View>
@@ -174,9 +176,8 @@ function AgenteProfileScreenContent() {
           </View>
           <View style={styles.buttonRow}>
             <Button style={styles.actionButton} onPress={abrirEdicaoPerfil}>Editar perfil</Button>
-            <Button variant="secondary" style={styles.actionButton} onPress={abrirEdicaoPortfolio}>Gerenciar portfólio</Button>
+            <Button variant="outline" style={styles.actionButton} onPress={() => navigation.navigate('PublicProfile', { profileType: 'AGENTE', profileId: agente.id })}>Ver perfil público</Button>
           </View>
-          <Button variant="outline" fullWidth style={{ borderRadius: radius.control }} onPress={() => navigation.navigate('PublicProfile', { profileType: 'AGENTE', profileId: agente.id })}>Ver meu perfil público</Button>
           {erroAtualizacao ? (
             <View style={styles.inlineError} accessibilityLiveRegion="polite">
               <AppText variant="bodySmall" color="dangerText">Algumas informações não puderam ser atualizadas.</AppText>
@@ -187,7 +188,8 @@ function AgenteProfileScreenContent() {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={styles.tabStrip}>
           {([
-            ['portfolio', 'Portfólio'],
+            ['portfolio', 'Galeria'],
+            ['atelier', 'Ateliê'],
             ['sobre', 'Sobre'],
             ['avaliacoes', 'Avaliações'],
             ['eventos', 'Eventos'],
@@ -201,22 +203,32 @@ function AgenteProfileScreenContent() {
 
         {abaAtiva === 'portfolio' ? (
           <View style={styles.section}>
-            <SectionHeader title="Seus trabalhos" description={agente.portfolio.length === 1 ? '1 trabalho publicado' : `${agente.portfolio.length} trabalhos publicados`} />
+            <SectionHeader title="Minha galeria" description={`${agente.portfolio.length} ${agente.portfolio.length === 1 ? 'trabalho publicado' : 'trabalhos publicados'}`} />
             {agente.portfolio.length === 0 ? (
-              <FeedbackState kind="empty" title="Seu portfólio começa aqui" description="Publique seus trabalhos para apresentar o que você cria." icon="images-outline" />
-            ) : (
-              <View style={styles.gallery}>
-                {agente.portfolio.map((item) => (
-                  <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Gerenciar trabalho: ${item.titulo || 'Trabalho criativo'}`} onPress={abrirEdicaoPortfolio}
-                    style={({ pressed }) => [styles.galleryItem, { opacity: pressed ? 0.8 : 1 }]}>
-                    <MediaImage uri={item.imageUrl} style={styles.galleryImage} />
-                    <AppText variant="bodySmall" weight="semibold">{item.titulo || 'Trabalho criativo'}</AppText>
-                    {item.descricao ? <AppText variant="label" color="textSecondary" numberOfLines={2}>{item.descricao}</AppText> : null}
-                  </Pressable>
-                ))}
-              </View>
-            )}
-            <Button variant="outline" fullWidth style={{ borderRadius: radius.control }} onPress={abrirEdicaoPortfolio}>Adicionar trabalho</Button>
+              <>
+                <FeedbackState kind="empty" title="Sua galeria começa aqui" description="Adicione obras no Ateliê para apresentar o que você cria." icon="images-outline" />
+                <Button variant="outline" fullWidth onPress={() => setAbaAtiva('atelier')}>Abrir Ateliê</Button>
+              </>
+            ) : <PortfolioGallery works={agente.portfolio} onEdit={editarTrabalho} />}
+          </View>
+        ) : null}
+
+        {abaAtiva === 'atelier' ? (
+          <View style={styles.section}>
+            <SectionHeader title="Seu ateliê" description="Adicione trabalhos ou edite os que já fazem parte da sua galeria." />
+            <Button fullWidth style={{ borderRadius: radius.control }} onPress={adicionarTrabalho}>Adicionar trabalho</Button>
+            <Button variant="outline" fullWidth style={{ borderRadius: radius.control }} onPress={abrirEdicaoPortfolio}>Gerenciar portfólio</Button>
+            {agente.portfolio.length ? agente.portfolio.map((item) => (
+              <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Editar ${item.titulo || 'trabalho criativo'}`} onPress={() => editarTrabalho(item)}
+                style={({ pressed }) => [styles.eventRow, { opacity: pressed ? 0.75 : 1 }]}>
+                <MediaImage uri={item.imageUrl} style={{ width: 64, height: 72, borderRadius: radius.control }} />
+                <View style={styles.eventCopy}>
+                  <AppText weight="bold">{item.titulo || 'Trabalho criativo'}</AppText>
+                  <AppText variant="bodySmall" color="textSecondary">Editar trabalho</AppText>
+                </View>
+                <Ionicons name="create-outline" size={dimensions.icon.large} color={color.accentText} />
+              </Pressable>
+            )) : <AppText variant="bodySmall" color="textSecondary">Nenhum trabalho publicado ainda.</AppText>}
           </View>
         ) : null}
 
@@ -265,13 +277,13 @@ function createStyles({ color, spacing, radius, dimensions }: ThemeTokens) {
     headerCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
     coverImage: { width: '100%', aspectRatio: 16 / 9, borderRadius: radius.cardCompact },
     coverEmpty: { minHeight: 104, padding: spacing.md, borderRadius: radius.cardCompact, borderWidth: 1, borderColor: color.border, backgroundColor: color.surfaceSubtle, gap: spacing.xs, alignItems: 'flex-start', justifyContent: 'center' },
-    identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-    avatarFrame: { width: 88, height: 88, position: 'relative' },
-    avatar: { width: 88, height: 88, borderRadius: radius.cardCompact },
+    identity: { alignItems: 'center', gap: spacing.sm },
+    avatarFrame: { width: 108, height: 108, position: 'relative', borderWidth: 4, borderColor: color.background, backgroundColor: color.background, borderRadius: 24 },
+    avatar: { width: 100, height: 100, borderRadius: 20 },
     cameraBadge: { position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: color.accent, borderWidth: 2, borderColor: color.background },
-    identityCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
-    locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-    flexText: { flex: 1 },
+    identityCopy: { width: '100%', alignItems: 'center', gap: spacing.xs },
+    locationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
+    locationText: { flexShrink: 1, textAlign: 'center' },
     centerText: { textAlign: 'center' },
     statsRow: { flexDirection: 'row', flexWrap: 'wrap', padding: spacing.md, gap: spacing.sm, borderRadius: radius.control, backgroundColor: color.surfaceSubtle },
     stat: { flexGrow: 1, flexBasis: 76, alignItems: 'center', gap: spacing.xs },
@@ -283,9 +295,6 @@ function createStyles({ color, spacing, radius, dimensions }: ThemeTokens) {
     tab: { minHeight: dimensions.touchTarget, paddingHorizontal: spacing.sm, justifyContent: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
     tabActive: { borderBottomColor: color.accent },
     section: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, gap: spacing.md },
-    gallery: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: spacing.xl },
-    galleryItem: { width: '48%', gap: spacing.xs },
-    galleryImage: { width: '100%', aspectRatio: 4 / 3, borderRadius: radius.control },
     eventRow: { flexDirection: 'row', alignItems: 'center', minHeight: dimensions.control.large, gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border },
     eventIcon: { width: 44, height: 44, borderRadius: radius.control, backgroundColor: color.surfaceSubtle, alignItems: 'center', justifyContent: 'center' },
     eventCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
