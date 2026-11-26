@@ -39,13 +39,6 @@ export function Button({
     ghost: 'transparent',
     danger: tokens.color.danger,
   };
-  const foregrounds: Record<ButtonVariant, string> = {
-    primary: tokens.color.textInverse,
-    secondary: tokens.color.textPrimary,
-    outline: tokens.color.textPrimary,
-    ghost: tokens.color.accent,
-    danger: '#FFFFFF',
-  };
   const borders: Record<ButtonVariant, string> = {
     primary: 'transparent',
     secondary: 'transparent',
@@ -77,10 +70,10 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={foregrounds[variant]} />
+        <ActivityIndicator color={variant === 'secondary' || variant === 'outline' || variant === 'ghost' ? tokens.color.textPrimary : '#FFFFFF'} />
       ) : (
         <View style={styles.content}>
-          <AppText variant="label" weight="bold" color={variant === 'outline' || variant === 'ghost' ? 'textPrimary' : undefined}>
+          <AppText variant="label" weight="bold" color={variant === 'secondary' || variant === 'outline' ? 'textPrimary' : variant === 'ghost' ? 'accent' : 'textInverse'}>
             {children}
           </AppText>
         </View>
