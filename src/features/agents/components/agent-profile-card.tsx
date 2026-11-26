@@ -39,18 +39,18 @@ export function AgentProfileCard({ agente, visible, onClose, onAgendar, onChat, 
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.modalRoot}>
         <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: color.overlay }]} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fechar detalhes do profissional" />
-        <View accessibilityViewIsModal style={[styles.sheet, { backgroundColor: color.surface, borderTopLeftRadius: radius.modal, borderTopRightRadius: radius.modal, paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+        <View accessibilityViewIsModal style={[styles.sheet, { backgroundColor: color.surface, borderTopLeftRadius: radius.sheetCompact, borderTopRightRadius: radius.sheetCompact, paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
           <View style={{ alignItems: 'center', paddingTop: spacing.sm }}>
-            <View style={{ width: 36, height: 4, borderRadius: radius.pill, backgroundColor: color.border }} />
+            <View style={{ width: 36, height: 4, borderRadius: radius.xs, backgroundColor: color.accentSecondary }} />
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
-            <AppText variant="label" color="accentText" weight="bold">PROFISSIONAL CRIATIVO</AppText>
+            <AppText variant="label" color="textSecondary" weight="semibold">Profissional criativo</AppText>
             <IconButton icon="close" accessibilityLabel="Fechar detalhes" variant="ghost" onPress={onClose} />
           </View>
 
           <ScrollView style={styles.body} contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.lg }} showsVerticalScrollIndicator={false}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-              <Avatar uri={agente.avatarUrl} style={{ width: 76, height: 76, borderRadius: radius.card }} iconSize={32} />
+              <Avatar uri={agente.avatarUrl} style={{ width: 80, height: 80, borderRadius: radius.cardCompact }} iconSize={32} />
               <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
                 <AppText variant="label" color="accentText" weight="bold">{categoryLabel(agente.categoria)}</AppText>
                 <AppText variant="h2" weight="heavy" accessibilityRole="header">{agente.nome}</AppText>
@@ -60,7 +60,7 @@ export function AgentProfileCard({ agente, visible, onClose, onAgendar, onChat, 
               </View>
             </View>
 
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, borderTopWidth: 1, borderBottomWidth: 1, borderColor: color.border }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.md, borderRadius: radius.control, backgroundColor: color.background }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                 <Ionicons name="location-outline" size={dimensions.icon.small} color={color.accentText} />
                 <AppText variant="bodySmall" color="textSecondary">{agente.cidade}</AppText>
@@ -75,12 +75,12 @@ export function AgentProfileCard({ agente, visible, onClose, onAgendar, onChat, 
             {agente.descricao.trim() ? <AppText>{agente.descricao}</AppText> : null}
 
             <View style={{ gap: spacing.sm }}>
-              <SectionHeader title="Portfólio" kicker="TRABALHOS" />
+              <SectionHeader title="Portfólio" />
               {agente.portfolio.length ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md }}>
                   {agente.portfolio.map((item) => (
-                    <View key={item.id} style={{ width: 136, gap: spacing.xs }}>
-                      <MediaImage uri={item.imagemUrl} style={{ width: 136, height: 100, borderRadius: radius.control }} />
+                    <View key={item.id} style={{ width: 152, gap: spacing.xs }}>
+                      <MediaImage uri={item.imagemUrl} style={{ width: 152, height: 106, borderRadius: radius.control }} />
                       <AppText variant="bodySmall" weight="medium" numberOfLines={2}>{item.titulo}</AppText>
                     </View>
                   ))}
@@ -106,10 +106,10 @@ export function AgentProfileCard({ agente, visible, onClose, onAgendar, onChat, 
 
           <View style={{ paddingTop: spacing.md, paddingHorizontal: spacing.lg, gap: spacing.sm, borderTopWidth: 1, borderTopColor: color.border }}>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-              <Button variant="outline" style={{ flexGrow: 1 }} onPress={() => onVerPerfil(agente)}>Ver perfil completo</Button>
-              {canChat ? <Button style={{ flexGrow: 1 }} loading={chatLoading} onPress={() => onChat(agente)}>{chatLabel}</Button> : null}
+              <Button variant="outline" style={{ flexGrow: 1, borderRadius: radius.control }} onPress={() => onVerPerfil(agente)}>Ver perfil completo</Button>
+              {canChat ? <Button style={{ flexGrow: 1, borderRadius: radius.control }} loading={chatLoading} onPress={() => onChat(agente)}>{chatLabel}</Button> : null}
             </View>
-            {canChat ? <Button variant="ghost" size="small" fullWidth onPress={() => onAgendar(agente)}>Sobre agendamento</Button> : null}
+            {canChat ? <Button variant="ghost" size="small" fullWidth style={{ borderRadius: radius.control }} onPress={() => onAgendar(agente)}>Sobre agendamento</Button> : null}
           </View>
         </View>
       </View>
