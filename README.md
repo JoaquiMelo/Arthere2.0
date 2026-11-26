@@ -71,6 +71,8 @@ As migrações adicionais desta versão são:
 
 Elas adicionam campos de contratante, eventos, solicitações de participação, conversas e mensagens sem resetar o banco.
 
-## Imagens
+## Imagens e uploads
 
-O portfólio aceita URL pública http/https para persistência. A seleção de imagem local funciona como pré-visualização; upload binário para servidor ainda não faz parte desta versão.
+O aplicativo já possui upload binário de imagens pelo endpoint autenticado `POST /uploads` (campo multipart `file`). O backend aceita JPG, PNG, WEBP e GIF, com limite de 8 MB por arquivo, e grava os arquivos no diretório `backend/uploads`, retornando uma URL pública. O portfólio também aceita URLs públicas HTTP/HTTPS.
+
+**Hospedagem:** o endpoint utiliza armazenamento em disco local. Em produção, configure um disco persistente no provedor de hospedagem e monte-o no caminho utilizado pelo backend; sem armazenamento persistente, arquivos locais podem ser perdidos em reinicializações ou redeploys. Não trate o disco efêmero do serviço como armazenamento durável.
