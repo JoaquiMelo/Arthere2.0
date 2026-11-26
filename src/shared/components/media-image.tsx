@@ -55,7 +55,7 @@ function MediaContent({ uri, style, icon = 'image-outline', iconSize = 32, resiz
         <ExpoImage
           key={attempt}
           source={{ uri: requestUri }}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           contentFit={fit}
           cachePolicy={remote && attempt === 0 ? 'memory-disk' : 'none'}
           recyclingKey={requestUri}
