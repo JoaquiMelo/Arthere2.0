@@ -25,6 +25,7 @@ import ProfileScreen from '@/features/profile/screens/profile-screen';
 import PublicProfileScreen from '@/features/profile/screens/public-profile-screen';
 import SettingsScreen from '@/features/profile/screens/settings-screen';
 import { useTheme } from '@/providers/theme-provider';
+import { createThemeTokens } from '@/shared/theme/tokens';
 import { useUser } from '@/providers/user-provider';
 
 export type RootStackParamList={
@@ -45,12 +46,13 @@ const icons:Record<keyof TabParamList,keyof typeof Ionicons.glyphMap>={
 
 function AppTabs(){
  const{palette}=useTheme();
+ const tokens=createThemeTokens(palette);
  return <Tab.Navigator screenOptions={({route})=>({
   headerShown:false,
-  tabBarActiveTintColor:palette.brandCoral,
-  tabBarInactiveTintColor:palette.brandPaper,
-  tabBarLabelStyle:{fontSize:8,fontWeight:'900',letterSpacing:1,textTransform:'uppercase'},
-  tabBarStyle:{height:74,paddingTop:8,paddingBottom:10,borderTopWidth:1,borderTopColor:palette.border,backgroundColor:palette.brandInk,elevation:0},
+  tabBarActiveTintColor:tokens.color.accent,
+  tabBarInactiveTintColor:tokens.color.textInverse,
+  tabBarLabelStyle:{fontSize:10,fontWeight:'700',letterSpacing:0.35,marginTop:2},
+  tabBarStyle:{height:78,paddingTop:8,paddingBottom:10,borderTopWidth:1,borderTopColor:tokens.color.border,backgroundColor:tokens.color.textPrimary,elevation:0},
   tabBarItemStyle:{paddingVertical:0},tabBarHideOnKeyboard:true,
   tabBarIcon:({color,focused})=><Ionicons name={focused?(icons[route.name].replace('-outline','') as keyof typeof Ionicons.glyphMap):icons[route.name]} size={focused?23:21} color={color}/>
  })}>
