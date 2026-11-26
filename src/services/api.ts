@@ -61,7 +61,6 @@ function obterApiUrl(): string {
 
 export const API_URL = obterApiUrl();
 
-console.log('🔗 API_URL:', API_URL);
 
 export type AuthResponse = {
   access_token: string;
