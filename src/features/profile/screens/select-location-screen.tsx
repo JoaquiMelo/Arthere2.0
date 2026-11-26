@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   searchBox: { marginHorizontal: 16, marginBottom: 10, minHeight: 46, borderWidth: 1, borderColor: colors.border, borderRadius: 10, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: colors.white },
   searchInput: { flex: 1, paddingVertical: 11, color: colors.text, fontSize: 14 },
   mapArea: { flex: 1, overflow: 'hidden' },
-  pinoArea: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  pinoArea: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   pino: { position: 'absolute', bottom: '50%' },
   sombra: { position: 'absolute', width: 10, height: 4, borderRadius: 5, backgroundColor: 'rgba(41,36,43,0.35)' },
   gpsButton: { position: 'absolute', right: 14, bottom: 14, width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
