@@ -14,10 +14,11 @@ Entregar interfaces com identidade própria, clareza, consistência, acessibilid
 ## Contexto técnico obrigatório
 
 - Produto: Arthere 2.0, plataforma que conecta profissionais criativos, agentes culturais, contratantes, oportunidades, portfólios e eventos.
-- Aplicativo móvel: React Native + Expo + TypeScript + Expo Router.
+- Aplicativo móvel: React Native + Expo SDK 58 + TypeScript + React Navigation 7 (Bottom Tabs + Native Stack).
 - Dependências e versões devem ser verificadas no `package.json` antes de propor APIs ou instalar bibliotecas.
 - A API existente é NestJS + Prisma + MySQL/MariaDB. Não substituir integrações reais por mocks.
 - Preservar autenticação, papéis, permissões, rotas, contratos da API e regras de negócio.
+- A navegação existente é React Navigation 7. Não introduzir Expo Router, não migrar rotas e não misturar arquiteturas sem autorização explícita do responsável pelo projeto.
 - O app tem mapa regional, descoberta de agentes, perfis/portfólios, oportunidades/candidaturas, eventos, calendário, avaliações, chat, notificações e configurações.
 - A experiência é mobile-first. Não transportar padrões web para o aplicativo sem adaptação aos padrões nativos.
 
@@ -89,6 +90,7 @@ Ative esta skill ao criar, avaliar, refatorar ou implementar qualquer tela, comp
 - Não quebrar fluxos existentes nem mudar papéis: AGENTE_CRIATIVO, CONTRATANTE_EVENTOS e CONTRATANTE_OPORTUNIDADES.
 - Não presumir que uma tela, rota ou componente existe: localize antes.
 - Não instalar biblioteca ou trocar navegação sem verificar compatibilidade com Expo SDK e dependências atuais.
+- Não propor Expo Router como arquitetura atual: o projeto usa React Navigation 7.
 - Não declarar testes/build aprovados se não foram executados.
 - Não fazer redesign de todo o aplicativo quando o pedido for localizado; identifique impactos e proponha etapas.
 - Se um requisito estiver ambíguo e puder mudar significativamente o produto, faça uma pergunta objetiva antes de implementar.
