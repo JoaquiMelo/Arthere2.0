@@ -1,7 +1,9 @@
 import { Avatar } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
+import { Button } from '@/shared/components';
+import { useUser } from '@/providers/user-provider';
 import {
   Alert,
   FlatList,
@@ -33,8 +35,11 @@ const STATUS_COR: Record<VagaGerenciada['status'], string> = {
 
 export default function ManageOpportunitiesScreen() {
   const navigation = useNavigation<any>();
+  const { user } = useUser();
+  const isCO = user?.tipo === 'CONTRATANTE_OPORTUNIDADES';
   const {
     vagas,
+    refresh,
     solicitacoesEvento,
     aceitarCandidato,
     recusarCandidato,
@@ -43,6 +48,9 @@ export default function ManageOpportunitiesScreen() {
     aceitarSolicitacaoEvento,
     recusarSolicitacaoEvento,
   } = useManagement();
+  useFocusEffect(useCallback(() => {
+    if (isCO) void refresh().catch(() => undefined);
+  }, [isCO, refresh]));
   const { adicionarAvaliacao } = useReviews();
   const [expandida, setExpandida] = useState<string | null>(null);
   const [avaliando, setAvaliando] = useState<{
@@ -229,6 +237,8 @@ export default function ManageOpportunitiesScreen() {
                   color={colors.muted}
                 />
               </TouchableOpacity>
+
+              {isCO ? <Button variant="outline" size="small" style={{ marginTop: 12 }} accessibilityLabel={`Editar vaga ${vaga.titulo}`} onPress={() => navigation.navigate('EditOpportunity', { opportunityId: vaga.id })}>Editar vaga</Button> : null}
 
               {aberta ? (
                 <View style={styles.candidatos}>

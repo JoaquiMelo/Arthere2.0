@@ -2,7 +2,7 @@ import { AppText, Badge, Button, FeedbackState, IconButton, ScreenContainer, Sec
 import { formatarLocalizacao } from '@/shared/config/brazil-location';
 import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useManagement } from '@/providers/management-provider';
@@ -40,6 +40,10 @@ export default function ContratanteProfileScreen() {
       setAtualizando(false);
     }
   }, [refreshUser, refreshManagement]);
+
+  useFocusEffect(useCallback(() => {
+    if (user?.tipo === 'CONTRATANTE_OPORTUNIDADES') void refreshManagement().then(() => setErro(false)).catch(() => setErro(true));
+  }, [user?.tipo, refreshManagement]));
 
   if (!user || (user.tipo !== 'CONTRATANTE_EVENTOS' && user.tipo !== 'CONTRATANTE_OPORTUNIDADES')) return null;
 
@@ -154,12 +158,13 @@ export default function ContratanteProfileScreen() {
         {aba === 'publicacoes' && !isEvents ? <View style={section}>
           <SectionHeader title="Minhas oportunidades" description={`${vagas.length} ${vagas.length === 1 ? 'vaga publicada' : 'vagas publicadas'}`} action={<IconButton icon="add" variant="outline" accessibilityLabel="Criar vaga" onPress={criarVaga} />} />
           {loading && vagas.length === 0 ? <FeedbackState kind="loading" title="Carregando vagas…" /> : vagas.length === 0 ? <FeedbackState kind="empty" title="Nenhuma vaga publicada" description="As oportunidades que você publicar aparecerão aqui." icon="briefcase-outline" /> : vagas.map((vaga) => (
-            <Pressable key={vaga.id} accessibilityRole="button" accessibilityLabel={`Gerenciar vaga ${vaga.titulo}`} onPress={() => navigation.navigate('ManageOpportunities')} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border, opacity: pressed ? 0.8 : 1 })}>
+            <Pressable key={vaga.id} accessibilityRole="button" accessibilityLabel={`Editar vaga ${vaga.titulo}`} onPress={() => navigation.navigate('EditOpportunity', { opportunityId: vaga.id })} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border, opacity: pressed ? 0.8 : 1 })}>
               <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
                 <AppText variant="label" color="accentText" weight="semibold">{vaga.categoria}</AppText>
                 <AppText variant="title" weight="bold">{vaga.titulo}</AppText>
                 <Badge label={vaga.status === 'CONCLUIDA' ? 'Concluída' : vaga.status === 'EM_ANDAMENTO' ? 'Em andamento' : 'Aberta'} tone={vaga.status === 'CONCLUIDA' ? 'success' : vaga.status === 'EM_ANDAMENTO' ? 'warning' : 'accent'} />
                 <AppText variant="bodySmall" color="textSecondary">{vaga.candidatos.length} {vaga.candidatos.length === 1 ? 'candidato' : 'candidatos'}</AppText>
+                <AppText variant="label" color="accentText" weight="semibold">Editar vaga</AppText>
               </View>
               <Ionicons name="chevron-forward" size={dimensions.icon.medium} color={color.textSecondary} />
             </Pressable>
