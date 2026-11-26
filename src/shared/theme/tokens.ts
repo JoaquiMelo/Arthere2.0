@@ -3,7 +3,7 @@ import { radius } from './radius';
 import { spacing } from './spacing';
 import { typography } from './typography';
 
-type Palette = typeof baseColors;
+type Palette = { [Key in keyof typeof baseColors]: string };
 
 export function createThemeTokens(palette: Palette) {
   return {
