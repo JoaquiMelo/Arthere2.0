@@ -1,11 +1,4 @@
 export const typography = {
-  family: {
-    regular: undefined,
-    medium: undefined,
-    semibold: undefined,
-    bold: undefined,
-    heavy: undefined,
-  },
   size: {
     display: 40,
     h1: 32,
