@@ -17,7 +17,7 @@ function formatDate(value: string) {
 export default function ContratanteProfileScreen() {
   const navigation = useNavigation<any>();
   const { user, updateProfile, refresh: refreshUser } = useUser();
-  const { vagas, eventos: todosEventos, refresh: refreshManagement, loading } = useManagement();
+  const { vagas, eventos: todosEventos, refresh: refreshManagement, loading, solicitacoesEvento, aceitarSolicitacaoEvento, recusarSolicitacaoEvento } = useManagement();
   const { color, spacing, radius, dimensions } = useThemeTokens();
   const isEvents = user?.tipo === 'CONTRATANTE_EVENTOS';
   const eventos = todosEventos.filter((evento) => evento.contratanteId === user?.id);
@@ -28,6 +28,8 @@ export default function ContratanteProfileScreen() {
   const [rascunhoEmpresa, setRascunhoEmpresa] = useState('');
   const [salvando, setSalvando] = useState(false);
   const pending = useRef(false);
+  const [respondendo, setRespondendo] = useState<string | null>(null);
+  const respondendoRef = useRef(false);
 
   const recarregar = useCallback(async () => {
     setAtualizando(true);
@@ -42,6 +44,20 @@ export default function ContratanteProfileScreen() {
   if (!user || (user.tipo !== 'CONTRATANTE_EVENTOS' && user.tipo !== 'CONTRATANTE_OPORTUNIDADES')) return null;
 
   const empresa = user.empresa?.trim() || '';
+  const pedidos = isEvents ? solicitacoesEvento.filter((item) => eventos.some((evento) => evento.id === item.eventId)) : [];
+  const responder = async (id: string, aceitar: boolean) => {
+    if (respondendoRef.current) return;
+    respondendoRef.current = true;
+    setRespondendo(id);
+    try {
+      await (aceitar ? aceitarSolicitacaoEvento(id) : recusarSolicitacaoEvento(id));
+    } catch (error) {
+      Alert.alert('Não foi possível responder', error instanceof Error ? error.message : 'Tente novamente.');
+    } finally {
+      respondendoRef.current = false;
+      setRespondendo(null);
+    }
+  };
   const local = formatarLocalizacao(user.cidade, user.estado);
   const concluidas = vagas.filter((vaga) => vaga.status === 'CONCLUIDA').length;
   const emAndamento = vagas.filter((vaga) => vaga.status === 'EM_ANDAMENTO').length;
@@ -152,8 +168,25 @@ export default function ContratanteProfileScreen() {
           <SectionHeader title={isEvents ? 'Gerencie seus eventos' : 'Gerencie contratações'} description={isEvents ? 'Publique atividades e acompanhe as participações.' : 'Acompanhe as candidaturas e o andamento das suas vagas.'} />
           {isEvents ? <>
             <Button fullWidth onPress={() => navigation.navigate('CreateEvent')}>Criar evento</Button>
-            <Button variant="outline" fullWidth onPress={() => navigation.navigate('ManageOpportunities')}>Solicitações de participação</Button>
-          </> : <Button fullWidth onPress={() => navigation.navigate('ManageOpportunities')}>Candidaturas ({totalCandidaturas})</Button>}
+            <SectionHeader title="Solicitações de participação" description={`${pedidos.filter((item) => item.status === 'PENDENTE').length} aguardando resposta`} />
+            {loading && pedidos.length === 0 ? <FeedbackState kind="loading" title="Carregando solicitações…" /> : pedidos.length === 0 ? <FeedbackState kind="empty" title="Nenhuma solicitação recebida" description="Os pedidos de participação nos seus eventos aparecerão aqui." icon="people-outline" /> : pedidos.map((item) => (
+              <View key={item.id} style={{ gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border }}>
+                <AppText variant="label" color="accentText" weight="bold">{item.eventoTitulo}</AppText>
+                <AppText variant="title" weight="bold">{item.agenteNome}</AppText>
+                <AppText variant="bodySmall" color="textSecondary">{item.agenteEspecialidade}</AppText>
+                {item.mensagem ? <AppText>{item.mensagem}</AppText> : null}
+                <Badge label={item.status === 'ACEITA' ? 'Aceita' : item.status === 'RECUSADA' ? 'Recusada' : 'Aguardando resposta'} tone={item.status === 'ACEITA' ? 'success' : item.status === 'RECUSADA' ? 'danger' : 'warning'} />
+                {item.status === 'PENDENTE' ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                  <Button variant="outline" disabled={respondendo !== null} onPress={() => Alert.alert('Recusar participação?', item.agenteNome, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Recusar', style: 'destructive', onPress: () => void responder(item.id, false) }])}>Recusar</Button>
+                  <Button disabled={respondendo !== null} onPress={() => Alert.alert('Aceitar participação?', item.agenteNome, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Aceitar', onPress: () => void responder(item.id, true) }])}>Aceitar</Button>
+                  {respondendo === item.id ? <AppText variant="bodySmall" accessibilityLiveRegion="polite">Enviando resposta…</AppText> : null}
+                </View> : null}
+              </View>
+            ))}
+          </> : <>
+            <Button fullWidth onPress={() => navigation.navigate('ManageOpportunities')}>Candidaturas ({totalCandidaturas})</Button>
+            <Button variant="outline" fullWidth onPress={() => navigation.navigate('Opportunities')}>Ir para oportunidades</Button>
+          </>}
         </View> : null}
 
         {aba === 'sobre' ? <View style={section}>
