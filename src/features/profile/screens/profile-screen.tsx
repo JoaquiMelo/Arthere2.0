@@ -277,7 +277,7 @@ function createStyles({ color, spacing, radius, dimensions }: ThemeTokens) {
     topBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     headerCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
     coverStage: { width: '100%', aspectRatio: 16 / 9, minHeight: 156, position: 'relative', alignItems: 'center', justifyContent: 'center', borderRadius: radius.cardCompact },
-    coverLayer: { ...StyleSheet.absoluteFillObject, borderRadius: radius.cardCompact, overflow: 'hidden' },
+    coverLayer: { ...StyleSheet.absoluteFill, borderRadius: radius.cardCompact, overflow: 'hidden' },
     coverImage: { width: '100%', height: '100%', borderRadius: radius.cardCompact },
     coverEmpty: { backgroundColor: color.accentSecondary },
     coverAction: { position: 'absolute', right: spacing.sm, bottom: spacing.sm, backgroundColor: color.surface, borderRadius: radius.control },
