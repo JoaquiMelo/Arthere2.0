@@ -12,7 +12,7 @@ function mapAvaliacao(x:any):Avaliacao { return { id:x.id, agenteId:x.agenteId, 
 export function ReviewsProvider({children}:{children:React.ReactNode}) {
  const {user}=useUser(); const [dados,setDados]=useState<Record<string,Avaliacao[]>>({});
  const carregarAvaliacoes=useCallback(async(id:string)=>{const lista=await ratings(id);setDados(c=>({...c,[id]:(lista??[]).map(mapAvaliacao)}));},[]);
- useEffect(()=>{if(user?.tipo==='AGENTE'&&user.id){void carregarAvaliacoes(user.id);}},[user?.id,user?.tipo,carregarAvaliacoes]);
+ useEffect(()=>{if(user?.tipo!=='AGENTE'||!user.id)return;const task=setTimeout(()=>{void carregarAvaliacoes(user.id);},0);return()=>clearTimeout(task);},[user,carregarAvaliacoes]);
  const avaliacoesPorAgente=useCallback((id:string)=>dados[id]??[],[dados]);
  const mediaPorAgente=useCallback((id:string)=>{const lista=dados[id]??[];return lista.length?lista.reduce((s,a)=>s+a.nota,0)/lista.length:0;},[dados]);
  const adicionarAvaliacao=useCallback(async(d:NovaAvaliacao)=>{if(!Number.isInteger(d.nota)||d.nota<1||d.nota>5)throw new Error('A nota deve estar entre 1 e 5.');await rateAgent(d.agenteId,{nota:d.nota,comentario:d.comentario?.trim()||undefined});await carregarAvaliacoes(d.agenteId);},[carregarAvaliacoes]);

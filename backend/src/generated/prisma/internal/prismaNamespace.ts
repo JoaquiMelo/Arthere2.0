@@ -1216,6 +1216,7 @@ export const AgenteCriativoScalarFieldEnum = {
   longitude: 'longitude',
   visivelMapa: 'visivelMapa',
   avatarUrl: 'avatarUrl',
+  bannerUrl: 'bannerUrl',
   notaMedia: 'notaMedia',
   totalAvaliacoes: 'totalAvaliacoes',
   totalProjetos: 'totalProjetos',
@@ -1235,6 +1236,7 @@ export const ContratanteScalarFieldEnum = {
   cpfCnpj: 'cpfCnpj',
   empresa: 'empresa',
   avatarUrl: 'avatarUrl',
+  bannerUrl: 'bannerUrl',
   telefone: 'telefone',
   descricao: 'descricao',
   site: 'site',
@@ -1312,6 +1314,7 @@ export const EventoScalarFieldEnum = {
   dataEvento: 'dataEvento',
   horario: 'horario',
   organizador: 'organizador',
+  imagemUrl: 'imagemUrl',
   premium: 'premium',
   fixado: 'fixado',
   contratanteId: 'contratanteId',
@@ -1391,7 +1394,8 @@ export const AgenteCriativoOrderByRelevanceFieldEnum = {
   estado: 'estado',
   cidade: 'cidade',
   endereco: 'endereco',
-  avatarUrl: 'avatarUrl'
+  avatarUrl: 'avatarUrl',
+  bannerUrl: 'bannerUrl'
 } as const
 
 export type AgenteCriativoOrderByRelevanceFieldEnum = (typeof AgenteCriativoOrderByRelevanceFieldEnum)[keyof typeof AgenteCriativoOrderByRelevanceFieldEnum]
@@ -1406,6 +1410,7 @@ export const ContratanteOrderByRelevanceFieldEnum = {
   cpfCnpj: 'cpfCnpj',
   empresa: 'empresa',
   avatarUrl: 'avatarUrl',
+  bannerUrl: 'bannerUrl',
   telefone: 'telefone',
   descricao: 'descricao',
   site: 'site',
@@ -1469,6 +1474,7 @@ export const EventoOrderByRelevanceFieldEnum = {
   cidade: 'cidade',
   horario: 'horario',
   organizador: 'organizador',
+  imagemUrl: 'imagemUrl',
   contratanteId: 'contratanteId'
 } as const
 

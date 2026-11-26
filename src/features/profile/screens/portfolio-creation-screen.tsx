@@ -26,7 +26,7 @@ export default function PortfolioCreationScreen(){
   }finally{
    setCarregando(false);
   }
- },[user?.id]);
+ },[user]);
 
  useFocusEffect(
   useCallback(()=>{void carregarPortfolio();},[carregarPortfolio]),

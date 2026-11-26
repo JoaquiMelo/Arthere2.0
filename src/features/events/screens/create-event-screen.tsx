@@ -41,9 +41,6 @@ const CATEGORIAS = [
   "Gastronomia",
 ];
 
-const imagemPadrao =
-  "https://images.unsplash.com/photo-1505236858219-8359eb29e329?auto=format&fit=crop&w=900&q=80";
-
 export default function CreateEventScreen() {
   const navigation = useNavigation<Navigation>();
   const { palette } = useTheme();

@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import type { AgentePerfil } from './profile-screen';
 import { colors } from '@/shared/theme/colors';
@@ -43,12 +43,12 @@ export default function EditProfileScreen() {
     endereco: user?.endereco ?? '',
   });
 
-  useEffect(() => {
+  useFocusEffect(React.useCallback(() => {
     const escolhido = route.params?.localSelecionado;
     if (!escolhido) return;
     setLocal({ latitude: escolhido.latitude, longitude: escolhido.longitude, endereco: escolhido.endereco });
     if (escolhido.cidade) setCidade(escolhido.cidade);
-  }, [route.params?.localSelecionado]);
+  }, [route.params?.localSelecionado]));
   const [salvando, setSalvando] = useState(false);
 
   const escolherFoto = async () => {

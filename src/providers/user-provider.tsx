@@ -100,16 +100,30 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const remoto = await api.me();
-      setUser(mapUsuario(remoto));
+      // Mantém uma identidade local enquanto a API é revalidada. Isso evita
+      // transformar indisponibilidade temporária em logout.
+      setUser(mapUsuario(sessao.usuario));
+
+      try {
+        const remoto = await api.me();
+        setUser(mapUsuario(remoto));
+      } catch (error) {
+        if (error instanceof api.ApiRequestError && error.status === 401) {
+          await api.encerrarSessao();
+          setUser(null);
+        }
+      }
     } catch {
-      await api.encerrarSessao();
+      // Falhas de leitura do armazenamento não autorizam apagar dados locais.
       setUser(null);
     }
   }, []);
 
   useEffect(() => {
-    void refresh().finally(() => setLoading(false));
+    const task = setTimeout(() => {
+      void refresh().finally(() => setLoading(false));
+    }, 0);
+    return () => clearTimeout(task);
   }, [refresh]);
 
   const value: UserContextType = {

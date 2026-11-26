@@ -34,6 +34,7 @@ export type EventoMinAggregateOutputType = {
   dataEvento: Date | null
   horario: string | null
   organizador: string | null
+  imagemUrl: string | null
   premium: boolean | null
   fixado: boolean | null
   contratanteId: string | null
@@ -51,6 +52,7 @@ export type EventoMaxAggregateOutputType = {
   dataEvento: Date | null
   horario: string | null
   organizador: string | null
+  imagemUrl: string | null
   premium: boolean | null
   fixado: boolean | null
   contratanteId: string | null
@@ -68,6 +70,7 @@ export type EventoCountAggregateOutputType = {
   dataEvento: number
   horario: number
   organizador: number
+  imagemUrl: number
   premium: number
   fixado: number
   contratanteId: number
@@ -87,6 +90,7 @@ export type EventoMinAggregateInputType = {
   dataEvento?: true
   horario?: true
   organizador?: true
+  imagemUrl?: true
   premium?: true
   fixado?: true
   contratanteId?: true
@@ -104,6 +108,7 @@ export type EventoMaxAggregateInputType = {
   dataEvento?: true
   horario?: true
   organizador?: true
+  imagemUrl?: true
   premium?: true
   fixado?: true
   contratanteId?: true
@@ -121,6 +126,7 @@ export type EventoCountAggregateInputType = {
   dataEvento?: true
   horario?: true
   organizador?: true
+  imagemUrl?: true
   premium?: true
   fixado?: true
   contratanteId?: true
@@ -211,6 +217,7 @@ export type EventoGroupByOutputType = {
   dataEvento: Date
   horario: string | null
   organizador: string | null
+  imagemUrl: string | null
   premium: boolean
   fixado: boolean
   contratanteId: string | null
@@ -249,6 +256,7 @@ export type EventoWhereInput = {
   dataEvento?: Prisma.DateTimeFilter<"Evento"> | Date | string
   horario?: Prisma.StringNullableFilter<"Evento"> | string | null
   organizador?: Prisma.StringNullableFilter<"Evento"> | string | null
+  imagemUrl?: Prisma.StringNullableFilter<"Evento"> | string | null
   premium?: Prisma.BoolFilter<"Evento"> | boolean
   fixado?: Prisma.BoolFilter<"Evento"> | boolean
   contratanteId?: Prisma.StringNullableFilter<"Evento"> | string | null
@@ -268,6 +276,7 @@ export type EventoOrderByWithRelationInput = {
   dataEvento?: Prisma.SortOrder
   horario?: Prisma.SortOrderInput | Prisma.SortOrder
   organizador?: Prisma.SortOrderInput | Prisma.SortOrder
+  imagemUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   premium?: Prisma.SortOrder
   fixado?: Prisma.SortOrder
   contratanteId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -291,6 +300,7 @@ export type EventoWhereUniqueInput = Prisma.AtLeast<{
   dataEvento?: Prisma.DateTimeFilter<"Evento"> | Date | string
   horario?: Prisma.StringNullableFilter<"Evento"> | string | null
   organizador?: Prisma.StringNullableFilter<"Evento"> | string | null
+  imagemUrl?: Prisma.StringNullableFilter<"Evento"> | string | null
   premium?: Prisma.BoolFilter<"Evento"> | boolean
   fixado?: Prisma.BoolFilter<"Evento"> | boolean
   contratanteId?: Prisma.StringNullableFilter<"Evento"> | string | null
@@ -310,6 +320,7 @@ export type EventoOrderByWithAggregationInput = {
   dataEvento?: Prisma.SortOrder
   horario?: Prisma.SortOrderInput | Prisma.SortOrder
   organizador?: Prisma.SortOrderInput | Prisma.SortOrder
+  imagemUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   premium?: Prisma.SortOrder
   fixado?: Prisma.SortOrder
   contratanteId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -333,6 +344,7 @@ export type EventoScalarWhereWithAggregatesInput = {
   dataEvento?: Prisma.DateTimeWithAggregatesFilter<"Evento"> | Date | string
   horario?: Prisma.StringNullableWithAggregatesFilter<"Evento"> | string | null
   organizador?: Prisma.StringNullableWithAggregatesFilter<"Evento"> | string | null
+  imagemUrl?: Prisma.StringNullableWithAggregatesFilter<"Evento"> | string | null
   premium?: Prisma.BoolWithAggregatesFilter<"Evento"> | boolean
   fixado?: Prisma.BoolWithAggregatesFilter<"Evento"> | boolean
   contratanteId?: Prisma.StringNullableWithAggregatesFilter<"Evento"> | string | null
@@ -350,6 +362,7 @@ export type EventoCreateInput = {
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
+  imagemUrl?: string | null
   premium?: boolean
   fixado?: boolean
   criadoEm?: Date | string
@@ -368,6 +381,7 @@ export type EventoUncheckedCreateInput = {
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
+  imagemUrl?: string | null
   premium?: boolean
   fixado?: boolean
   contratanteId?: string | null
@@ -386,6 +400,7 @@ export type EventoUpdateInput = {
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imagemUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -404,6 +419,7 @@ export type EventoUncheckedUpdateInput = {
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imagemUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
   contratanteId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -422,6 +438,7 @@ export type EventoCreateManyInput = {
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
+  imagemUrl?: string | null
   premium?: boolean
   fixado?: boolean
   contratanteId?: string | null
@@ -439,6 +456,7 @@ export type EventoUpdateManyMutationInput = {
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imagemUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -455,6 +473,7 @@ export type EventoUncheckedUpdateManyInput = {
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imagemUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
   contratanteId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -488,6 +507,7 @@ export type EventoCountOrderByAggregateInput = {
   dataEvento?: Prisma.SortOrder
   horario?: Prisma.SortOrder
   organizador?: Prisma.SortOrder
+  imagemUrl?: Prisma.SortOrder
   premium?: Prisma.SortOrder
   fixado?: Prisma.SortOrder
   contratanteId?: Prisma.SortOrder
@@ -505,6 +525,7 @@ export type EventoMaxOrderByAggregateInput = {
   dataEvento?: Prisma.SortOrder
   horario?: Prisma.SortOrder
   organizador?: Prisma.SortOrder
+  imagemUrl?: Prisma.SortOrder
   premium?: Prisma.SortOrder
   fixado?: Prisma.SortOrder
   contratanteId?: Prisma.SortOrder
@@ -522,6 +543,7 @@ export type EventoMinOrderByAggregateInput = {
   dataEvento?: Prisma.SortOrder
   horario?: Prisma.SortOrder
   organizador?: Prisma.SortOrder
+  imagemUrl?: Prisma.SortOrder
   premium?: Prisma.SortOrder
   fixado?: Prisma.SortOrder
   contratanteId?: Prisma.SortOrder
@@ -600,6 +622,7 @@ export type EventoCreateWithoutContratanteInput = {
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
+  imagemUrl?: string | null
   premium?: boolean
   fixado?: boolean
   criadoEm?: Date | string
@@ -617,6 +640,7 @@ export type EventoUncheckedCreateWithoutContratanteInput = {
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
+  imagemUrl?: string | null
   premium?: boolean
   fixado?: boolean
   criadoEm?: Date | string
@@ -663,6 +687,7 @@ export type EventoScalarWhereInput = {
   dataEvento?: Prisma.DateTimeFilter<"Evento"> | Date | string
   horario?: Prisma.StringNullableFilter<"Evento"> | string | null
   organizador?: Prisma.StringNullableFilter<"Evento"> | string | null
+  imagemUrl?: Prisma.StringNullableFilter<"Evento"> | string | null
   premium?: Prisma.BoolFilter<"Evento"> | boolean
   fixado?: Prisma.BoolFilter<"Evento"> | boolean
   contratanteId?: Prisma.StringNullableFilter<"Evento"> | string | null
@@ -680,6 +705,7 @@ export type EventoCreateWithoutSolicitacoesInput = {
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
+  imagemUrl?: string | null
   premium?: boolean
   fixado?: boolean
   criadoEm?: Date | string
@@ -697,6 +723,7 @@ export type EventoUncheckedCreateWithoutSolicitacoesInput = {
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
+  imagemUrl?: string | null
   premium?: boolean
   fixado?: boolean
   contratanteId?: string | null
@@ -730,6 +757,7 @@ export type EventoUpdateWithoutSolicitacoesInput = {
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imagemUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -747,6 +775,7 @@ export type EventoUncheckedUpdateWithoutSolicitacoesInput = {
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imagemUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
   contratanteId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -764,6 +793,7 @@ export type EventoCreateManyContratanteInput = {
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
+  imagemUrl?: string | null
   premium?: boolean
   fixado?: boolean
   criadoEm?: Date | string
@@ -780,6 +810,7 @@ export type EventoUpdateWithoutContratanteInput = {
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imagemUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -797,6 +828,7 @@ export type EventoUncheckedUpdateWithoutContratanteInput = {
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imagemUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -814,6 +846,7 @@ export type EventoUncheckedUpdateManyWithoutContratanteInput = {
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imagemUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
   fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -861,6 +894,7 @@ export type EventoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   dataEvento?: boolean
   horario?: boolean
   organizador?: boolean
+  imagemUrl?: boolean
   premium?: boolean
   fixado?: boolean
   contratanteId?: boolean
@@ -883,6 +917,7 @@ export type EventoSelectScalar = {
   dataEvento?: boolean
   horario?: boolean
   organizador?: boolean
+  imagemUrl?: boolean
   premium?: boolean
   fixado?: boolean
   contratanteId?: boolean
@@ -890,7 +925,7 @@ export type EventoSelectScalar = {
   atualizadoEm?: boolean
 }
 
-export type EventoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "titulo" | "descricao" | "categoria" | "local" | "cidade" | "dataEvento" | "horario" | "organizador" | "premium" | "fixado" | "contratanteId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["evento"]>
+export type EventoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "titulo" | "descricao" | "categoria" | "local" | "cidade" | "dataEvento" | "horario" | "organizador" | "imagemUrl" | "premium" | "fixado" | "contratanteId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["evento"]>
 export type EventoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   contratante?: boolean | Prisma.Evento$contratanteArgs<ExtArgs>
   solicitacoes?: boolean | Prisma.Evento$solicitacoesArgs<ExtArgs>
@@ -913,6 +948,7 @@ export type $EventoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     dataEvento: Date
     horario: string | null
     organizador: string | null
+    imagemUrl: string | null
     premium: boolean
     fixado: boolean
     contratanteId: string | null
@@ -1298,6 +1334,7 @@ export interface EventoFieldRefs {
   readonly dataEvento: Prisma.FieldRef<"Evento", 'DateTime'>
   readonly horario: Prisma.FieldRef<"Evento", 'String'>
   readonly organizador: Prisma.FieldRef<"Evento", 'String'>
+  readonly imagemUrl: Prisma.FieldRef<"Evento", 'String'>
   readonly premium: Prisma.FieldRef<"Evento", 'Boolean'>
   readonly fixado: Prisma.FieldRef<"Evento", 'Boolean'>
   readonly contratanteId: Prisma.FieldRef<"Evento", 'String'>

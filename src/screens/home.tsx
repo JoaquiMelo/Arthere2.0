@@ -19,9 +19,7 @@ export default function Home() {
 
   useEffect(() => {
     let ativo = true;
-    setLoading(true);
-
-    Promise.all([
+    const task = setTimeout(() => Promise.all([
       projects(user?.cidade ? { cidade: user.cidade } : {}),
       events(user?.cidade ? { cidade: user.cidade } : {}),
     ])
@@ -35,10 +33,11 @@ export default function Home() {
       })
       .finally(() => {
         if (ativo) setLoading(false);
-      });
+      }), 0);
 
     return () => {
       ativo = false;
+      clearTimeout(task);
     };
   }, [user?.cidade]);
 

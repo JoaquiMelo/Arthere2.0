@@ -98,11 +98,14 @@ export default function EventsScreen() {
 
   useEffect(() => {
     if (!primeiroEvento) return;
-    const data = dataDoEvento(primeiroEvento.data);
-    setAno(data.getFullYear());
-    setMes(data.getMonth());
-    setDiaSelecionado(data.getDate());
-  }, [primeiroEvento?.id]);
+    const task = setTimeout(() => {
+      const data = dataDoEvento(primeiroEvento.data);
+      setAno(data.getFullYear());
+      setMes(data.getMonth());
+      setDiaSelecionado(data.getDate());
+    }, 0);
+    return () => clearTimeout(task);
+  }, [primeiroEvento]);
 
   const categorias = useMemo(() => {
     const unicas = Array.from(

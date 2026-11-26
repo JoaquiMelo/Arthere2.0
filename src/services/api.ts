@@ -96,6 +96,14 @@ export type Sessao = {
   usuario: any;
 };
 
+/** Erro HTTP preserva o status para que a sessão só seja encerrada quando inválida. */
+export class ApiRequestError extends Error {
+  constructor(message: string, public readonly status?: number) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
+
 /**
  * Função principal para comunicação com o backend.
  */
@@ -127,7 +135,7 @@ async function request<T>(
         ? body.message.join(', ')
         : body?.message ?? 'Não foi possível concluir a operação.';
 
-      throw new Error(message);
+      throw new ApiRequestError(message, response.status);
     }
 
     return body as T;

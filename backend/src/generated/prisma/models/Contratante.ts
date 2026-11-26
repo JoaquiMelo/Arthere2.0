@@ -33,6 +33,7 @@ export type ContratanteMinAggregateOutputType = {
   cpfCnpj: string | null
   empresa: string | null
   avatarUrl: string | null
+  bannerUrl: string | null
   telefone: string | null
   descricao: string | null
   site: string | null
@@ -53,6 +54,7 @@ export type ContratanteMaxAggregateOutputType = {
   cpfCnpj: string | null
   empresa: string | null
   avatarUrl: string | null
+  bannerUrl: string | null
   telefone: string | null
   descricao: string | null
   site: string | null
@@ -73,6 +75,7 @@ export type ContratanteCountAggregateOutputType = {
   cpfCnpj: number
   empresa: number
   avatarUrl: number
+  bannerUrl: number
   telefone: number
   descricao: number
   site: number
@@ -95,6 +98,7 @@ export type ContratanteMinAggregateInputType = {
   cpfCnpj?: true
   empresa?: true
   avatarUrl?: true
+  bannerUrl?: true
   telefone?: true
   descricao?: true
   site?: true
@@ -115,6 +119,7 @@ export type ContratanteMaxAggregateInputType = {
   cpfCnpj?: true
   empresa?: true
   avatarUrl?: true
+  bannerUrl?: true
   telefone?: true
   descricao?: true
   site?: true
@@ -135,6 +140,7 @@ export type ContratanteCountAggregateInputType = {
   cpfCnpj?: true
   empresa?: true
   avatarUrl?: true
+  bannerUrl?: true
   telefone?: true
   descricao?: true
   site?: true
@@ -228,6 +234,7 @@ export type ContratanteGroupByOutputType = {
   cpfCnpj: string | null
   empresa: string | null
   avatarUrl: string | null
+  bannerUrl: string | null
   telefone: string | null
   descricao: string | null
   site: string | null
@@ -269,6 +276,7 @@ export type ContratanteWhereInput = {
   cpfCnpj?: Prisma.StringNullableFilter<"Contratante"> | string | null
   empresa?: Prisma.StringNullableFilter<"Contratante"> | string | null
   avatarUrl?: Prisma.StringNullableFilter<"Contratante"> | string | null
+  bannerUrl?: Prisma.StringNullableFilter<"Contratante"> | string | null
   telefone?: Prisma.StringNullableFilter<"Contratante"> | string | null
   descricao?: Prisma.StringNullableFilter<"Contratante"> | string | null
   site?: Prisma.StringNullableFilter<"Contratante"> | string | null
@@ -293,6 +301,7 @@ export type ContratanteOrderByWithRelationInput = {
   cpfCnpj?: Prisma.SortOrderInput | Prisma.SortOrder
   empresa?: Prisma.SortOrderInput | Prisma.SortOrder
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  bannerUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   telefone?: Prisma.SortOrderInput | Prisma.SortOrder
   descricao?: Prisma.SortOrderInput | Prisma.SortOrder
   site?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -321,6 +330,7 @@ export type ContratanteWhereUniqueInput = Prisma.AtLeast<{
   pronomes?: Prisma.StringNullableFilter<"Contratante"> | string | null
   empresa?: Prisma.StringNullableFilter<"Contratante"> | string | null
   avatarUrl?: Prisma.StringNullableFilter<"Contratante"> | string | null
+  bannerUrl?: Prisma.StringNullableFilter<"Contratante"> | string | null
   telefone?: Prisma.StringNullableFilter<"Contratante"> | string | null
   descricao?: Prisma.StringNullableFilter<"Contratante"> | string | null
   site?: Prisma.StringNullableFilter<"Contratante"> | string | null
@@ -345,6 +355,7 @@ export type ContratanteOrderByWithAggregationInput = {
   cpfCnpj?: Prisma.SortOrderInput | Prisma.SortOrder
   empresa?: Prisma.SortOrderInput | Prisma.SortOrder
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  bannerUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   telefone?: Prisma.SortOrderInput | Prisma.SortOrder
   descricao?: Prisma.SortOrderInput | Prisma.SortOrder
   site?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -371,6 +382,7 @@ export type ContratanteScalarWhereWithAggregatesInput = {
   cpfCnpj?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
   empresa?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
   avatarUrl?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
+  bannerUrl?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
   telefone?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
   descricao?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
   site?: Prisma.StringNullableWithAggregatesFilter<"Contratante"> | string | null
@@ -390,6 +402,7 @@ export type ContratanteCreateInput = {
   cpfCnpj?: string | null
   empresa?: string | null
   avatarUrl?: string | null
+  bannerUrl?: string | null
   telefone?: string | null
   descricao?: string | null
   site?: string | null
@@ -414,6 +427,7 @@ export type ContratanteUncheckedCreateInput = {
   cpfCnpj?: string | null
   empresa?: string | null
   avatarUrl?: string | null
+  bannerUrl?: string | null
   telefone?: string | null
   descricao?: string | null
   site?: string | null
@@ -436,6 +450,7 @@ export type ContratanteUpdateInput = {
   cpfCnpj?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empresa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -460,6 +475,7 @@ export type ContratanteUncheckedUpdateInput = {
   cpfCnpj?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empresa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -483,6 +499,7 @@ export type ContratanteCreateManyInput = {
   cpfCnpj?: string | null
   empresa?: string | null
   avatarUrl?: string | null
+  bannerUrl?: string | null
   telefone?: string | null
   descricao?: string | null
   site?: string | null
@@ -502,6 +519,7 @@ export type ContratanteUpdateManyMutationInput = {
   cpfCnpj?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empresa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -522,6 +540,7 @@ export type ContratanteUncheckedUpdateManyInput = {
   cpfCnpj?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empresa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -553,6 +572,7 @@ export type ContratanteCountOrderByAggregateInput = {
   cpfCnpj?: Prisma.SortOrder
   empresa?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrder
+  bannerUrl?: Prisma.SortOrder
   telefone?: Prisma.SortOrder
   descricao?: Prisma.SortOrder
   site?: Prisma.SortOrder
@@ -573,6 +593,7 @@ export type ContratanteMaxOrderByAggregateInput = {
   cpfCnpj?: Prisma.SortOrder
   empresa?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrder
+  bannerUrl?: Prisma.SortOrder
   telefone?: Prisma.SortOrder
   descricao?: Prisma.SortOrder
   site?: Prisma.SortOrder
@@ -593,6 +614,7 @@ export type ContratanteMinOrderByAggregateInput = {
   cpfCnpj?: Prisma.SortOrder
   empresa?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrder
+  bannerUrl?: Prisma.SortOrder
   telefone?: Prisma.SortOrder
   descricao?: Prisma.SortOrder
   site?: Prisma.SortOrder
@@ -693,6 +715,7 @@ export type ContratanteCreateWithoutUsuarioInput = {
   cpfCnpj?: string | null
   empresa?: string | null
   avatarUrl?: string | null
+  bannerUrl?: string | null
   telefone?: string | null
   descricao?: string | null
   site?: string | null
@@ -715,6 +738,7 @@ export type ContratanteUncheckedCreateWithoutUsuarioInput = {
   cpfCnpj?: string | null
   empresa?: string | null
   avatarUrl?: string | null
+  bannerUrl?: string | null
   telefone?: string | null
   descricao?: string | null
   site?: string | null
@@ -753,6 +777,7 @@ export type ContratanteUpdateWithoutUsuarioInput = {
   cpfCnpj?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empresa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -775,6 +800,7 @@ export type ContratanteUncheckedUpdateWithoutUsuarioInput = {
   cpfCnpj?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empresa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -797,6 +823,7 @@ export type ContratanteCreateWithoutProjetosInput = {
   cpfCnpj?: string | null
   empresa?: string | null
   avatarUrl?: string | null
+  bannerUrl?: string | null
   telefone?: string | null
   descricao?: string | null
   site?: string | null
@@ -820,6 +847,7 @@ export type ContratanteUncheckedCreateWithoutProjetosInput = {
   cpfCnpj?: string | null
   empresa?: string | null
   avatarUrl?: string | null
+  bannerUrl?: string | null
   telefone?: string | null
   descricao?: string | null
   site?: string | null
@@ -857,6 +885,7 @@ export type ContratanteUpdateWithoutProjetosInput = {
   cpfCnpj?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empresa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -880,6 +909,7 @@ export type ContratanteUncheckedUpdateWithoutProjetosInput = {
   cpfCnpj?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empresa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -901,6 +931,7 @@ export type ContratanteCreateWithoutAvaliacoesInput = {
   cpfCnpj?: string | null
   empresa?: string | null
   avatarUrl?: string | null
+  bannerUrl?: string | null
   telefone?: string | null
   descricao?: string | null
   site?: string | null
@@ -924,6 +955,7 @@ export type ContratanteUncheckedCreateWithoutAvaliacoesInput = {
   cpfCnpj?: string | null
   empresa?: string | null
   avatarUrl?: string | null
+  bannerUrl?: string | null
   telefone?: string | null
   descricao?: string | null
   site?: string | null
@@ -961,6 +993,7 @@ export type ContratanteUpdateWithoutAvaliacoesInput = {
   cpfCnpj?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empresa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -984,6 +1017,7 @@ export type ContratanteUncheckedUpdateWithoutAvaliacoesInput = {
   cpfCnpj?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empresa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1005,6 +1039,7 @@ export type ContratanteCreateWithoutEventosInput = {
   cpfCnpj?: string | null
   empresa?: string | null
   avatarUrl?: string | null
+  bannerUrl?: string | null
   telefone?: string | null
   descricao?: string | null
   site?: string | null
@@ -1028,6 +1063,7 @@ export type ContratanteUncheckedCreateWithoutEventosInput = {
   cpfCnpj?: string | null
   empresa?: string | null
   avatarUrl?: string | null
+  bannerUrl?: string | null
   telefone?: string | null
   descricao?: string | null
   site?: string | null
@@ -1065,6 +1101,7 @@ export type ContratanteUpdateWithoutEventosInput = {
   cpfCnpj?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empresa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1088,6 +1125,7 @@ export type ContratanteUncheckedUpdateWithoutEventosInput = {
   cpfCnpj?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   empresa?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   telefone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   site?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1159,6 +1197,7 @@ export type ContratanteSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   cpfCnpj?: boolean
   empresa?: boolean
   avatarUrl?: boolean
+  bannerUrl?: boolean
   telefone?: boolean
   descricao?: boolean
   site?: boolean
@@ -1186,6 +1225,7 @@ export type ContratanteSelectScalar = {
   cpfCnpj?: boolean
   empresa?: boolean
   avatarUrl?: boolean
+  bannerUrl?: boolean
   telefone?: boolean
   descricao?: boolean
   site?: boolean
@@ -1197,7 +1237,7 @@ export type ContratanteSelectScalar = {
   atualizadoEm?: boolean
 }
 
-export type ContratanteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "nome" | "nomeSocial" | "pronomes" | "cpfCnpj" | "empresa" | "avatarUrl" | "telefone" | "descricao" | "site" | "estado" | "cidade" | "endereco" | "categoria" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["contratante"]>
+export type ContratanteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "nome" | "nomeSocial" | "pronomes" | "cpfCnpj" | "empresa" | "avatarUrl" | "bannerUrl" | "telefone" | "descricao" | "site" | "estado" | "cidade" | "endereco" | "categoria" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["contratante"]>
 export type ContratanteInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   avaliacoes?: boolean | Prisma.Contratante$avaliacoesArgs<ExtArgs>
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
@@ -1223,6 +1263,7 @@ export type $ContratantePayload<ExtArgs extends runtime.Types.Extensions.Interna
     cpfCnpj: string | null
     empresa: string | null
     avatarUrl: string | null
+    bannerUrl: string | null
     telefone: string | null
     descricao: string | null
     site: string | null
@@ -1613,6 +1654,7 @@ export interface ContratanteFieldRefs {
   readonly cpfCnpj: Prisma.FieldRef<"Contratante", 'String'>
   readonly empresa: Prisma.FieldRef<"Contratante", 'String'>
   readonly avatarUrl: Prisma.FieldRef<"Contratante", 'String'>
+  readonly bannerUrl: Prisma.FieldRef<"Contratante", 'String'>
   readonly telefone: Prisma.FieldRef<"Contratante", 'String'>
   readonly descricao: Prisma.FieldRef<"Contratante", 'String'>
   readonly site: Prisma.FieldRef<"Contratante", 'String'>

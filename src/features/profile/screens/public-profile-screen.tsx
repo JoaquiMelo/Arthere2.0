@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { publicAgent, publicContractor } from '@/services/api';
 import { colors } from '@/shared/theme/colors';
@@ -33,7 +33,7 @@ export default function PublicProfileScreen() {
     }
   }, [profileType, profileId]);
 
-  useEffect(() => { void carregar(); }, [carregar]);
+  useFocusEffect(useCallback(() => { void carregar(); }, [carregar]));
 
   if (carregando) {
     return <SafeAreaView style={styles.center}><ActivityIndicator size="large" color={colors.brandCoral} /><Text style={styles.muted}>Carregando perfil...</Text></SafeAreaView>;

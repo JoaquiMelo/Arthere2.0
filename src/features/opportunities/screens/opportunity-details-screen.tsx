@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { applyToProject, obterSessao, project } from '@/services/api';
 import { colors } from '@/shared/theme/colors';
@@ -33,7 +33,7 @@ export default function OpportunityDetailsScreen() {
     }
   }, [route.params.opportunityId]);
 
-  useEffect(() => { void carregar(); }, [carregar]);
+  useFocusEffect(useCallback(() => { void carregar(); }, [carregar]));
 
   const candidatar = async () => {
     if (tipo !== 'AGENTE') {

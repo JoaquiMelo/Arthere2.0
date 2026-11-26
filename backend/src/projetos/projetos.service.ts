@@ -51,7 +51,9 @@ export class ProjetosService {
   async obter(id: string) {
     const projeto = await this.prisma.projeto.findUnique({
       where: { id },
-      include: { contratante: true, candidaturas: { include: { agente: { include: { portfolio: true } } }, orderBy: { criadoEm: 'desc' } } },
+      // Detalhes públicos não podem expor candidaturas nem dados de agentes.
+      // O endpoint autenticado candidaturasDoProjeto já aplica a verificação de dono.
+      include: { contratante: { select: { id: true, nome: true, nomeSocial: true, empresa: true, avatarUrl: true, cidade: true } } },
     });
     if (!projeto) throw new NotFoundException('Projeto não encontrado.');
     return projeto;

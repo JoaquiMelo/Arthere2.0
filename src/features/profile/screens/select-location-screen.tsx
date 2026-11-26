@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Keyboard, Platform, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -26,12 +26,13 @@ export default function SelectLocationScreen() {
   const route = useRoute<any>();
   const mapRef = useRef<MapView>(null);
   const requisicao = useRef(0);
-  const elevacao = useRef(new Animated.Value(0)).current;
+  const [elevacao] = useState(() => new Animated.Value(0));
 
-  const inicial: Ponto | null =
+  const inicial = useMemo<Ponto | null>(() =>
     route.params?.latitude != null && route.params?.longitude != null
       ? { latitude: Number(route.params.latitude), longitude: Number(route.params.longitude) }
-      : null;
+      : null,
+  [route.params]);
 
   const [centro, setCentro] = useState<Ponto>(inicial ?? REGIAO_PADRAO);
   const [endereco, setEndereco] = useState('');
@@ -62,10 +63,10 @@ export default function SelectLocationScreen() {
     }
   }, []);
 
-  const irPara = (ponto: Ponto, delta = DELTA_ZOOM) =>
-    mapRef.current?.animateToRegion({ ...ponto, latitudeDelta: delta, longitudeDelta: delta }, 600);
+  const irPara = useCallback((ponto: Ponto, delta = DELTA_ZOOM) =>
+    mapRef.current?.animateToRegion({ ...ponto, latitudeDelta: delta, longitudeDelta: delta }, 600), []);
 
-  const usarMinhaLocalizacao = async (silencioso = false) => {
+  const usarMinhaLocalizacao = useCallback(async (silencioso = false) => {
     setLocalizando(true);
     try {
       const permissao = await Location.requestForegroundPermissionsAsync();
@@ -80,7 +81,7 @@ export default function SelectLocationScreen() {
     } finally {
       setLocalizando(false);
     }
-  };
+  }, [irPara]);
 
   const buscarEndereco = async () => {
     const texto = busca.trim();
@@ -99,10 +100,12 @@ export default function SelectLocationScreen() {
   };
 
   useEffect(() => {
-    if (inicial) descobrirEndereco(inicial);
-    else usarMinhaLocalizacao(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const task = setTimeout(() => {
+      if (inicial) descobrirEndereco(inicial);
+      else usarMinhaLocalizacao(true);
+    }, 0);
+    return () => clearTimeout(task);
+  }, [descobrirEndereco, inicial, usarMinhaLocalizacao]);
 
   const confirmar = () => {
     navigation.popTo(

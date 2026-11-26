@@ -55,6 +55,7 @@ export type AgenteCriativoMinAggregateOutputType = {
   longitude: number | null
   visivelMapa: boolean | null
   avatarUrl: string | null
+  bannerUrl: string | null
   notaMedia: number | null
   totalAvaliacoes: number | null
   totalProjetos: number | null
@@ -75,6 +76,7 @@ export type AgenteCriativoMaxAggregateOutputType = {
   longitude: number | null
   visivelMapa: boolean | null
   avatarUrl: string | null
+  bannerUrl: string | null
   notaMedia: number | null
   totalAvaliacoes: number | null
   totalProjetos: number | null
@@ -95,6 +97,7 @@ export type AgenteCriativoCountAggregateOutputType = {
   longitude: number
   visivelMapa: number
   avatarUrl: number
+  bannerUrl: number
   notaMedia: number
   totalAvaliacoes: number
   totalProjetos: number
@@ -133,6 +136,7 @@ export type AgenteCriativoMinAggregateInputType = {
   longitude?: true
   visivelMapa?: true
   avatarUrl?: true
+  bannerUrl?: true
   notaMedia?: true
   totalAvaliacoes?: true
   totalProjetos?: true
@@ -153,6 +157,7 @@ export type AgenteCriativoMaxAggregateInputType = {
   longitude?: true
   visivelMapa?: true
   avatarUrl?: true
+  bannerUrl?: true
   notaMedia?: true
   totalAvaliacoes?: true
   totalProjetos?: true
@@ -173,6 +178,7 @@ export type AgenteCriativoCountAggregateInputType = {
   longitude?: true
   visivelMapa?: true
   avatarUrl?: true
+  bannerUrl?: true
   notaMedia?: true
   totalAvaliacoes?: true
   totalProjetos?: true
@@ -280,6 +286,7 @@ export type AgenteCriativoGroupByOutputType = {
   longitude: number | null
   visivelMapa: boolean
   avatarUrl: string | null
+  bannerUrl: string | null
   notaMedia: number
   totalAvaliacoes: number
   totalProjetos: number
@@ -323,6 +330,7 @@ export type AgenteCriativoWhereInput = {
   longitude?: Prisma.FloatNullableFilter<"AgenteCriativo"> | number | null
   visivelMapa?: Prisma.BoolFilter<"AgenteCriativo"> | boolean
   avatarUrl?: Prisma.StringNullableFilter<"AgenteCriativo"> | string | null
+  bannerUrl?: Prisma.StringNullableFilter<"AgenteCriativo"> | string | null
   notaMedia?: Prisma.FloatFilter<"AgenteCriativo"> | number
   totalAvaliacoes?: Prisma.IntFilter<"AgenteCriativo"> | number
   totalProjetos?: Prisma.IntFilter<"AgenteCriativo"> | number
@@ -348,6 +356,7 @@ export type AgenteCriativoOrderByWithRelationInput = {
   longitude?: Prisma.SortOrderInput | Prisma.SortOrder
   visivelMapa?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  bannerUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   notaMedia?: Prisma.SortOrder
   totalAvaliacoes?: Prisma.SortOrder
   totalProjetos?: Prisma.SortOrder
@@ -377,6 +386,7 @@ export type AgenteCriativoWhereUniqueInput = Prisma.AtLeast<{
   longitude?: Prisma.FloatNullableFilter<"AgenteCriativo"> | number | null
   visivelMapa?: Prisma.BoolFilter<"AgenteCriativo"> | boolean
   avatarUrl?: Prisma.StringNullableFilter<"AgenteCriativo"> | string | null
+  bannerUrl?: Prisma.StringNullableFilter<"AgenteCriativo"> | string | null
   notaMedia?: Prisma.FloatFilter<"AgenteCriativo"> | number
   totalAvaliacoes?: Prisma.IntFilter<"AgenteCriativo"> | number
   totalProjetos?: Prisma.IntFilter<"AgenteCriativo"> | number
@@ -402,6 +412,7 @@ export type AgenteCriativoOrderByWithAggregationInput = {
   longitude?: Prisma.SortOrderInput | Prisma.SortOrder
   visivelMapa?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  bannerUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   notaMedia?: Prisma.SortOrder
   totalAvaliacoes?: Prisma.SortOrder
   totalProjetos?: Prisma.SortOrder
@@ -430,6 +441,7 @@ export type AgenteCriativoScalarWhereWithAggregatesInput = {
   longitude?: Prisma.FloatNullableWithAggregatesFilter<"AgenteCriativo"> | number | null
   visivelMapa?: Prisma.BoolWithAggregatesFilter<"AgenteCriativo"> | boolean
   avatarUrl?: Prisma.StringNullableWithAggregatesFilter<"AgenteCriativo"> | string | null
+  bannerUrl?: Prisma.StringNullableWithAggregatesFilter<"AgenteCriativo"> | string | null
   notaMedia?: Prisma.FloatWithAggregatesFilter<"AgenteCriativo"> | number
   totalAvaliacoes?: Prisma.IntWithAggregatesFilter<"AgenteCriativo"> | number
   totalProjetos?: Prisma.IntWithAggregatesFilter<"AgenteCriativo"> | number
@@ -449,6 +461,7 @@ export type AgenteCriativoCreateInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -474,6 +487,7 @@ export type AgenteCriativoUncheckedCreateInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -497,6 +511,7 @@ export type AgenteCriativoUpdateInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -522,6 +537,7 @@ export type AgenteCriativoUncheckedUpdateInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -546,6 +562,7 @@ export type AgenteCriativoCreateManyInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -565,6 +582,7 @@ export type AgenteCriativoUpdateManyMutationInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -585,6 +603,7 @@ export type AgenteCriativoUncheckedUpdateManyInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -616,6 +635,7 @@ export type AgenteCriativoCountOrderByAggregateInput = {
   longitude?: Prisma.SortOrder
   visivelMapa?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrder
+  bannerUrl?: Prisma.SortOrder
   notaMedia?: Prisma.SortOrder
   totalAvaliacoes?: Prisma.SortOrder
   totalProjetos?: Prisma.SortOrder
@@ -644,6 +664,7 @@ export type AgenteCriativoMaxOrderByAggregateInput = {
   longitude?: Prisma.SortOrder
   visivelMapa?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrder
+  bannerUrl?: Prisma.SortOrder
   notaMedia?: Prisma.SortOrder
   totalAvaliacoes?: Prisma.SortOrder
   totalProjetos?: Prisma.SortOrder
@@ -664,6 +685,7 @@ export type AgenteCriativoMinOrderByAggregateInput = {
   longitude?: Prisma.SortOrder
   visivelMapa?: Prisma.SortOrder
   avatarUrl?: Prisma.SortOrder
+  bannerUrl?: Prisma.SortOrder
   notaMedia?: Prisma.SortOrder
   totalAvaliacoes?: Prisma.SortOrder
   totalProjetos?: Prisma.SortOrder
@@ -816,6 +838,7 @@ export type AgenteCriativoCreateWithoutUsuarioInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -839,6 +862,7 @@ export type AgenteCriativoUncheckedCreateWithoutUsuarioInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -878,6 +902,7 @@ export type AgenteCriativoUpdateWithoutUsuarioInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -901,6 +926,7 @@ export type AgenteCriativoUncheckedUpdateWithoutUsuarioInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -924,6 +950,7 @@ export type AgenteCriativoCreateWithoutCandidaturasInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -948,6 +975,7 @@ export type AgenteCriativoUncheckedCreateWithoutCandidaturasInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -986,6 +1014,7 @@ export type AgenteCriativoUpdateWithoutCandidaturasInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1010,6 +1039,7 @@ export type AgenteCriativoUncheckedUpdateWithoutCandidaturasInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1032,6 +1062,7 @@ export type AgenteCriativoCreateWithoutPortfolioInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -1056,6 +1087,7 @@ export type AgenteCriativoUncheckedCreateWithoutPortfolioInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -1094,6 +1126,7 @@ export type AgenteCriativoUpdateWithoutPortfolioInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1118,6 +1151,7 @@ export type AgenteCriativoUncheckedUpdateWithoutPortfolioInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1140,6 +1174,7 @@ export type AgenteCriativoCreateWithoutAvaliacoesInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -1164,6 +1199,7 @@ export type AgenteCriativoUncheckedCreateWithoutAvaliacoesInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -1202,6 +1238,7 @@ export type AgenteCriativoUpdateWithoutAvaliacoesInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1226,6 +1263,7 @@ export type AgenteCriativoUncheckedUpdateWithoutAvaliacoesInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1248,6 +1286,7 @@ export type AgenteCriativoCreateWithoutSolicitacoesEventoInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -1272,6 +1311,7 @@ export type AgenteCriativoUncheckedCreateWithoutSolicitacoesEventoInput = {
   longitude?: number | null
   visivelMapa?: boolean
   avatarUrl?: string | null
+  bannerUrl?: string | null
   notaMedia?: number
   totalAvaliacoes?: number
   totalProjetos?: number
@@ -1310,6 +1350,7 @@ export type AgenteCriativoUpdateWithoutSolicitacoesEventoInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1334,6 +1375,7 @@ export type AgenteCriativoUncheckedUpdateWithoutSolicitacoesEventoInput = {
   longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   visivelMapa?: Prisma.BoolFieldUpdateOperationsInput | boolean
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bannerUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notaMedia?: Prisma.FloatFieldUpdateOperationsInput | number
   totalAvaliacoes?: Prisma.IntFieldUpdateOperationsInput | number
   totalProjetos?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1415,6 +1457,7 @@ export type AgenteCriativoSelect<ExtArgs extends runtime.Types.Extensions.Intern
   longitude?: boolean
   visivelMapa?: boolean
   avatarUrl?: boolean
+  bannerUrl?: boolean
   notaMedia?: boolean
   totalAvaliacoes?: boolean
   totalProjetos?: boolean
@@ -1443,6 +1486,7 @@ export type AgenteCriativoSelectScalar = {
   longitude?: boolean
   visivelMapa?: boolean
   avatarUrl?: boolean
+  bannerUrl?: boolean
   notaMedia?: boolean
   totalAvaliacoes?: boolean
   totalProjetos?: boolean
@@ -1450,7 +1494,7 @@ export type AgenteCriativoSelectScalar = {
   atualizadoEm?: boolean
 }
 
-export type AgenteCriativoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "nome" | "especialidade" | "bio" | "estado" | "cidade" | "endereco" | "latitude" | "longitude" | "visivelMapa" | "avatarUrl" | "notaMedia" | "totalAvaliacoes" | "totalProjetos" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["agenteCriativo"]>
+export type AgenteCriativoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "nome" | "especialidade" | "bio" | "estado" | "cidade" | "endereco" | "latitude" | "longitude" | "visivelMapa" | "avatarUrl" | "bannerUrl" | "notaMedia" | "totalAvaliacoes" | "totalProjetos" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["agenteCriativo"]>
 export type AgenteCriativoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
   avaliacoes?: boolean | Prisma.AgenteCriativo$avaliacoesArgs<ExtArgs>
@@ -1482,6 +1526,7 @@ export type $AgenteCriativoPayload<ExtArgs extends runtime.Types.Extensions.Inte
     longitude: number | null
     visivelMapa: boolean
     avatarUrl: string | null
+    bannerUrl: string | null
     notaMedia: number
     totalAvaliacoes: number
     totalProjetos: number
@@ -1873,6 +1918,7 @@ export interface AgenteCriativoFieldRefs {
   readonly longitude: Prisma.FieldRef<"AgenteCriativo", 'Float'>
   readonly visivelMapa: Prisma.FieldRef<"AgenteCriativo", 'Boolean'>
   readonly avatarUrl: Prisma.FieldRef<"AgenteCriativo", 'String'>
+  readonly bannerUrl: Prisma.FieldRef<"AgenteCriativo", 'String'>
   readonly notaMedia: Prisma.FieldRef<"AgenteCriativo", 'Float'>
   readonly totalAvaliacoes: Prisma.FieldRef<"AgenteCriativo", 'Int'>
   readonly totalProjetos: Prisma.FieldRef<"AgenteCriativo", 'Int'>
