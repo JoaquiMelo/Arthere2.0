@@ -94,7 +94,7 @@ export default function SettingsScreen() {
             icon="person-outline"
             label="Editar perfil"
             last
-            onPress={() => navigation.navigate(user?.tipo === "CONTRATANTE_EVENTOS" || user?.tipo === "CONTRATANTE_OPORTUNIDADES" ? "EditContractorProfile" : "EditProfile")}
+            onPress={() => navigation.navigate(user?.tipo === "CONTRATANTE_OPORTUNIDADES" ? "EditOpportunityContractorProfile" : user?.tipo === "CONTRATANTE_EVENTOS" ? "EditContractorProfile" : "EditProfile")}
           />
         </View>
 
