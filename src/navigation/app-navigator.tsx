@@ -15,9 +15,11 @@ import EventDetailsScreen from '@/features/events/screens/event-details-screen';
 import CreateEventScreen from '@/features/events/screens/create-event-screen';
 import EventsScreen from '@/features/events/screens/events-screen';
 import { MapScreen } from '@/features/map/screens/map-screen';
+import CreateOpportunityScreen from '@/features/opportunities/screens/create-opportunity-screen';
 import ManageOpportunitiesScreen from '@/features/opportunities/screens/manage-opportunities-screen';
 import OpportunitiesScreen from '@/features/opportunities/screens/opportunities-screen';
 import OpportunityDetailsScreen from '@/features/opportunities/screens/opportunity-details-screen';
+import EditOpportunityContractorProfileScreen from '@/features/profile/screens/edit-opportunity-contractor-profile-screen';
 import EditContractorProfileScreen from '@/features/profile/screens/edit-contractor-profile-screen';
 import EditProfileScreen from '@/features/profile/screens/edit-profile-screen';
 import SelectLocationScreen from '@/features/profile/screens/select-location-screen';
@@ -30,7 +32,7 @@ import { useUser } from '@/providers/user-provider';
 
 export type RootStackParamList={
  Map:undefined; Login:undefined; Register:undefined; CreatePortfolio:undefined; CustomizeProfile:undefined; Tabs:undefined;
- EditProfile?:{agente?:unknown; localSelecionado?:{latitude:number;longitude:number;endereco:string;cidade:string}}; SelectLocation:{latitude?:number|null;longitude?:number|null}; EditContractorProfile:undefined; PortfolioCreation?:{portfolio?:unknown[];mode?:'manage'|'add'|'edit';itemId?:string};
+ EditProfile?:{agente?:unknown; localSelecionado?:{latitude:number;longitude:number;endereco:string;cidade:string}}; SelectLocation:{latitude?:number|null;longitude?:number|null}; EditContractorProfile:undefined; EditOpportunityContractorProfile:{mode?:'presentation'}|undefined; CreateOpportunity:undefined; PortfolioCreation?:{portfolio?:unknown[];mode?:'manage'|'add'|'edit';itemId?:string};
  Settings:undefined; ChatConversation:{conversationId:string}; ManageOpportunities:undefined;
  Opportunities:undefined; OpportunityDetails:{opportunityId:string}; PublicProfile:{profileType:'AGENTE'|'CONTRATANTE';profileId:string}; Events:undefined; EventDetails:{eventId:string}; CreateEvent:undefined;
 };
@@ -94,6 +96,10 @@ function RootStack(){
       <Stack.Screen name="EditProfile" component={EditProfileScreen}/>
       <Stack.Screen name="SelectLocation" component={SelectLocationScreen}/>
       <Stack.Screen name="EditContractorProfile" component={EditContractorProfileScreen}/>
+      {user.tipo === 'CONTRATANTE_OPORTUNIDADES' ? <>
+        <Stack.Screen name="EditOpportunityContractorProfile" component={EditOpportunityContractorProfileScreen}/>
+        <Stack.Screen name="CreateOpportunity" component={CreateOpportunityScreen}/>
+      </> : null}
       <Stack.Screen name="PortfolioCreation" component={PortfolioCreationScreen}/>
       <Stack.Screen name="Settings" component={SettingsScreen}/>
       <Stack.Screen name="ChatConversation" component={ChatConversationScreen}/>
