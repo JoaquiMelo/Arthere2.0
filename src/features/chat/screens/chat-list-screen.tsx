@@ -58,11 +58,21 @@ function ConversationRow({
   onPress: () => void;
 }) {
   const last = conversation.messages.at(-1);
+  const iniciais = conversation.participant.nome
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((parte) => parte.charAt(0).toUpperCase())
+    .join('');
 
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}>
       <View style={styles.avatarFrame}>
-        <Image source={{ uri: conversation.participant.avatarUrl }} style={styles.avatar} />
+        {conversation.participant.avatarUrl ? (
+          <Image source={{ uri: conversation.participant.avatarUrl }} style={styles.avatar} />
+        ) : (
+          <Text style={styles.avatarInitials}>{iniciais || "A"}</Text>
+        )}
         {conversation.participant.disponivel ? <View style={styles.online} /> : null}
       </View>
 
@@ -142,6 +152,12 @@ const styles = StyleSheet.create({
   avatar: {
     width: 46,
     height: 46,
+  },
+  avatarInitials: {
+    color: colors.brandInk,
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   online: {
     position: 'absolute',
