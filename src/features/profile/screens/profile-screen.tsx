@@ -1,10 +1,10 @@
+import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { colors } from '@/shared/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
 import {
   Dimensions,
-  Image,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -68,7 +68,7 @@ export default function ProfileScreen() {
 function AgenteProfileScreenContent() {
   const navigation = useNavigation<any>();
   const { user, refresh: refreshUser } = useUser();
-  const { refresh: refreshManagement } = useManagement();
+  const { refresh: refreshManagement, solicitacoesEvento, loading: loadingEventos } = useManagement();
   const [atualizando, setAtualizando] = useState(false);
   const recarregar = useCallback(async () => {
     setAtualizando(true);
@@ -78,7 +78,7 @@ function AgenteProfileScreenContent() {
       setAtualizando(false);
     }
   }, [refreshUser, refreshManagement]);
-  const [abaAtiva, setAbaAtiva] = useState<'portfolio' | 'sobre' | 'avaliacoes'>('portfolio');
+  const [abaAtiva, setAbaAtiva] = useState<'portfolio' | 'sobre' | 'avaliacoes' | 'eventos'>('portfolio');
   const { avaliacoesPorAgente, mediaPorAgente } = useReviews();
 
   if (!user) {
@@ -91,7 +91,7 @@ function AgenteProfileScreenContent() {
     especialidade: user.especialidade || 'Profissional criativo',
     bio: user.bio || 'Adicione uma apresentação sobre seu trabalho.',
     cidade: user.cidade || 'Cidade não informada',
-    avatarUrl: user.avatarUrl || 'https://i.pravatar.cc/300?img=12',
+    avatarUrl: user.avatarUrl || '',
     notaMedia: Number(user.notaMedia ?? 0),
     totalAvaliacoes: Number(user.totalAvaliacoes ?? 0),
     totalProjetos: Number(user.totalProjetos ?? 0),
@@ -105,6 +105,7 @@ function AgenteProfileScreenContent() {
   const avaliacoes = avaliacoesPorAgente(agente.id);
   const media = avaliacoes.length ? mediaPorAgente(agente.id) : agente.notaMedia;
   const totalAvaliacoes = avaliacoes.length || agente.totalAvaliacoes;
+  const meusEventos = solicitacoesEvento.filter((item) => item.agenteId === user.id);
 
   const abrirEdicaoPerfil = () => navigation.navigate('EditProfile', { agente });
   const abrirEdicaoPortfolio = () =>
@@ -115,12 +116,7 @@ function AgenteProfileScreenContent() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={atualizando} onRefresh={recarregar} />}>
         <View style={styles.coverContainer}>
-          <Image
-            source={{
-              uri: user.bannerUrl || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
-            }}
-            style={styles.coverImage}
-          />
+          <MediaImage uri={user.bannerUrl} style={styles.coverImage} icon="image-outline" iconSize={40} />
           <View style={styles.coverOverlay} />
 
           <View style={styles.coverLabel}>
@@ -147,7 +143,7 @@ function AgenteProfileScreenContent() {
             onPress={abrirEdicaoPerfil}
             accessibilityLabel="Editar foto de perfil"
           >
-            <Image source={{ uri: agente.avatarUrl }} style={styles.avatar} />
+            <Avatar uri={agente.avatarUrl} style={styles.avatar} iconSize={48} />
             <View style={styles.cameraBadge}>
               <Ionicons name="camera" size={13} color={colors.brandPaper} />
             </View>
@@ -198,6 +194,7 @@ function AgenteProfileScreenContent() {
             ['portfolio', 'FOTOS'],
             ['sobre', 'SOBRE'],
             ['avaliacoes', 'AVALIAÇÕES'],
+            ['eventos', 'EVENTOS'],
           ] as const).map(([id, label]) => (
             <TouchableOpacity
               key={id}
@@ -230,7 +227,7 @@ function AgenteProfileScreenContent() {
                   style={styles.galleryItem}
                   onPress={abrirEdicaoPortfolio}
                 >
-                  <Image source={{ uri: item.imageUrl }} style={styles.galleryImage} />
+                  <MediaImage uri={item.imageUrl} style={styles.galleryImage} />
                 </TouchableOpacity>
               ))}
               <TouchableOpacity
@@ -255,6 +252,25 @@ function AgenteProfileScreenContent() {
               <Text style={styles.editBioText}>EDITAR APRESENTAÇÃO</Text>
               <Ionicons name="arrow-forward" size={15} color={colors.brandCoral} />
             </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {abaAtiva === 'eventos' ? (
+          <View style={styles.gallerySection}>
+            <Text style={styles.sectionTitle}>Minhas participações</Text>
+            {meusEventos.length ? meusEventos.map((item) => (
+              <TouchableOpacity key={item.id} accessibilityRole="button"
+                accessibilityLabel={`Abrir evento ${item.eventoTitulo}`}
+                onPress={() => navigation.navigate('EventDetails', { eventId: item.eventId })}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                <Ionicons name="calendar-outline" size={24} color={colors.brandInk} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.brandInk, fontSize: 15, fontWeight: '700' }}>{item.eventoTitulo}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 13 }}>{item.status === 'ACEITA' ? 'Participação aceita' : item.status === 'RECUSADA' ? 'Solicitação recusada' : 'Aguardando resposta'}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.muted} />
+              </TouchableOpacity>
+            )) : <Text style={{ color: colors.muted, marginTop: 12, fontSize: 14 }}>{loadingEventos ? 'Carregando participações…' : 'Você ainda não solicitou participação em eventos.'}</Text>}
           </View>
         ) : null}
 

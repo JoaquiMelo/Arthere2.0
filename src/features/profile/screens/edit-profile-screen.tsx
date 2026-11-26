@@ -1,5 +1,7 @@
+import { realImageUri } from '@/shared/config/image-uri';
+import { Avatar, MediaImage } from '@/shared/components/media-image';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,14 +21,14 @@ export default function EditProfileScreen() {
     especialidade: user?.especialidade ?? '',
     bio: user?.bio ?? '',
     cidade: user?.cidade ?? '',
-    avatarUrl: user?.avatarUrl ?? 'https://i.pravatar.cc/300?img=12',
+    avatarUrl: user?.avatarUrl ?? '',
     notaMedia: Number(user?.notaMedia ?? 0),
     totalAvaliacoes: Number(user?.totalAvaliacoes ?? 0),
     totalProjetos: Number(user?.totalProjetos ?? 0),
     portfolio: user?.portfolio ?? [],
   } as AgentePerfil;
-  const [avatarUri, setAvatarUri] = useState(agenteAtual.avatarUrl);
-  const [bannerUri, setBannerUri] = useState<string>(user?.bannerUrl ?? '');
+  const [avatarUri, setAvatarUri] = useState(realImageUri(agenteAtual.avatarUrl));
+  const [bannerUri, setBannerUri] = useState<string>(realImageUri(user?.bannerUrl));
   const [nome, setNome] = useState(agenteAtual.nome);
   const [especialidade, setEspecialidade] = useState(agenteAtual.especialidade);
   const [estado, setEstado] = useState(user?.estado ?? '');
@@ -108,11 +110,11 @@ export default function EditProfileScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="none">
           <TouchableOpacity onPress={escolherBanner} style={{ height: 116, borderRadius: 14, overflow: 'hidden', marginBottom: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-            {bannerUri ? <Image source={{ uri: bannerUri }} style={{ width: '100%', height: '100%' }} /> : <><Ionicons name="image-outline" size={24} color={colors.primaryDark} /><Text style={styles.changePhoto}>Adicionar banner do perfil</Text></>}
+            {bannerUri ? <MediaImage uri={bannerUri} style={{ width: '100%', height: '100%' }} /> : <><Ionicons name="image-outline" size={24} color={colors.primaryDark} /><Text style={styles.changePhoto}>Adicionar banner do perfil</Text></>}
           </TouchableOpacity>
           <View style={styles.photoSection}>
             <TouchableOpacity style={styles.avatarWrapper} onPress={escolherFoto} accessibilityLabel="Trocar foto de perfil">
-              <Image source={{ uri: avatarUri }} style={styles.avatar} />
+              <Avatar uri={avatarUri} style={styles.avatar} iconSize={36} />
               <View style={styles.cameraBadge}><Ionicons name="camera" size={15} color={colors.white} /></View>
             </TouchableOpacity>
             <TouchableOpacity onPress={escolherFoto}><Text style={styles.changePhoto}>Alterar foto</Text></TouchableOpacity>

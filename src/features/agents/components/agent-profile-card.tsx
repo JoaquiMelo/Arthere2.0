@@ -1,6 +1,6 @@
+import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Image,
   Modal,
   ScrollView,
   StyleSheet,
@@ -54,7 +54,7 @@ export function AgentProfileCard({
 
         <View style={styles.header}>
           <View style={styles.avatarFrame}>
-            <Image source={{ uri: agente.avatarUrl }} style={styles.avatar} />
+            <Avatar uri={agente.avatarUrl} style={styles.avatar} iconSize={36} />
           </View>
 
           <View style={styles.headerInfo}>
@@ -103,11 +103,7 @@ export function AgentProfileCard({
         >
           {agente.portfolio.map((item) => (
             <View key={item.id} style={styles.portfolioItem}>
-              {item.imagemUrl ? (
-                <Image source={{ uri: item.imagemUrl }} style={styles.portfolioImagem} />
-              ) : (
-                <View style={styles.placeholder} />
-              )}
+              <MediaImage uri={item.imagemUrl} style={styles.portfolioImagem} />
               <Text style={styles.portfolioTexto} numberOfLines={1}>
                 {item.titulo}
               </Text>

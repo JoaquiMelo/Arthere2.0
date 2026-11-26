@@ -1,3 +1,4 @@
+import { MediaImage } from '@/shared/components/media-image';
 import React,{useCallback,useState} from 'react';
 import {ActivityIndicator,Alert,Image,KeyboardAvoidingView,Platform,SafeAreaView,ScrollView,StyleSheet,Text,TextInput,TouchableOpacity,View,RefreshControl} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
@@ -8,7 +9,6 @@ import {addPortfolio,deletePortfolio,portfolio as fetchPortfolio,updatePortfolio
 import {colors} from '@/shared/theme/colors';
 
 type Item={id:string;imageUrl:string;titulo?:string;descricao?:string};
-const FALLBACK='https://picsum.photos/seed/arthere-default/500/500';
 
 export default function PortfolioCreationScreen(){
  const navigation=useNavigation<any>(); const {user}=useUser();
@@ -49,7 +49,7 @@ export default function PortfolioCreationScreen(){
     <TouchableOpacity style={[styles.primaryButton,salvando&&styles.disabled]} onPress={adicionar} disabled={salvando}>{salvando?<ActivityIndicator color={colors.brandPaper}/>:<><Ionicons name="add" size={18} color={colors.brandPaper}/><Text style={styles.primaryText}>ADICIONAR TRABALHO</Text></>}</TouchableOpacity>
    </View>
    <View style={styles.listHeader}><Text style={styles.sectionKicker}>PUBLICADOS</Text><Text style={styles.sectionTitle}>Seu portfólio</Text></View>
-   {carregando?<ActivityIndicator color={colors.brandCoral} style={{marginTop:25}}/>:itens.length===0?<View style={styles.empty}><Ionicons name="images-outline" size={31} color={colors.brandCoral}/><Text style={styles.emptyTitle}>Nenhum trabalho ainda</Text><Text style={styles.emptyText}>Adicione uma imagem pública para começar a montar seu portfólio.</Text></View>:itens.map(item=><View key={item.id} style={styles.itemCard}><Image source={{uri:item.imageUrl||FALLBACK}} style={styles.itemImage}/><View style={styles.itemBody}><TextInput style={styles.itemTitle} value={item.titulo||''} onChangeText={v=>setItens(c=>c.map(x=>x.id===item.id?{...x,titulo:v}:x))} placeholder="Título" placeholderTextColor={colors.muted}/><TextInput style={styles.itemDescription} value={item.descricao||''} onChangeText={v=>setItens(c=>c.map(x=>x.id===item.id?{...x,descricao:v}:x))} placeholder="Descrição" placeholderTextColor={colors.muted} multiline/><View style={styles.itemActions}><TouchableOpacity onPress={()=>atualizar(item)}><Text style={styles.saveText}>SALVAR</Text></TouchableOpacity><TouchableOpacity onPress={()=>remover(item.id)}><Text style={styles.deleteText}>REMOVER</Text></TouchableOpacity></View></View></View>)}
+   {carregando?<ActivityIndicator color={colors.brandCoral} style={{marginTop:25}}/>:itens.length===0?<View style={styles.empty}><Ionicons name="images-outline" size={31} color={colors.brandCoral}/><Text style={styles.emptyTitle}>Nenhum trabalho ainda</Text><Text style={styles.emptyText}>Adicione uma imagem pública para começar a montar seu portfólio.</Text></View>:itens.map(item=><View key={item.id} style={styles.itemCard}><MediaImage uri={item.imageUrl} style={styles.itemImage}/><View style={styles.itemBody}><TextInput style={styles.itemTitle} value={item.titulo||''} onChangeText={v=>setItens(c=>c.map(x=>x.id===item.id?{...x,titulo:v}:x))} placeholder="Título" placeholderTextColor={colors.muted}/><TextInput style={styles.itemDescription} value={item.descricao||''} onChangeText={v=>setItens(c=>c.map(x=>x.id===item.id?{...x,descricao:v}:x))} placeholder="Descrição" placeholderTextColor={colors.muted} multiline/><View style={styles.itemActions}><TouchableOpacity onPress={()=>atualizar(item)}><Text style={styles.saveText}>SALVAR</Text></TouchableOpacity><TouchableOpacity onPress={()=>remover(item.id)}><Text style={styles.deleteText}>REMOVER</Text></TouchableOpacity></View></View></View>)}
   </ScrollView></KeyboardAvoidingView>
  </SafeAreaView>;
 }

@@ -1,8 +1,9 @@
+import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { publicAgent, publicContractor } from '@/services/api';
 import { colors } from '@/shared/theme/colors';
 import type { RootStackParamList } from '@/navigation/app-navigator';
@@ -58,12 +59,12 @@ export default function PublicProfileScreen() {
         contentContainerStyle={styles.content}
       >
         <View style={styles.hero}>
-          {!!perfil.bannerUrl && <Image source={{ uri: perfil.bannerUrl }} style={styles.heroBanner} resizeMode="cover" />}
+          {!!perfil.bannerUrl && <MediaImage uri={perfil.bannerUrl} style={styles.heroBanner} />}
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back} accessibilityLabel="Voltar"><Ionicons name="arrow-back" size={21} color={colors.brandInk} /></TouchableOpacity>
           <View style={styles.heroShape} />
           <Text style={styles.kicker}>{agente ? 'PROFISSIONAL CRIATIVO' : perfil.usuario?.tipo === 'CONTRATANTE_EVENTOS' ? 'CONTRATANTE DE EVENTOS' : 'CONTRATANTE DE OPORTUNIDADES'}</Text>
           <View style={styles.identity}>
-            <Image source={{ uri: perfil.avatarUrl || 'https://i.pravatar.cc/300?img=12' }} style={styles.avatar} />
+            <Avatar uri={perfil.avatarUrl} style={styles.avatar} iconSize={36} />
             <View style={styles.identityCopy}>
               <Text style={styles.name}>{nome}</Text>
               <Text style={styles.subtitle}>{agente ? perfil.especialidade || 'Profissional criativo' : perfil.categoria || 'Contratante independente'}</Text>
@@ -83,14 +84,14 @@ export default function PublicProfileScreen() {
         {agente ? (
           <View style={styles.panel}>
             <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>PORTFÓLIO</Text><Text style={styles.count}>{portfolio.length} trabalhos</Text></View>
-            {portfolio.length ? <View style={styles.gallery}>{portfolio.map((item: any) => <View key={item.id} style={styles.work}><Image source={{ uri: item.imageUrl }} style={styles.workImage} /><Text style={styles.workTitle} numberOfLines={2}>{item.titulo || 'Trabalho criativo'}</Text>{!!item.descricao && <Text style={styles.muted} numberOfLines={3}>{item.descricao}</Text>}</View>)}</View> : <Text style={styles.muted}>Este perfil ainda não publicou trabalhos no portfólio.</Text>}
+            {portfolio.length ? <View style={styles.gallery}>{portfolio.map((item: any) => <View key={item.id} style={styles.work}><MediaImage uri={item.imageUrl} style={styles.workImage} /><Text style={styles.workTitle} numberOfLines={2}>{item.titulo || 'Trabalho criativo'}</Text>{!!item.descricao && <Text style={styles.muted} numberOfLines={3}>{item.descricao}</Text>}</View>)}</View> : <Text style={styles.muted}>Este perfil ainda não publicou trabalhos no portfólio.</Text>}
             <View style={styles.statRow}><View style={styles.stat}><Text style={styles.statNumber}>{Number(perfil.totalProjetos || 0)}</Text><Text style={styles.statLabel}>PROJETOS</Text></View><View style={styles.stat}><Text style={styles.statNumber}>{Number(perfil.notaMedia || 0).toFixed(1)}</Text><Text style={styles.statLabel}>NOTA MÉDIA</Text></View><View style={styles.stat}><Text style={styles.statNumber}>{Number(perfil.totalAvaliacoes || 0)}</Text><Text style={styles.statLabel}>AVALIAÇÕES</Text></View></View>
           </View>
         ) : (
           <>
             <View style={styles.panel}>
               <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>EVENTOS PUBLICADOS</Text><Text style={styles.count}>{eventos.length}</Text></View>
-              {eventos.length ? eventos.map((item: any) => <TouchableOpacity key={item.id} style={styles.listItem} onPress={() => navigation.navigate('EventDetails', { eventId: item.id })}><View style={[styles.listIcon, { backgroundColor: '#DCEBE3' }]}><Ionicons name="calendar-outline" size={19} color="#648A78" /></View><View style={styles.listCopy}><Text style={styles.itemTitle}>{item.titulo}</Text><Text style={styles.muted}>{item.cidade} · {new Date(item.dataEvento).toLocaleDateString('pt-BR')}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted} /></TouchableOpacity>) : <Text style={styles.muted}>Nenhum evento publicado.</Text>}
+              {eventos.length ? eventos.map((item: any) => <TouchableOpacity key={item.id} accessibilityRole="button" accessibilityLabel={`Abrir evento ${item.titulo}`} style={styles.listItem} onPress={() => navigation.navigate('EventDetails', { eventId: item.id })}><View style={[styles.listIcon, { backgroundColor: '#DCEBE3' }]}><Ionicons name="calendar-outline" size={19} color="#648A78" /></View><View style={styles.listCopy}><Text style={styles.itemTitle}>{item.titulo}</Text><Text style={styles.muted}>{item.cidade} · {new Date(item.dataEvento).toLocaleDateString('pt-BR')}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted} /></TouchableOpacity>) : <Text style={styles.muted}>Nenhum evento publicado.</Text>}
             </View>
             <View style={styles.panel}>
               <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>OPORTUNIDADES ABERTAS</Text><Text style={styles.count}>{projetos.length}</Text></View>

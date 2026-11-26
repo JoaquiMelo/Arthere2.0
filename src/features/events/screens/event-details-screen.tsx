@@ -1,6 +1,7 @@
+import { MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Alert, Image , SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,6 +23,8 @@ export default function EventDetailsScreen() {
   const { eventos, solicitacoesEvento, enviarSolicitacaoEvento } = useManagement();
   const [enviando, setEnviando] = useState(false);
   const [eventoApi, setEventoApi] = useState<any>(null);
+  const [erroEvento, setErroEvento] = useState<{ id: string; message: string } | null>(null);
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
     if (eventos.some((item) => item.id === route.params.eventId)) return;
@@ -44,17 +47,27 @@ export default function EventDetailsScreen() {
         premium: Boolean(dados.premium),
         destaque: Boolean(dados.fixado),
       });
-    }).catch(() => { if (ativo) setEventoApi(null); });
+    }).catch((error: unknown) => {
+      if (ativo) setErroEvento({ id: route.params.eventId, message: error instanceof Error ? error.message : 'Não foi possível carregar o evento.' });
+    });
     return () => { ativo = false; };
-  }, [eventos, route.params.eventId]);
+  }, [eventos, route.params.eventId, tentativa]);
 
-  const evento = eventos.find((item) => item.id === route.params.eventId) ?? eventoApi;
+  const evento = eventos.find((item) => item.id === route.params.eventId) ?? (eventoApi?.id === route.params.eventId ? eventoApi : null);
+  const erroAtual = erroEvento?.id === route.params.eventId ? erroEvento.message : null;
 
   if (!evento) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
         <View style={styles.center}>
-          <Text style={[styles.errorTitle, { color: palette.brandInk }]}>Evento não encontrado</Text>
+          {!erroAtual ? <ActivityIndicator color={palette.brandCoral} /> : null}
+          <Text style={[styles.errorTitle, { color: palette.brandInk }]}>{erroAtual ? 'Evento indisponível' : 'Carregando evento…'}</Text>
+          {erroAtual ? <>
+            <Text style={{ color: palette.muted, textAlign: 'center', marginBottom: 12 }}>{erroAtual}</Text>
+            <TouchableOpacity accessibilityRole="button" onPress={() => { setErroEvento(null); setTentativa((value) => value + 1); }} style={[styles.backButton, { backgroundColor: palette.brandInk }]}>
+              <Text style={[styles.buttonText, { color: palette.brandPaper }]}>Tentar novamente</Text>
+            </TouchableOpacity>
+          </> : null}
           <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: palette.brandCoral }]}>
             <Text style={[styles.buttonText, { color: palette.brandPaper }]}>Voltar</Text>
           </TouchableOpacity>
@@ -108,7 +121,7 @@ export default function EventDetailsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {evento.imagemUrl ? <Image source={{ uri: evento.imagemUrl }} style={styles.eventImage} resizeMode="cover" /> : null}
+        <MediaImage uri={evento.imagemUrl} style={styles.eventImage} icon="calendar-outline" iconSize={52} />
         <View style={[styles.hero, { backgroundColor: palette.brandInk }]}>
           <View style={[styles.shapeBlue, { backgroundColor: palette.brandBlue }]} />
           <View style={[styles.shapeGreen, { backgroundColor: palette.brandGreen }]} />

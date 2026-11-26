@@ -1,6 +1,7 @@
+import { Avatar } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useChat, type Conversation } from '@/providers/chat-provider';
 import { colors } from '@/shared/theme/colors';
@@ -58,21 +59,10 @@ function ConversationRow({
   onPress: () => void;
 }) {
   const last = conversation.messages.at(-1);
-  const iniciais = conversation.participant.nome
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((parte) => parte.charAt(0).toUpperCase())
-    .join('');
-
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}>
       <View style={styles.avatarFrame}>
-        {conversation.participant.avatarUrl ? (
-          <Image source={{ uri: conversation.participant.avatarUrl }} style={styles.avatar} />
-        ) : (
-          <Text style={styles.avatarInitials}>{iniciais || "A"}</Text>
-        )}
+        <Avatar uri={conversation.participant.avatarUrl} style={styles.avatar} iconSize={24} />
         {conversation.participant.disponivel ? <View style={styles.online} /> : null}
       </View>
 

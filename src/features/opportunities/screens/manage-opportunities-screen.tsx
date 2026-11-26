@@ -1,10 +1,10 @@
+import { Avatar } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import {
   Alert,
   FlatList,
-  Image,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -240,7 +240,7 @@ export default function ManageOpportunitiesScreen() {
 
                   {vaga.candidatos.map((candidato) => (
                     <View key={candidato.id} style={styles.candidatoCard}>
-                      <Image source={{ uri: candidato.avatarUrl }} style={styles.avatar} />
+                      <Avatar uri={candidato.avatarUrl} style={styles.avatar} iconSize={24} />
 
                       <View style={styles.flex1}>
                         <View style={styles.candidatoTop}>

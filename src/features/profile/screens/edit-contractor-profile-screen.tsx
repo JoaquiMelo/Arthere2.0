@@ -1,3 +1,5 @@
+import { realImageUri } from '@/shared/config/image-uri';
+import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
@@ -6,7 +8,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -24,19 +25,15 @@ import { uploadImage } from "@/services/api";
 import { colors } from "@/shared/theme/colors";
 import { buscarCidades, CidadeBR, ESTADOS_BR } from "@/shared/config/brazil-location";
 
-const AVATAR_PADRAO = "https://i.pravatar.cc/300?img=68";
 
 export default function EditContractorProfileScreen() {
   const navigation = useNavigation<any>();
   const { user, updateProfile } = useUser();
 
   const [avatarUri, setAvatarUri] = useState<string>(
-    (user as (typeof user & { avatarUrl?: string; avatar?: string }) | null)
-      ?.avatarUrl ||
-      (user as (typeof user & { avatar?: string }) | null)?.avatar ||
-      AVATAR_PADRAO,
+    realImageUri(user?.avatarUrl || (user as { avatar?: string } | null)?.avatar),
   );
-  const [bannerUri, setBannerUri] = useState<string>(user?.bannerUrl || "");
+  const [bannerUri, setBannerUri] = useState<string>(realImageUri(user?.bannerUrl));
   const [documento, setDocumento] = useState(user?.documento || "");
   const [nome, setNome] = useState(user?.nome || "");
   const [nomeSocial, setNomeSocial] = useState(user?.nomeSocial || "");
@@ -103,7 +100,7 @@ export default function EditContractorProfileScreen() {
       const avatarPersistido = avatarUri.startsWith('file:') || avatarUri.startsWith('content:') ? await uploadImage(avatarUri) : avatarUri;
       const bannerPersistido = bannerUri.startsWith('file:') || bannerUri.startsWith('content:') ? await uploadImage(bannerUri) : bannerUri;
       const dados = {
-        avatarUrl: avatarPersistido,
+        avatarUrl: avatarPersistido || null,
         bannerUrl: bannerPersistido || null,
         documento: documento.trim(),
         nome: nome.trim(),
@@ -158,7 +155,7 @@ export default function EditContractorProfileScreen() {
           contentContainerStyle={styles.content}
         >
           <TouchableOpacity onPress={escolherBanner} style={{ height: 116, borderRadius: 14, overflow: 'hidden', marginBottom: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-            {bannerUri ? <Image source={{ uri: bannerUri }} style={{ width: '100%', height: '100%' }} /> : <><Ionicons name="image-outline" size={24} color={colors.primaryDark} /><Text style={styles.changePhoto}>Adicionar banner do perfil</Text></>}
+            {bannerUri ? <MediaImage uri={bannerUri} style={{ width: '100%', height: '100%' }} /> : <><Ionicons name="image-outline" size={24} color={colors.primaryDark} /><Text style={styles.changePhoto}>Adicionar banner do perfil</Text></>}
           </TouchableOpacity>
           {/* Foto de Perfil */}
           <View style={styles.photoSection}>
@@ -168,7 +165,7 @@ export default function EditContractorProfileScreen() {
               activeOpacity={0.8}
               accessibilityLabel="Trocar foto de perfil"
             >
-              <Image source={{ uri: avatarUri }} style={styles.avatar} />
+              <Avatar uri={avatarUri} style={styles.avatar} iconSize={36} />
               <View style={styles.cameraBadge}>
                 <Ionicons name="camera" size={15} color={colors.white} />
               </View>

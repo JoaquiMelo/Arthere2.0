@@ -1,9 +1,9 @@
+import { Avatar } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
-  Image,
   Platform,
   ScrollView,
   StyleSheet,
@@ -59,17 +59,13 @@ function CustomPin({
     >
       <View style={[styles.pinContainer, ativo && styles.pinActive]}>
         <View style={[styles.pinImageContainer, { borderColor: cor }]}>
-          {agente.avatarUrl ? <Image source={{ uri: agente.avatarUrl }} style={styles.pinImage} /> : <Text style={[styles.pinInitials, { color: cor }]}>{iniciais(agente.nome)}</Text>}
+          <Avatar uri={agente.avatarUrl} style={styles.pinImage} iconSize={22} />
         </View>
         {typeof agente.disponivel === 'boolean' ? <View style={[styles.pinStatus, { backgroundColor: agente.disponivel ? cor : colors.muted }]} /> : null}
         <View style={[styles.pinTail, { borderTopColor: cor }]} />
       </View>
     </Marker>
   );
-}
-
-function iniciais(nome: string) {
-  return nome.split(/\s+/).filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase() || 'A';
 }
 
 export function MapScreen() {
@@ -313,7 +309,7 @@ export function MapScreen() {
           ) : (
             destaque.map((agente) => (
               <View key={agente.id} style={styles.card}>
-                {agente.avatarUrl ? <Image source={{ uri: agente.avatarUrl }} style={styles.cardImage} /> : <View style={styles.cardAvatarFallback}><Text style={styles.cardAvatarInitials}>{iniciais(agente.nome)}</Text></View>}
+                <Avatar uri={agente.avatarUrl} style={styles.cardImage} iconSize={54} />
                 <View style={styles.cardBody}>
                   <View style={styles.cardTop}>
                     <Text style={styles.cardCategory}>

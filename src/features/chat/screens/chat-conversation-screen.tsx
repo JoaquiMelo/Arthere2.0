@@ -1,10 +1,10 @@
+import { Avatar } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
-  Image,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -31,13 +31,6 @@ export default function ChatConversationScreen() {
 
   if (!conversation) return null;
 
-  const iniciais = conversation.participant.nome
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((parte) => parte.charAt(0).toUpperCase())
-    .join('');
-
   const submit = async () => {
     const texto = draft.trim();
     if (!texto) return;
@@ -61,11 +54,7 @@ export default function ChatConversationScreen() {
             <Ionicons name="arrow-back" size={20} color={colors.brandInk} />
           </TouchableOpacity>
           <View style={styles.avatarFrame}>
-            {conversation.participant.avatarUrl ? (
-              <Image source={{ uri: conversation.participant.avatarUrl }} style={styles.avatar} />
-            ) : (
-              <Text style={styles.avatarInitials}>{iniciais || "A"}</Text>
-            )}
+            <Avatar uri={conversation.participant.avatarUrl} style={styles.avatar} iconSize={24} />
           </View>
           <View style={styles.headerInfo}>
             <Text style={styles.kicker}>CONVERSA</Text>

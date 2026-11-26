@@ -1,9 +1,9 @@
+import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import {
     Alert,
-    Image,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -20,12 +20,12 @@ import { useManagement } from "@/providers/management-provider";
 import { useUser } from "@/providers/user-provider";
 import { colors } from "@/shared/theme/colors";
 
-const AVATAR_PADRAO = "https://i.pravatar.cc/300?img=68";
 
 export default function ContratanteProfileScreen() {
   const navigation = useNavigation<any>();
   const { user, updateProfile } = useUser();
-  const { vagas, eventos } = useManagement();
+  const { vagas, eventos: todosEventos } = useManagement();
+  const eventos = todosEventos.filter((evento) => evento.contratanteId === user?.id);
 
   const [empresa, setEmpresa] = useState(
     user?.empresa || "Empresa não informada",
@@ -62,7 +62,7 @@ export default function ContratanteProfileScreen() {
   const avatarSource =
     (user as { avatarUrl?: string; avatar?: string } | null)?.avatarUrl ||
     (user as { avatar?: string } | null)?.avatar ||
-    AVATAR_PADRAO;
+    '';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -71,12 +71,7 @@ export default function ContratanteProfileScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.coverContainer}>
-          <Image
-            source={{
-              uri: user?.bannerUrl || "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80",
-            }}
-            style={styles.coverImage}
-          />
+          <MediaImage uri={user?.bannerUrl} style={styles.coverImage} icon="image-outline" iconSize={40} />
           <View style={styles.coverOverlay} />
 
           <View style={styles.coverLabel}>
@@ -97,7 +92,7 @@ export default function ContratanteProfileScreen() {
         </View>
 
         <View style={styles.intro}>
-          <Image source={{ uri: avatarSource }} style={styles.avatar} />
+          <Avatar uri={avatarSource} style={styles.avatar} iconSize={48} />
 
           <Text style={styles.name}>
             {user?.nomeSocial || user?.nome || "Contratante"}
@@ -167,7 +162,7 @@ export default function ContratanteProfileScreen() {
           <View style={styles.sectionHeader}>
             <View>
               <Text style={styles.sectionKicker}>PORTFÓLIO DE EVENTOS</Text>
-              <Text style={styles.sectionTitle}>Eventos anteriores</Text>
+              <Text style={styles.sectionTitle}>Meus eventos</Text>
             </View>
             <Text style={styles.sectionSubtitle}>
               {eventos.length} registros
@@ -180,18 +175,17 @@ export default function ContratanteProfileScreen() {
             contentContainerStyle={styles.galleryContainer}
           >
             {eventos.map((evento) => (
-              <View key={evento.id} style={styles.eventCard}>
-                <Image
-                  source={{ uri: evento.imagemUrl || "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=600&q=80" }}
-                  style={styles.eventImage}
-                />
+              <TouchableOpacity key={evento.id} style={styles.eventCard} accessibilityRole="button"
+                accessibilityLabel={`Abrir evento ${evento.titulo}`}
+                onPress={() => navigation.navigate("EventDetails", { eventId: evento.id })}>
+                <MediaImage uri={evento.imagemUrl} style={styles.eventImage} icon="calendar-outline" iconSize={40} />
                 <View style={styles.eventOverlay}>
                   <Text style={styles.eventTitle} numberOfLines={2}>
                     {evento.titulo}
                   </Text>
                   <Text style={styles.eventDateText}>{new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(evento.data + "T12:00:00")).replace(".", "")}</Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
 
             <TouchableOpacity
