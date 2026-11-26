@@ -113,26 +113,27 @@ export function MapScreen() {
 
   return (
     <ScreenContainer edges={user ? ['top', 'left', 'right'] : ['top', 'left', 'right', 'bottom']}>
-      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: spacing.md }}>
+      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm, gap: spacing.sm }}>
         <View style={styles.brandRow}>
+          <View style={{ width: 3, alignSelf: 'stretch', borderRadius: radius.xs, backgroundColor: color.accent }} />
           <View style={styles.flex}>
-            <AppText variant="label" color="accentText" weight="heavy">ARTHERE / TERRITÓRIO CRIATIVO</AppText>
+            <AppText variant="label" color="accentText" weight="bold">ARTHERE / TERRITÓRIO CRIATIVO</AppText>
             <AppText variant="h2" weight="heavy" accessibilityRole="header" style={{ letterSpacing: typography.tracking.tight }}>Explore a cena.</AppText>
           </View>
-          {user ? <IconButton icon="settings-outline" accessibilityLabel="Abrir configurações" onPress={() => navigation.navigate('Settings')} /> : null}
+          {user ? <IconButton icon="settings-outline" variant="outline" accessibilityLabel="Abrir configurações" onPress={() => navigation.navigate('Settings')} /> : null}
         </View>
         {!user ? (
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <Button variant="outline" size="small" style={{ flex: 1 }} onPress={() => navigation.navigate('Login')}>Entrar</Button>
-            <Button size="small" style={{ flex: 1 }} onPress={() => navigation.navigate('Register')}>Criar perfil</Button>
+            <Button variant="outline" size="small" style={{ flex: 1, borderRadius: radius.control }} onPress={() => navigation.navigate('Login')}>Entrar</Button>
+            <Button size="small" style={{ flex: 1, borderRadius: radius.control }} onPress={() => navigation.navigate('Register')}>Criar perfil</Button>
           </View>
         ) : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingLeft: spacing.md, minHeight: dimensions.control.medium, borderWidth: 1, borderColor: color.border, backgroundColor: color.surface, borderRadius: radius.control }}>
-          <Ionicons name="search-outline" size={dimensions.icon.medium} color={color.textSecondary} />
+          <Ionicons name="search-outline" size={dimensions.icon.medium} color={color.accentText} />
           <TextInput
             value={busca}
             onChangeText={setBusca}
-            placeholder="Nome, cidade ou especialidade"
+            placeholder="Nome, cidade ou área criativa"
             placeholderTextColor={color.textSecondary}
             accessibilityLabel="Buscar profissionais criativos"
             returnKeyType="search"
@@ -145,23 +146,23 @@ export function MapScreen() {
         </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.categoryStrip} contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, gap: spacing.sm }}>
-        <FilterChip label="Todos" selected={!categoria} onPress={() => setCategoria(null)} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.categoryStrip} contentContainerStyle={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.xs }}>
+        <FilterChip variant="compact" label="Todos" selected={!categoria} onPress={() => setCategoria(null)} />
         {categories.map(([id, item]) => (
-          <FilterChip key={id} label={item.label} selected={categoria === id} onPress={() => setCategoria((current) => current === id ? null : id)} />
+          <FilterChip key={id} variant="compact" label={item.label} selected={categoria === id} onPress={() => setCategoria((current) => current === id ? null : id)} />
         ))}
       </ScrollView>
 
-      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm }}>
+      <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm }}>
         <AppText variant="bodySmall" weight="semibold" style={{ flex: 1, minWidth: 92 }} accessibilityLiveRegion="polite">
           {carregando && !agentes.length ? 'Buscando…' : erro && !agentes.length ? 'Não foi possível carregar' : `${filtrados.length} ${filtrados.length === 1 ? 'profissional' : 'profissionais'}`}
         </AppText>
-        <FilterChip label="Mapa" icon="map-outline" selected={mode === 'map'} onPress={() => trocarModo('map')} />
-        <FilterChip label="Lista" icon="list-outline" selected={mode === 'list'} onPress={() => trocarModo('list')} />
+        <FilterChip variant="segment" label="Mapa" icon={mode === 'map' ? 'map' : 'map-outline'} selected={mode === 'map'} onPress={() => trocarModo('map')} />
+        <FilterChip variant="segment" label="Lista" icon="list-outline" selected={mode === 'list'} onPress={() => trocarModo('list')} />
       </View>
 
       {mode === 'map' ? (
-        <View style={[styles.mapFrame, { marginHorizontal: spacing.lg, marginBottom: spacing.sm, backgroundColor: color.surfaceSubtle, borderColor: color.border, borderRadius: radius.panel }]}>
+        <View style={[styles.mapFrame, { marginHorizontal: spacing.md, marginBottom: spacing.sm, backgroundColor: color.surfaceSubtle, borderColor: color.border, borderRadius: radius.cardCompact }]}>
           <MapView
             ref={mapRef}
             style={StyleSheet.absoluteFill}
@@ -185,30 +186,30 @@ export function MapScreen() {
               />
             ))}
           </MapView>
-          <View style={{ position: 'absolute', top: spacing.md, right: spacing.md, gap: spacing.sm }}>
-            <View style={{ backgroundColor: color.surface, borderRadius: radius.control, ...elevation.low }}>
+          <View style={{ position: 'absolute', top: spacing.sm, right: spacing.sm, backgroundColor: color.surface, borderRadius: radius.control, borderWidth: 1, borderColor: color.border, ...elevation.low }}>
+            <View>
               <IconButton icon="scan-outline" accessibilityLabel={filtrados.length ? 'Enquadrar profissionais no mapa' : 'Voltar à região inicial'} variant="ghost" disabled={!mapReady} onPress={enquadrar} />
             </View>
-            <View style={{ backgroundColor: color.surface, borderRadius: radius.control, ...elevation.low }}>
+            <View style={{ borderTopWidth: 1, borderTopColor: color.border }}>
               <IconButton icon="refresh-outline" accessibilityLabel="Atualizar profissionais" variant="ghost" loading={carregando} onPress={() => void carregarAgentes()} />
             </View>
           </View>
           {carregando && !agentes.length ? (
-            <View pointerEvents="none" style={[styles.mapNotice, { backgroundColor: color.surface, padding: spacing.md, borderRadius: radius.control, gap: spacing.sm }]}>
+            <View pointerEvents="none" style={[styles.mapNotice, { backgroundColor: color.surface, padding: spacing.md, borderRadius: radius.control, borderWidth: 1, borderColor: color.border, gap: spacing.sm }]}>
               <ActivityIndicator color={color.accentText} />
               <AppText variant="bodySmall">Buscando profissionais…</AppText>
             </View>
           ) : null}
           {erro ? (
-            <View style={[styles.mapNotice, { backgroundColor: color.surface, padding: spacing.md, borderRadius: radius.control, gap: spacing.sm }]}>
+            <View style={[styles.mapNotice, { backgroundColor: color.surface, padding: spacing.md, borderRadius: radius.control, borderWidth: 1, borderColor: color.border, gap: spacing.sm }]}>
               <AppText color="dangerText" variant="bodySmall">{erro}</AppText>
-              <Button variant="outline" size="small" onPress={() => void carregarAgentes()}>Tentar novamente</Button>
+              <Button variant="outline" size="small" style={{ borderRadius: radius.control }} onPress={() => void carregarAgentes()}>Tentar novamente</Button>
             </View>
           ) : !carregando && !filtrados.length ? (
-            <View style={[styles.mapNotice, { backgroundColor: color.surface, padding: spacing.md, borderRadius: radius.control, gap: spacing.sm }]}>
+            <View style={[styles.mapNotice, { backgroundColor: color.surface, padding: spacing.md, borderRadius: radius.control, borderWidth: 1, borderColor: color.border, gap: spacing.sm }]}>
               <AppText weight="semibold">Nenhum profissional encontrado</AppText>
               <AppText variant="bodySmall" color="textSecondary">{busca || categoria ? 'Experimente outros filtros.' : 'Ainda não há profissionais disponíveis no mapa.'}</AppText>
-              {busca || categoria ? <Button variant="outline" size="small" onPress={limparFiltros}>Limpar filtros</Button> : null}
+              {busca || categoria ? <Button variant="outline" size="small" style={{ borderRadius: radius.control }} onPress={limparFiltros}>Limpar filtros</Button> : null}
             </View>
           ) : null}
         </View>
@@ -219,10 +220,10 @@ export function MapScreen() {
           refreshing={carregando}
           onRefresh={() => void carregarAgentes()}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.sm, flexGrow: 1 }}
+          contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.xl, flexGrow: 1 }}
           ListHeaderComponent={resultados.length ? (
             <View style={{ paddingVertical: spacing.sm, gap: spacing.xs }}>
-              <AppText variant="label" color="textSecondary">PROFISSIONAIS · ORDENADOS POR AVALIAÇÃO</AppText>
+              <AppText variant="label" color="textSecondary" weight="medium">Ordenados por avaliação</AppText>
               {erro ? <AppText color="dangerText" variant="bodySmall">{erro}</AppText> : null}
             </View>
           ) : undefined}
@@ -230,7 +231,7 @@ export function MapScreen() {
             erro ? <FeedbackState kind="error" title="Profissionais indisponíveis" description={erro} onRetry={() => void carregarAgentes()} /> :
             <View style={{ gap: spacing.sm }}>
               <FeedbackState kind="empty" icon="search-outline" title="Nenhum profissional encontrado" description="Experimente outra busca ou remova os filtros." />
-              {busca || categoria ? <Button variant="outline" fullWidth onPress={limparFiltros}>Limpar filtros</Button> : null}
+              {busca || categoria ? <Button variant="outline" fullWidth style={{ borderRadius: radius.control }} onPress={limparFiltros}>Limpar filtros</Button> : null}
             </View>}
           renderItem={({ item }) => <AgentResult agente={item} onPress={() => abrirAgente(item)} />}
         />
@@ -258,13 +259,13 @@ function AgentResult({ agente, onPress }: { agente: AgenteCriativo; onPress: () 
   const { color, spacing, radius, dimensions } = useThemeTokens();
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={`Abrir perfil de ${agente.nome}`} onPress={onPress}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, minHeight: dimensions.control.large, backgroundColor: color.surface, borderWidth: 1, borderColor: color.border, borderRadius: radius.card, opacity: pressed ? 0.8 : 1 })}>
-      <Avatar uri={agente.avatarUrl} style={{ width: 68, height: 68, borderRadius: radius.control }} iconSize={28} />
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.xs, minHeight: dimensions.control.large, backgroundColor: pressed ? color.surfaceSubtle : 'transparent', borderBottomWidth: 1, borderBottomColor: color.border })}>
+      <Avatar uri={agente.avatarUrl} style={{ width: 72, height: 72, borderRadius: radius.control }} iconSize={28} />
       <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
         <AppText variant="label" color="accentText" weight="bold">{categoryLabel(agente.categoria)}</AppText>
         <AppText variant="title" weight="bold">{agente.nome}</AppText>
         <AppText variant="bodySmall" color="textSecondary">{agente.especialidades[0]} · {agente.cidade}</AppText>
-        <AppText variant="label" color="textSecondary">{agente.avaliacao > 0 ? `★ ${agente.avaliacao.toFixed(1)}` : 'Sem avaliações'}</AppText>
+        <AppText variant="label" color={agente.avaliacao > 0 ? 'accentText' : 'textSecondary'} weight="semibold">{agente.avaliacao > 0 ? `★ ${agente.avaliacao.toFixed(1)}` : 'Sem avaliações'}</AppText>
       </View>
       <Ionicons name="chevron-forward" size={dimensions.icon.medium} color={color.textSecondary} />
     </Pressable>
@@ -273,7 +274,7 @@ function AgentResult({ agente, onPress }: { agente: AgenteCriativo; onPress: () 
 
 const styles = StyleSheet.create({
   flex: { flex: 1, minWidth: 0 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   categoryStrip: { flexGrow: 0, flexShrink: 0 },
   mapFrame: { flex: 1, minHeight: 0, overflow: 'hidden', borderWidth: 1 },
   mapNotice: { position: 'absolute', bottom: 12, left: 12, right: 12 },
