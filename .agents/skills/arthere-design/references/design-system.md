@@ -27,3 +27,19 @@ Não criar todos de uma vez. Identifique padrões repetidos no código e evolua 
 
 ## Auditoria de consistência
 Compare telas que fazem tarefas semelhantes. Verifique alturas de botões, campos, raios, espaçamento, títulos, estados e padrões de navegação. Diferenças precisam ser intencionais.
+
+## Implementação atual no repositório
+
+A fundação compartilhada está em `src/shared/theme/`:
+- `colors.ts`: paleta de marca e aliases legados.
+- `tokens.ts`: cores semânticas derivadas da paleta ativa.
+- `typography.ts`, `spacing.ts`, `radius.ts`, `elevation.ts` e `motion.ts`: escalas reutilizáveis.
+- `index.ts`: ponto de exportação dos tokens.
+
+Os componentes-base estão em `src/shared/components/`:
+- `AppText`: variantes tipográficas e cores semânticas.
+- `Button`: variantes, tamanhos, loading e estado desabilitado.
+- `TextField`: label, foco, helper text e erro.
+- `SectionHeader`: hierarquia editorial de seções.
+
+Use `useTheme()` e `createThemeTokens(palette)` para consumir a paleta ativa. Durante a migração, mantenha os nomes legados em `colors.ts` para não quebrar telas ainda não convertidas. Novos componentes devem preferir tokens semânticos.
