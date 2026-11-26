@@ -49,7 +49,7 @@ const icons:Record<keyof TabParamList, { active: keyof typeof Ionicons.glyphMap;
 };
 
 function AppTabs(){
- const {color,spacing,radius}=useThemeTokens();
+ const {color,spacing}=useThemeTokens();
  return <Tab.Navigator initialRouteName="Map" screenOptions={({route})=>({
   headerShown:false,
   tabBarActiveTintColor:color.accentOnInverse,
@@ -59,8 +59,8 @@ function AppTabs(){
   tabBarStyle:{borderTopWidth:1,borderTopColor:color.border,backgroundColor:color.textPrimary,elevation:0},
   tabBarHideOnKeyboard:true,
   tabBarIcon:({color:foreground,focused})=>(
-   <View style={{minWidth:44,height:30,paddingHorizontal:spacing.sm,alignItems:'center',justifyContent:'center',borderRadius:radius.pill,backgroundColor:focused?color.accentSoft:'transparent'}}>
-    <Ionicons name={focused?icons[route.name].active:icons[route.name].inactive} size={22} color={focused?color.textPrimary:foreground}/>
+   <View style={{minWidth:44,height:30,paddingHorizontal:spacing.xs,alignItems:'center',justifyContent:'center'}}>
+    <Ionicons name={focused?icons[route.name].active:icons[route.name].inactive} size={22} color={foreground}/>
    </View>
   )
  })}>
