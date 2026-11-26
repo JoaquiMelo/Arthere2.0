@@ -32,6 +32,9 @@ Compare telas que fazem tarefas semelhantes. Verifique alturas de botões, campo
 
 A fundação compartilhada está em `src/shared/theme/`:
 - `colors.ts`: paleta de marca e aliases legados.
+- `palettes.ts`: fonte única das três paletas Arthere, Oceano e Ameixa.
+- `contrast.ts`: cálculo de contraste e adaptação de primeiro plano para as paletas claras.
+- `dimensions.ts`: alvos de toque, alturas mínimas, ícones e largura de referência.
 - `tokens.ts`: cores semânticas derivadas da paleta ativa.
 - `typography.ts`, `spacing.ts`, `radius.ts`, `elevation.ts` e `motion.ts`: escalas reutilizáveis.
 - `index.ts`: ponto de exportação dos tokens.
@@ -42,4 +45,12 @@ Os componentes-base estão em `src/shared/components/`:
 - `TextField`: label, foco, helper text e erro.
 - `SectionHeader`: hierarquia editorial de seções.
 
-Use `useTheme()` e `createThemeTokens(palette)` para consumir a paleta ativa. Durante a migração, mantenha os nomes legados em `colors.ts` para não quebrar telas ainda não convertidas. Novos componentes devem preferir tokens semânticos.
+Use `useThemeTokens()` de `@/shared/theme/use-theme-tokens` para consumir a instância memoizada no ThemeProvider. Use `useTheme()` quando precisar selecionar a paleta ou acessar aliases legados. `createThemeTokens(palette)` permanece disponível para uso fora de componentes. Durante a migração, mantenha os nomes legados em `colors.ts` para não quebrar telas ainda não convertidas. Novos componentes devem preferir tokens semânticos.
+
+## Consolidação — etapa 3.2
+
+- A marca original permanece intacta. `accent`, `danger`, `success` e `warning` são cores de preenchimento/destaque. Para texto sobre superfícies claras use `accentText`, `dangerText`, `successText` e `warningText`. Para texto sobre preenchimentos use `onAccent`, `onAccentSecondary` e `onDanger`. `accentOnInverse` é a cor de destaque sobre grafite.
+- Os primeiros planos adaptados buscam relação de contraste mínima 4,5:1 nas superfícies claras das três paletas; não substituem verificação visual em contexto, sobretudo sobre imagens e fundos não previstos.
+- Botões usam altura mínima de 44/48/56 dp; campos usam 48 dp e a escala tipográfica compartilhada. Não fixar a altura quando o conteúdo pode crescer.
+- O NavigationContainer recebe as cores do tema sem trocar rotas. A prévia das paletas nas Configurações usa a mesma fonte de dados do provider.
+- Não criar diretório paralelo de UI. Evoluir `src/shared/components/` na etapa 3.3. Telas ainda com cores estáticas serão migradas por módulo; não considerar a migração visual global concluída.

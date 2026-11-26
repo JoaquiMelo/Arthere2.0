@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react';
 import { Text, type StyleProp, type TextProps, type TextStyle } from 'react-native';
 
-import { useTheme } from '@/providers/theme-provider';
-import { createThemeTokens } from '@/shared/theme/tokens';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import type { TypographyVariant } from '@/shared/theme/typography';
 
-type ColorToken = keyof ReturnType<typeof createThemeTokens>['color'];
+import type { ColorToken } from '@/shared/theme/tokens';
 
 type AppTextProps = TextProps & {
   children: ReactNode;
@@ -23,8 +22,7 @@ export function AppText({
   style,
   ...props
 }: AppTextProps) {
-  const { palette } = useTheme();
-  const tokens = createThemeTokens(palette);
+  const tokens = useThemeTokens();
 
   return (
     <Text

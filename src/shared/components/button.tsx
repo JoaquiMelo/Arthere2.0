@@ -1,9 +1,9 @@
 import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps, type ViewStyle } from 'react-native';
 import type { ReactNode } from 'react';
 
-import { useTheme } from '@/providers/theme-provider';
-import { createThemeTokens } from '@/shared/theme/tokens';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { AppText } from './app-text';
+import type { ColorToken } from '@/shared/theme/tokens';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'small' | 'medium' | 'large';
@@ -26,10 +26,10 @@ export function Button({
   fullWidth = false,
   style,
   accessibilityLabel,
+  accessibilityState,
   ...props
 }: ButtonProps) {
-  const { palette } = useTheme();
-  const tokens = createThemeTokens(palette);
+  const tokens = useThemeTokens();
   const isDisabled = disabled || loading;
 
   const backgrounds: Record<ButtonVariant, string> = {
@@ -46,20 +46,28 @@ export function Button({
     ghost: 'transparent',
     danger: 'transparent',
   };
-  const heights: Record<ButtonSize, number> = { small: 40, medium: 48, large: 54 };
+  const foregrounds: Record<ButtonVariant, ColorToken> = {
+    primary: 'onAccent',
+    secondary: 'onAccentSecondary',
+    outline: 'textPrimary',
+    ghost: 'accentText',
+    danger: 'onDanger',
+  };
+  const foreground = foregrounds[variant];
 
   return (
     <Pressable
       {...props}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      accessibilityState={{ ...accessibilityState, disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.base,
         {
-          minHeight: heights[size],
-          paddingHorizontal: size === 'small' ? 14 : 18,
+          minHeight: tokens.dimensions.control[size],
+          paddingHorizontal: size === 'small' ? tokens.spacing.md : tokens.spacing.xl,
+          paddingVertical: tokens.spacing.sm,
           borderRadius: tokens.radius.button,
           backgroundColor: backgrounds[variant],
           borderColor: borders[variant],
@@ -70,10 +78,10 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'secondary' || variant === 'outline' || variant === 'ghost' ? tokens.color.textPrimary : '#FFFFFF'} />
+        <ActivityIndicator color={tokens.color[foreground]} />
       ) : (
         <View style={styles.content}>
-          <AppText variant="label" weight="bold" color={variant === 'secondary' || variant === 'outline' ? 'textPrimary' : variant === 'ghost' ? 'accent' : 'textInverse'}>
+          <AppText variant="label" weight="bold" color={foreground}>
             {children}
           </AppText>
         </View>

@@ -8,8 +8,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { useTheme } from '@/providers/theme-provider';
-import { createThemeTokens } from '@/shared/theme/tokens';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { AppText } from './app-text';
 
 type TextFieldProps = Omit<TextInputProps, 'style'> & {
@@ -29,12 +28,11 @@ export function TextField({
   accessibilityLabel,
   ...inputProps
 }: TextFieldProps) {
-  const { palette } = useTheme();
-  const tokens = createThemeTokens(palette);
+  const tokens = useThemeTokens();
   const [focused, setFocused] = useState(false);
 
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View style={[{ gap: tokens.spacing.sm }, containerStyle]}>
       <AppText variant="label" weight="semibold">{label}</AppText>
       <TextInput
         {...inputProps}
@@ -53,13 +51,17 @@ export function TextField({
           {
             color: tokens.color.textPrimary,
             backgroundColor: tokens.color.surface,
-            borderColor: error ? tokens.color.danger : focused ? tokens.color.accent : tokens.color.border,
+            borderColor: error ? tokens.color.dangerText : focused ? tokens.color.focus : tokens.color.border,
             borderRadius: tokens.radius.control,
+            minHeight: tokens.dimensions.control.medium,
+            paddingHorizontal: tokens.spacing.lg,
+            paddingVertical: tokens.spacing.md,
+            fontSize: tokens.typography.size.body,
           },
         ]}
       />
       {error ? (
-        <AppText variant="caption" color="danger" accessibilityRole="alert">{error}</AppText>
+        <AppText variant="caption" color="dangerText" accessibilityRole="alert">{error}</AppText>
       ) : helperText ? (
         <AppText variant="caption" color="textSecondary">{helperText}</AppText>
       ) : null}
@@ -68,14 +70,7 @@ export function TextField({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 7,
-  },
   input: {
-    minHeight: 48,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 15,
   },
 });

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
+import { useMemo } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -24,8 +25,7 @@ import PortfolioCreationScreen from '@/features/profile/screens/portfolio-creati
 import ProfileScreen from '@/features/profile/screens/profile-screen';
 import PublicProfileScreen from '@/features/profile/screens/public-profile-screen';
 import SettingsScreen from '@/features/profile/screens/settings-screen';
-import { useTheme } from '@/providers/theme-provider';
-import { createThemeTokens } from '@/shared/theme/tokens';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { useUser } from '@/providers/user-provider';
 
 export type RootStackParamList={
@@ -45,11 +45,10 @@ const icons:Record<keyof TabParamList,keyof typeof Ionicons.glyphMap>={
 };
 
 function AppTabs(){
- const{palette}=useTheme();
- const tokens=createThemeTokens(palette);
+ const tokens=useThemeTokens();
  return <Tab.Navigator screenOptions={({route})=>({
   headerShown:false,
-  tabBarActiveTintColor:tokens.color.accent,
+  tabBarActiveTintColor:tokens.color.accentOnInverse,
   tabBarInactiveTintColor:tokens.color.textInverse,
   tabBarLabelStyle:{fontSize:10,fontWeight:'700',letterSpacing:0.35,marginTop:2},
   tabBarStyle:{height:78,paddingTop:8,paddingBottom:10,borderTopWidth:1,borderTopColor:tokens.color.border,backgroundColor:tokens.color.textPrimary,elevation:0},
@@ -66,7 +65,8 @@ function AppTabs(){
 
 function RootStack(){
  const{user,loading}=useUser();
- if(loading)return <View style={{flex:1,alignItems:'center',justifyContent:'center'}}><ActivityIndicator/></View>;
+ const tokens=useThemeTokens();
+ if(loading)return <View style={{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:tokens.color.background}}><ActivityIndicator color={tokens.color.accentText}/></View>;
  return <Stack.Navigator initialRouteName={user?'Tabs':'Map'} screenOptions={{headerShown:false}}>
   {!user ? (
     <>
@@ -100,4 +100,11 @@ function RootStack(){
  </Stack.Navigator>;
 }
 
-export function AppNavigator(){return <NavigationContainer><RootStack/></NavigationContainer>;}
+export function AppNavigator(){
+ const {color}=useThemeTokens();
+ const navigationTheme=useMemo(()=>({
+  ...DefaultTheme,
+  colors:{...DefaultTheme.colors,primary:color.accentText,background:color.background,card:color.surface,text:color.textPrimary,border:color.border,notification:color.dangerText},
+ }),[color]);
+ return <NavigationContainer theme={navigationTheme}><RootStack/></NavigationContainer>;
+}

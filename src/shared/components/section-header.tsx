@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText } from './app-text';
+import { spacing } from '@/shared/theme/spacing';
 
 type SectionHeaderProps = {
   title: string;
@@ -14,8 +15,8 @@ export function SectionHeader({ title, kicker, description, action }: SectionHea
   return (
     <View style={styles.container}>
       <View style={styles.copy}>
-        {kicker ? <AppText variant="overline" color="accent" weight="heavy">{kicker}</AppText> : null}
-        <AppText variant="h3" weight="bold">{title}</AppText>
+        {kicker ? <AppText variant="overline" color="accentText" weight="heavy">{kicker}</AppText> : null}
+        <AppText variant="h3" weight="bold" accessibilityRole="header">{title}</AppText>
         {description ? <AppText variant="bodySmall" color="textSecondary">{description}</AppText> : null}
       </View>
       {action ? <View style={styles.action}>{action}</View> : null}
@@ -28,11 +29,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: spacing.md,
   },
   copy: {
     flex: 1,
-    gap: 4,
+    gap: spacing.xs,
   },
   action: {
     flexShrink: 0,

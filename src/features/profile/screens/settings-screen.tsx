@@ -12,7 +12,7 @@ import {
     View,
 } from "react-native";
 
-import { PaletteName, useTheme } from "@/providers/theme-provider";
+import { palettes, type PaletteName, useTheme } from "@/providers/theme-provider";
 import { useUser } from "@/providers/user-provider";
 
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -20,7 +20,7 @@ type IconName = keyof typeof Ionicons.glyphMap;
 export default function SettingsScreen() {
   const navigation = useNavigation<any>();
   const { user, logout } = useUser();
-  const { paletteName, palette, setPalette } = useTheme();
+  const { paletteName, palette, tokens, setPalette } = useTheme();
   const [paletaAberta, setPaletaAberta] = useState(false);
   const sair = () =>
     Alert.alert("Sair da conta", "Você deseja encerrar a sessão?", [
@@ -56,7 +56,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerCopy}>
-          <Text style={[styles.headerKicker, { color: palette.brandCoral }]}>
+          <Text style={[styles.headerKicker, { color: tokens.color.accentText }]}>
             PREFERÊNCIAS
           </Text>
           <Text style={[styles.headerTitle, { color: palette.brandInk }]}>
@@ -80,7 +80,7 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        <Text style={[styles.groupTitle, { color: palette.brandCoral }]}>
+        <Text style={[styles.groupTitle, { color: tokens.color.accentText }]}>
           CONTA
         </Text>
         <View
@@ -98,7 +98,7 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <Text style={[styles.groupTitle, { color: palette.brandCoral }]}>
+        <Text style={[styles.groupTitle, { color: tokens.color.accentText }]}>
           APARÊNCIA
         </Text>
         <View
@@ -156,9 +156,9 @@ export default function SettingsScreen() {
           <Ionicons
             name="log-out-outline"
             size={18}
-            color={palette.brandCoral}
+            color={tokens.color.accentText}
           />
-          <Text style={[styles.logoutText, { color: palette.brandCoral }]}>
+          <Text style={[styles.logoutText, { color: tokens.color.accentText }]}>
             SAIR DA CONTA
           </Text>
         </TouchableOpacity>
@@ -177,7 +177,7 @@ export default function SettingsScreen() {
         <View
           style={[
             styles.modalOverlay,
-            { backgroundColor: "rgba(41,36,43,0.50)" },
+            { backgroundColor: tokens.color.overlay },
           ]}
         >
           <View
@@ -192,7 +192,7 @@ export default function SettingsScreen() {
             <View
               style={[styles.modalHandle, { backgroundColor: palette.border }]}
             />
-            <Text style={[styles.paletteKicker, { color: palette.brandCoral }]}>
+            <Text style={[styles.paletteKicker, { color: tokens.color.accentText }]}>
               IDENTIDADE
             </Text>
             <Text style={[styles.paletteTitle, { color: palette.brandInk }]}>
@@ -201,16 +201,15 @@ export default function SettingsScreen() {
 
             {(["Arthere", "Oceano", "Ameixa"] as PaletteName[]).map((nome) => {
               const selecionada = nome === paletteName;
-              const cores =
-                nome === "Arthere"
-                  ? ["#EFE7DA", "#90C8D8", "#F2CE99", "#D88160", "#EB6241"]
-                  : nome === "Oceano"
-                    ? ["#D9EEF1", "#B9DFE5", "#F2CE99", "#E17A56", "#3F91A3"]
-                    : ["#EFE2EB", "#DFC6D7", "#F2CE99", "#D88160", "#8B567D"];
+              const amostra = palettes[nome];
+              const cores = [amostra.surface, amostra.surfaceStrong, amostra.brandSand, amostra.orange, amostra.primary];
 
               return (
                 <TouchableOpacity
                   key={nome}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: selecionada }}
+                  accessibilityLabel={`Paleta ${nome}`}
                   style={[
                     styles.paletteOption,
                     {
