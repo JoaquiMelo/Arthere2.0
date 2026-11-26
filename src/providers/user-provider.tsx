@@ -113,11 +113,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
         }
       }
-    } catch (error) {
+    } catch {
       // Uma falha de leitura não equivale a logout. Preserve a identidade atual;
       // a sessão será revalidada na próxima tentativa de refresh.
-      if (error instanceof api.SessaoStorageError) return;
-      throw error;
+      return;
     }
   }, []);
 
