@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentRef, ReactNode, Ref } from 'react';
 import { Text, type StyleProp, type TextProps, type TextStyle } from 'react-native';
 
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
@@ -7,6 +7,7 @@ import type { TypographyVariant } from '@/shared/theme/typography';
 import type { ColorToken } from '@/shared/theme/tokens';
 
 type AppTextProps = TextProps & {
+  ref?: Ref<ComponentRef<typeof Text>>;
   children: ReactNode;
   variant?: TypographyVariant;
   color?: ColorToken;

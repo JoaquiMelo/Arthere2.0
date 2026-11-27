@@ -1,11 +1,13 @@
-import type { ReactNode } from 'react';
-import { useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
+import type { ComponentRef, ReactNode, Ref } from 'react';
+import { useWindowDimensions, View, type StyleProp, type Text, type ViewStyle } from 'react-native';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { AppText } from './app-text';
 import { IconButton } from './icon-button';
 
 type Props = {
   title: string;
+  titleRef?: Ref<ComponentRef<typeof Text>>;
+  titleAccessibilityLabel?: string;
   kicker?: string;
   description?: string;
   onBack?: () => void;
@@ -14,7 +16,7 @@ type Props = {
 };
 
 /** Cabeçalho de página; não conhece rotas ou regras de navegação. */
-export function ScreenHeader({ title, kicker, description, onBack, action, style }: Props) {
+export function ScreenHeader({ title, titleRef, titleAccessibilityLabel, kicker, description, onBack, action, style }: Props) {
   const { color, dimensions, spacing } = useThemeTokens();
   const { width, fontScale } = useWindowDimensions();
   const wrapsAction = width / fontScale < 6 * dimensions.control.large;
@@ -24,7 +26,8 @@ export function ScreenHeader({ title, kicker, description, onBack, action, style
         {onBack ? <IconButton icon="arrow-back" accessibilityLabel="Voltar" variant="ghost" onPress={onBack} /> : null}
         <View style={{ flex: 1, gap: spacing.xs }}>
           {kicker ? <AppText variant="overline" color="accentText" weight="bold">{kicker}</AppText> : null}
-          <AppText variant="h2" weight="heavy" accessibilityRole="header">{title}</AppText>
+          <AppText ref={titleRef} variant="h2" weight="heavy" accessibilityRole="header"
+            accessibilityLabel={titleAccessibilityLabel}>{title}</AppText>
         </View>
         {wrapsAction ? null : action}
       </View>

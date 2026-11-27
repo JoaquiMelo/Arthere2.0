@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useCallback, useEffect, useRef, useState, type ComponentProps } from 'react';
-import { BackHandler, Keyboard, Pressable, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState, type ComponentProps, type ComponentRef } from 'react';
+import { BackHandler, Keyboard, Pressable, View, type TextInput } from 'react-native';
 import type { RootStackParamList } from '@/navigation/app-navigator';
 import { useUser, type TipoUsuario } from '@/providers/user-provider';
 import { AppText, Button, SectionHeader, TextField } from '@/shared/components';
@@ -30,6 +30,8 @@ const initial = {
 };
 type Field = keyof typeof initial;
 type Errors = Partial<Record<Field | 'termos', string>>;
+const profileFieldOrder = ['nome', 'especialidade', 'empresa', 'cpfCnpj', 'categoria', 'estado', 'cidade'] as const;
+const accessFieldOrder = ['email', 'senha', 'confirmarSenha', 'termos'] as const;
 
 export default function RegisterScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Register'>>();
@@ -43,11 +45,15 @@ export default function RegisterScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [failure, setFailure] = useState('');
-  const hasErrors = Object.keys(errors).length > 0;
-  const errorSummary = failure || (hasErrors ? 'Revise os campos indicados acima.' : '');
+  const firstError = (step === 2 ? accessFieldOrder : profileFieldOrder).find((name) => errors[name]);
+  const errorSummary = failure || (firstError ? errors[firstError] : '');
   useStatusAnnouncement(errorSummary);
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
+  const fields = useRef<Partial<Record<Field, ComponentRef<typeof TextInput>>>>({});
+  const emailInput = useRef<ComponentRef<typeof TextInput>>(null);
+  const passwordInput = useRef<ComponentRef<typeof TextInput>>(null);
+  const confirmationInput = useRef<ComponentRef<typeof TextInput>>(null);
   const organizer = role === 'CONTRATANTE_EVENTOS';
   const agent = role === 'AGENTE';
 
@@ -89,9 +95,17 @@ export default function RegisterScreen() {
     if (field === 'senha') clearErrors('senha', 'confirmarSenha');
     else clearErrors(field);
   };
+  const fieldProps = (key: Field) => ({
+    value: draft[key],
+    error: errors[key],
+    editable: !busy,
+    onChangeText: (value: string) => edit(key, key === 'email' ? value.replace(/\s/g, '') : value),
+  });
   const field = (key: Field, label: string, props: Partial<ComponentProps<typeof TextField>> = {}) => (
-    <TextField {...props} label={label} value={draft[key]} error={errors[key]} editable={!busy}
-      onChangeText={(value) => edit(key, key === 'email' ? value.replace(/\s/g, '') : value)} />
+    <TextField {...props} {...fieldProps(key)} label={label} ref={(input) => {
+      if (input) fields.current[key] = input;
+      else delete fields.current[key];
+    }} />
   );
   const profileErrors = () => {
     const next: Errors = {};
@@ -113,6 +127,9 @@ export default function RegisterScreen() {
     if (Object.keys(profile).length) {
       if (step === 2) move(1);
       setErrors(profile);
+      const invalid = profileFieldOrder.find((name) => profile[name]);
+      if (invalid && fields.current[invalid]) fields.current[invalid].focus();
+      else Keyboard.dismiss();
       return;
     }
     if (step === 1) { move(2); return; }
@@ -124,7 +141,15 @@ export default function RegisterScreen() {
     if (!draft.confirmarSenha || draft.senha !== draft.confirmarSenha) access.confirmarSenha = 'Repita a mesma senha.';
     if (!accepted) access.termos = 'Confirme a leitura e aceitação para continuar.';
     setErrors(access);
-    if (Object.keys(access).length) return;
+    const invalid = accessFieldOrder.find((name) => access[name]);
+    if (invalid) {
+      if (invalid === 'termos') Keyboard.dismiss();
+      else {
+        const input = invalid === 'email' ? emailInput : invalid === 'senha' ? passwordInput : confirmationInput;
+        input.current?.focus();
+      }
+      return;
+    }
     Keyboard.dismiss();
     pending.current = true;
     setBusy(true);
@@ -209,9 +234,15 @@ export default function RegisterScreen() {
         </>
       ) : (
         <>
-          {field('email', 'E-mail', { keyboardType: 'email-address', autoComplete: 'email', autoCapitalize: 'none', autoCorrect: false })}
-          {field('senha', 'Senha', { secureTextEntry: !passwordVisible, autoComplete: 'new-password', autoCapitalize: 'none', autoCorrect: false, helperText: 'Pelo menos 8 caracteres.' })}
-          {field('confirmarSenha', 'Confirmar senha', { secureTextEntry: !passwordVisible, autoComplete: 'new-password', autoCapitalize: 'none', autoCorrect: false })}
+          <TextField {...fieldProps('email')} ref={emailInput} label="E-mail" keyboardType="email-address" autoComplete="email"
+            autoCapitalize="none" autoCorrect={false} returnKeyType="next" submitBehavior="submit"
+            onSubmitEditing={() => passwordInput.current?.focus()} />
+          <TextField {...fieldProps('senha')} ref={passwordInput} label="Senha" secureTextEntry={!passwordVisible} autoComplete="new-password"
+            autoCapitalize="none" autoCorrect={false} helperText="Pelo menos 8 caracteres." returnKeyType="next"
+            submitBehavior="submit" onSubmitEditing={() => confirmationInput.current?.focus()} />
+          <TextField {...fieldProps('confirmarSenha')} ref={confirmationInput} label="Confirmar senha" secureTextEntry={!passwordVisible}
+            autoComplete="new-password" autoCapitalize="none" autoCorrect={false} returnKeyType="go"
+            submitBehavior="submit" onSubmitEditing={() => void next()} />
           <Button variant="ghost" size="small" disabled={busy} accessibilityState={{ selected: passwordVisible }}
             onPress={() => setPasswordVisible((visible) => !visible)}>{passwordVisible ? 'Ocultar senhas' : 'Mostrar senhas'}</Button>
           <View style={{ gap: spacing.xs }}>

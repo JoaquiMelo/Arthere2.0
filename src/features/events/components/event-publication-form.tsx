@@ -2,7 +2,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation, usePreventRemove, type NavigationProp } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
 import { useManagement } from '@/providers/management-provider';
 import type { RootStackParamList } from '@/navigation/app-navigator';
@@ -115,6 +115,7 @@ export function EventPublicationForm({ eventId }: { eventId?: string }) {
     if (!allowed || pending.current || finished || (eventId && (ownedEventId !== eventId || !dirty))) return;
     setAttempted(true);
     if (Object.keys(errors).length) return;
+    Keyboard.dismiss();
     pending.current = true;
     setBusy('save');
     setError('');

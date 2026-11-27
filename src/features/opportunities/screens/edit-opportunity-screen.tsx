@@ -1,6 +1,6 @@
 import { useNavigation, usePreventRemove, useRoute, type RouteProp } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, Keyboard, View } from 'react-native';
 import { AppText, Badge, Button, FeedbackState, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { useUser } from '@/providers/user-provider';
@@ -84,6 +84,7 @@ export default function EditOpportunityScreen() {
     if (!allowed || !original || original.id !== opportunityId || pending.current || !dirty || saved) return;
     setAttempted(true);
     if (Object.keys(errors).length > 0) return;
+    Keyboard.dismiss();
     setSaveError('');
     pending.current = true;
     setBusy(true);

@@ -63,7 +63,10 @@ export default function EventAlbumScreen() {
     ]);
   });
   useEffect(() => {
-    if (done) navigation.goBack();
+    if (done && navigation.isFocused()) {
+      navigation.goBack();
+      Alert.alert('Álbum atualizado', 'As alterações nas fotos foram salvas.');
+    }
   }, [done, navigation]);
 
   const pick = async () => {
@@ -140,6 +143,9 @@ export default function EventAlbumScreen() {
                   </View>
                 ))}
                 <Button variant="outline" loading={busy === 'pick'} disabled={busy !== null || photos.length >= MAX_PHOTOS} onPress={() => void pick()}>Adicionar fotos</Button>
+                <AppText variant="caption" color="textSecondary" accessibilityLiveRegion="polite">
+                  {photos.length} de {MAX_PHOTOS} fotos
+                </AppText>
                 {actionError ? <AppText color="dangerText" accessibilityRole="alert">{actionError}</AppText> : null}
                 <Button fullWidth loading={busy === 'save'} disabled={!dirty || busy !== null} onPress={() => void save()}>Salvar álbum</Button>
               </ScrollView>

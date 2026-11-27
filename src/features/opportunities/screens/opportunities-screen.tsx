@@ -8,7 +8,7 @@ import type { RootStackParamList } from '@/navigation/app-navigator';
 import { useApplications } from '@/providers/applications-provider';
 import { useUser } from '@/providers/user-provider';
 import { ApiRequestError, listarProjetos, type Projeto } from '@/services/api';
-import { AppText, Avatar, Badge, Button, FeedbackState, FilterChip, IconButton, ScreenContainer, ScreenHeader } from '@/shared/components';
+import { AppText, Avatar, Badge, Button, FeedbackState, FilterChip, IconButton, ListLoading, ScreenContainer, ScreenHeader } from '@/shared/components';
 import { nomeMunicipio } from '@/shared/config/brazil-location';
 import { dimensions, radius, spacing } from '@/shared/theme';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
@@ -213,8 +213,8 @@ export default function OpportunitiesScreen() {
 
   if (dados === null && !erro) return (
     <ScreenContainer edges={['top', 'left', 'right']}>
-      <ScreenHeader kicker="TRABALHO E COLABORAÇÃO" title="Oportunidades" description="Buscando projetos criativos para você." action={headerAction} />
-      <View style={styles.centerState}><FeedbackState kind="loading" title="Carregando oportunidades" description="Isso pode levar alguns instantes." /></View>
+      <ScreenHeader kicker="TRABALHO E COLABORAÇÃO" title="Oportunidades" action={headerAction} />
+      <ScrollView contentContainerStyle={{ padding: tokens.spacing.xl }}><ListLoading label="Carregando oportunidades…" /></ScrollView>
     </ScreenContainer>
   );
 

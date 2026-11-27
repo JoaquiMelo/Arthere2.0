@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { useRef, useState, type ComponentRef } from 'react';
+import { Modal, Pressable, ScrollView, View, useWindowDimensions, type Text } from 'react-native';
 import { AppText, Button, IconButton, MediaImage, ScreenContainer } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { focusAccessibilityHeading } from '@/shared/focus-accessibility';
 
 export type GalleryWork = { id: string; imageUrl: string; titulo?: string | null; descricao?: string | null };
 
@@ -10,6 +11,7 @@ export function PortfolioGallery({ works, onEdit }: { works: GalleryWork[]; onEd
   const { color, spacing, radius, typography } = useThemeTokens();
   const { width, fontScale } = useWindowDimensions();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const workTitle = useRef<ComponentRef<typeof Text>>(null);
   const selected = works.find((work) => work.id === selectedId);
   const compact = width < 340 || fontScale > 1.4;
   // Alterna uma obra de destaque com um díptico assimétrico, na ordem da API.
@@ -26,7 +28,6 @@ export function PortfolioGallery({ works, onEdit }: { works: GalleryWork[]; onEd
         <View key={group[0].id} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md }}>
           {group.map((work, column) => {
             const solo = group.length === 1;
-            const index = works.indexOf(work);
             const tall = !solo && (row + column) % 2 === 1;
             return (
               <Pressable key={work.id} accessibilityRole="button" accessibilityLabel={`Visualizar ${work.titulo || 'trabalho criativo'}`}
@@ -36,7 +37,6 @@ export function PortfolioGallery({ works, onEdit }: { works: GalleryWork[]; onEd
                   <MediaImage uri={work.imageUrl} style={{ width: '100%', aspectRatio: solo ? 4 / 3 : tall ? 3 / 4 : 5 / 4, borderRadius: radius.xs }} />
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs }}>
-                  <AppText variant="label" color="accentText" weight="bold">{String(index + 1).padStart(2, '0')}</AppText>
                   <View style={{ flex: 1, minWidth: 0, gap: spacing.xxs }}>
                     <AppText variant={solo ? 'title' : 'bodySmall'} weight="bold">{work.titulo || 'Trabalho criativo'}</AppText>
                     {work.descricao ? <AppText variant="label" color="textSecondary" numberOfLines={2}>{work.descricao}</AppText> : null}
@@ -48,7 +48,8 @@ export function PortfolioGallery({ works, onEdit }: { works: GalleryWork[]; onEd
           })}
         </View>
       ))}
-      <Modal visible={Boolean(selected)} animationType="none" onRequestClose={() => setSelectedId(null)}>
+      <Modal visible={Boolean(selected)} animationType="none" onRequestClose={() => setSelectedId(null)}
+        onShow={() => focusAccessibilityHeading(workTitle)}>
         <ScreenContainer accessibilityViewIsModal>
           <View style={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md }}>
             <AppText variant="label" color="accentText" weight="bold" style={{ letterSpacing: typography.tracking.wide, flex: 1 }}>ARTHERE / GALERIA</AppText>
@@ -57,7 +58,7 @@ export function PortfolioGallery({ works, onEdit }: { works: GalleryWork[]; onEd
           {selected ? (
             <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: spacing['3xl'] }}>
               <MediaImage uri={selected.imageUrl} resizeMode="contain" style={{ width: '100%', aspectRatio: 4 / 5, borderRadius: radius.control }} />
-              <AppText variant="h2" weight="bold" accessibilityRole="header">{selected.titulo || 'Trabalho criativo'}</AppText>
+              <AppText ref={workTitle} variant="h2" weight="bold" accessibilityRole="header">{selected.titulo || 'Trabalho criativo'}</AppText>
               {selected.descricao ? <AppText color="textSecondary">{selected.descricao}</AppText> : null}
               {onEdit ? <Button variant="outline" style={{ borderRadius: radius.control }} onPress={() => { setSelectedId(null); onEdit(selected); }}>Editar este trabalho</Button> : null}
             </ScrollView>

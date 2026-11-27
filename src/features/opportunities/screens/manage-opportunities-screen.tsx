@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { Alert, FlatList, Pressable, RefreshControl, View } from 'react-native';
 
 import { ReviewFormModal } from '@/features/reviews/components/review-form-modal';
+import { confirmWithHaptic } from '@/shared/feedback';
 import type { RootStackParamList } from '@/navigation/app-navigator';
 import { useApplications } from '@/providers/applications-provider';
 import { useManagement } from '@/providers/management-provider';
@@ -185,6 +186,7 @@ function ContractorJobs() {
       marcarAvaliado(review.jobId);
       updateJob(review.jobId, (job) => ({ ...job, avaliado: true }));
       setReview(null);
+      confirmWithHaptic();
       Alert.alert('Avaliação enviada');
     });
   };

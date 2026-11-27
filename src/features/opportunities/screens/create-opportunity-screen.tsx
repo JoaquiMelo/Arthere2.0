@@ -1,6 +1,6 @@
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Keyboard } from 'react-native';
 import { Button, FeedbackState, ScreenContainer, ScreenHeader } from '@/shared/components';
 import { useUser } from '@/providers/user-provider';
 import { confirmWithHaptic } from '@/shared/feedback';
@@ -46,6 +46,7 @@ export default function CreateOpportunityScreen() {
     if (!allowed || pending.current || published) return;
     setAttempted(true);
     if (Object.keys(errors).length > 0) return;
+    Keyboard.dismiss();
     pending.current = true;
     setError('');
     setBusy(true);
