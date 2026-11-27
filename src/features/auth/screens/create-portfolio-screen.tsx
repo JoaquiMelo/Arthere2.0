@@ -1,85 +1,149 @@
-import { Ionicons } from '@expo/vector-icons';
-import React,{useState} from 'react';
-import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useRef, useState } from 'react';
+import { Platform, View } from 'react-native';
+
 import { useUser } from '@/providers/user-provider';
 import { addPortfolio, uploadImage } from '@/services/api';
-import { colors } from '@/shared/theme/colors';
-import { Button } from '@/shared/components';
+import { AppText, Button, MediaImage, SectionHeader, TextField } from '@/shared/components';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { OnboardingProfileLayout } from '../components/onboarding-profile-layout';
 
-export default function CreatePortfolioScreen(){
- const {user,updateProfile,finishOnboarding}=useUser();
- const [especialidade,setEspecialidade]=useState(user?.especialidade||'');
- const [cidade,setCidade]=useState(user?.cidade||'');
- const [bio,setBio]=useState(user?.bio||'');
- const [imagemUrl,setImagemUrl]=useState('');
- const [preview,setPreview]=useState<string|null>(null);
- const [titulo,setTitulo]=useState('');
- const [carregando,setCarregando]=useState(false);
-
- const selecionarImagem=async()=>{
-  const permissao=await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if(!permissao.granted){Alert.alert('Permissão necessária','Autorize o acesso à galeria para selecionar uma imagem.');return;}
-  const resultado=await ImagePicker.launchImageLibraryAsync({mediaTypes:['images'],allowsEditing:true,aspect:[1,1],quality:.8});
-  if(!resultado.canceled&&resultado.assets?.[0]) setPreview(resultado.assets[0].uri);
- };
-
- const handleSalvarPerfil=async()=>{
-  if(!especialidade.trim()||!cidade.trim()){Alert.alert('Atenção','Preencha a especialidade e a cidade.');return;}
-  try{
-   setCarregando(true);
-   await updateProfile({especialidade:especialidade.trim(),cidade:cidade.trim(),bio:bio.trim()});
-   const origem=imagemUrl.trim()||preview||'';
-   if(origem){
-    const url=origem.startsWith('file:')||origem.startsWith('content:')?await uploadImage(origem):origem;
-    if(!/^https?:\/\//i.test(url)){Alert.alert('URL inválida','A imagem precisa ser enviada ou possuir uma URL pública.');return;}
-    await addPortfolio({agenteId:user?.id,imageUrl:url,titulo:titulo.trim()||undefined});
-   }
-   finishOnboarding();
-  }catch(error){Alert.alert('Não foi possível concluir',error instanceof Error?error.message:'Falha ao salvar os dados.');}
-  finally{setCarregando(false);}
- };
-
- return <SafeAreaView style={styles.container}>
-  <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-   <View style={styles.hero}><Text style={styles.kicker}>AGENTE CRIATIVO</Text><Text style={styles.title}>Configure seu portfólio</Text><Text style={styles.subtitle}>Mostre seu trabalho e deixe seu perfil pronto para os contratantes.</Text></View>
-   <Text style={styles.label}>ÁREA DE ATUAÇÃO</Text>
-   <View style={styles.inputContainer}><Ionicons name="brush-outline" size={20} color={colors.muted}/><TextInput style={styles.input} placeholder="Ex.: Fotógrafo, Designer, DJ" placeholderTextColor={colors.muted} value={especialidade} onChangeText={setEspecialidade}/></View>
-   <Text style={styles.label}>CIDADE</Text>
-   <View style={styles.inputContainer}><Ionicons name="location-outline" size={20} color={colors.muted}/><TextInput style={styles.input} placeholder="Cidade - UF" placeholderTextColor={colors.muted} value={cidade} onChangeText={setCidade}/></View>
-   <Text style={styles.label}>SOBRE VOCÊ</Text>
-   <View style={[styles.inputContainer,styles.textAreaContainer]}><TextInput style={[styles.input,styles.textArea]} placeholder="Fale sobre seu trabalho e experiência" placeholderTextColor={colors.muted} value={bio} onChangeText={setBio} multiline/></View>
-   <Text style={styles.sectionTitle}>PRIMEIRA AMOSTRA (OPCIONAL)</Text>
-   <TouchableOpacity style={styles.imageBox} onPress={selecionarImagem}>
-    {preview?<Image source={{uri:preview}} style={styles.preview}/>:<><View style={styles.addIcon}><Ionicons name="image-outline" size={28} color={colors.brandInk}/></View><Text style={styles.imageTitle}>Selecionar imagem</Text><Text style={styles.imageHint}>Use uma URL pública para salvar no banco</Text></>}
-   </TouchableOpacity>
-   <TextInput style={styles.fullInput} placeholder="URL pública da imagem (https://...)" placeholderTextColor={colors.muted} value={imagemUrl} onChangeText={setImagemUrl} autoCapitalize="none" autoCorrect={false}/>
-   <TextInput style={styles.fullInput} placeholder="Título da amostra (opcional)" placeholderTextColor={colors.muted} value={titulo} onChangeText={setTitulo}/>
-   <TouchableOpacity style={styles.button} onPress={handleSalvarPerfil} disabled={carregando}>{carregando?<ActivityIndicator color={colors.white}/>:<><Text style={styles.buttonText}>CONCLUIR E IR PARA O MAPA</Text><Ionicons name="arrow-forward" size={20} color={colors.white}/></>}</TouchableOpacity>
-   <Button variant="ghost" disabled={carregando} onPress={finishOnboarding}>Configurar depois</Button>
-  </ScrollView>
- </SafeAreaView>;
+function isPublicImageLink(value: string) {
+  try {
+    const url = new URL(value);
+    return (url.protocol === 'https:' || url.protocol === 'http:') && Boolean(url.hostname) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
 }
 
-const styles=StyleSheet.create({
- container:{flex:1,backgroundColor:colors.brandPaper},
- scrollContent:{padding:22,paddingBottom:42},
- hero:{backgroundColor:colors.brandInk,padding:20,borderRadius:20,marginBottom:20},
- kicker:{color:colors.brandSand,fontSize:9,fontWeight:'900',letterSpacing:1.6},
- title:{color:colors.brandPaper,fontSize:29,fontWeight:'900',marginTop:7,lineHeight:33},
- subtitle:{color:colors.brandPaper,fontSize:12,lineHeight:18,opacity:.88,marginTop:8},
- label:{color:colors.muted,fontSize:9,fontWeight:'900',letterSpacing:1.2,marginTop:5,marginBottom:7},
- inputContainer:{flexDirection:'row',alignItems:'center',backgroundColor:colors.white,borderRadius:12,paddingHorizontal:14,minHeight:52,marginBottom:12,borderWidth:1,borderColor:colors.border,gap:9},
- input:{flex:1,fontSize:15,color:colors.text,paddingVertical:10},
- textAreaContainer:{minHeight:108,alignItems:'flex-start',paddingTop:12},
- textArea:{minHeight:84,textAlignVertical:'top'},
- sectionTitle:{fontSize:9,fontWeight:'900',letterSpacing:1.2,color:colors.brandCoral,marginTop:7,marginBottom:10},
- imageBox:{height:170,borderRadius:16,borderWidth:1.5,borderStyle:'dashed',borderColor:colors.brandCoral,backgroundColor:colors.surface,alignItems:'center',justifyContent:'center',overflow:'hidden'},
- preview:{width:'100%',height:'100%'},
- addIcon:{width:52,height:52,borderRadius:26,backgroundColor:colors.brandPaper,alignItems:'center',justifyContent:'center'},
- imageTitle:{color:colors.brandInk,fontSize:14,fontWeight:'900',marginTop:9},
- imageHint:{color:colors.muted,fontSize:10,marginTop:3},
- fullInput:{minHeight:50,borderWidth:1,borderColor:colors.border,borderRadius:12,backgroundColor:colors.white,color:colors.text,paddingHorizontal:13,marginTop:10},
- button:{minHeight:54,backgroundColor:colors.brandInk,borderRadius:999,paddingHorizontal:17,marginTop:20,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
- buttonText:{color:colors.white,fontSize:10,fontWeight:'900',letterSpacing:1}
-});
+export default function CreatePortfolioScreen() {
+  const { user, updateProfile, finishOnboarding } = useUser();
+  const { color, radius, spacing } = useThemeTokens();
+  const [specialty, setSpecialty] = useState(user?.especialidade ?? '');
+  const [bio, setBio] = useState(user?.bio ?? '');
+  const [image, setImage] = useState('');
+  const [link, setLink] = useState('');
+  const [linkPreview, setLinkPreview] = useState('');
+  const [source, setSource] = useState<'gallery' | 'link'>('gallery');
+  const [title, setTitle] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [picking, setPicking] = useState(false);
+  const [attempted, setAttempted] = useState(false);
+  const [error, setError] = useState('');
+  const pending = useRef(false);
+  const [savedProfile, setSavedProfile] = useState(() => ({ specialty: specialty.trim(), bio: bio.trim() }));
+  const uploaded = useRef<{ local: string; remote: string } | null>(null);
+  const profileChanged = specialty.trim() !== savedProfile.specialty || bio.trim() !== savedProfile.bio;
+  const selected = source === 'link' ? link.trim() : image;
+  const isLink = source === 'link' && selected !== '';
+  const linkError = isLink && !isPublicImageLink(selected) ? 'Use um endereço completo com http:// ou https://.' : undefined;
+  const missingImage = !selected && Boolean(title.trim());
+  const changed = profileChanged || Boolean(selected || title.trim());
+
+  const chooseImage = async () => {
+    if (pending.current) return;
+    pending.current = true;
+    setPicking(true);
+    setError('');
+    try {
+      if (Platform.OS !== 'web') {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          setError('Autorize o acesso à galeria ou use um link público para adicionar a amostra.');
+          return;
+        }
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 0.85 });
+      if (!result.canceled && result.assets[0]) {
+        setImage(result.assets[0].uri);
+        setSource('gallery');
+      }
+    } catch {
+      setError('Não foi possível abrir a galeria. Tente novamente.');
+    } finally {
+      pending.current = false;
+      setPicking(false);
+    }
+  };
+
+  const save = async () => {
+    if (pending.current || user?.tipo !== 'AGENTE') return;
+    setAttempted(true);
+    setError('');
+    if ((profileChanged && !specialty.trim()) || linkError || missingImage) return;
+    pending.current = true;
+    setBusy(true);
+    try {
+      let imageUrl = selected;
+      if (selected && !isLink) {
+        if (uploaded.current?.local === selected) imageUrl = uploaded.current.remote;
+        else {
+          imageUrl = await uploadImage(selected);
+          uploaded.current = { local: selected, remote: imageUrl };
+        }
+      }
+      if (profileChanged) {
+        await updateProfile({
+          ...(specialty.trim() !== savedProfile.specialty ? { especialidade: specialty.trim() } : {}),
+          ...(bio.trim() !== savedProfile.bio ? { bio: bio.trim() || null } : {}),
+        });
+        setSavedProfile({ specialty: specialty.trim(), bio: bio.trim() });
+      }
+      if (imageUrl) {
+        await addPortfolio({ agenteId: user.id, imageUrl, titulo: title.trim() || undefined });
+      }
+      finishOnboarding();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Não foi possível salvar. Tente novamente.');
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
+  };
+
+  if (user?.tipo !== 'AGENTE') return null;
+  const preview = source === 'gallery' ? selected : (!linkError && linkPreview === selected ? linkPreview : '');
+  return (
+    <OnboardingProfileLayout user={user} role="Agente criativo"
+      description="Revise sua apresentação e, se quiser, publique a primeira amostra do seu trabalho."
+      busy={busy} changed={changed} disabled={picking} error={error} onSave={() => void save()}
+      onSkip={() => { if (!pending.current) finishOnboarding(); }}>
+      <View style={{ gap: spacing.md }}>
+        <SectionHeader title="Sua apresentação" />
+        <TextField label="Área de atuação" value={specialty} onChangeText={setSpecialty}
+          placeholder="Ex.: Fotografia, design ou música" editable={!busy && !picking}
+          error={attempted && profileChanged && !specialty.trim() ? 'Informe sua área de atuação.' : undefined} />
+        <TextField label="Sobre você (opcional)" value={bio} onChangeText={setBio} multiline numberOfLines={4}
+          textAlignVertical="top" placeholder="Conte o que você faz e como gosta de trabalhar." editable={!busy && !picking} />
+      </View>
+      <View style={{ gap: spacing.md, borderTopWidth: 1, borderColor: color.border, paddingTop: spacing.lg }}>
+        <SectionHeader title="Primeira amostra" description="Opcional. A imagem ficará visível no seu portfólio." />
+        {preview ? (
+          <View accessible accessibilityRole="image" accessibilityLabel="Prévia da imagem da primeira amostra">
+            <MediaImage uri={preview} icon="image-outline" style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: radius.cardCompact }} />
+          </View>
+        ) : null}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+          <Button variant="outline" loading={picking} disabled={busy} onPress={() => void chooseImage()}>{source === 'gallery' && image ? 'Trocar imagem' : 'Escolher na galeria'}</Button>
+          <Button variant="ghost" disabled={busy || picking} onPress={() => setSource('link')}>Usar um link</Button>
+          {selected || title ? (
+            <Button variant="ghost" disabled={busy || picking} onPress={() => {
+              setImage(''); setLink(''); setLinkPreview(''); setTitle(''); setSource('gallery');
+            }}>Remover amostra</Button>
+          ) : null}
+        </View>
+        {source === 'link' ? (
+          <TextField label="Link público da imagem" value={link} onChangeText={setLink} editable={!busy && !picking}
+            keyboardType="url" autoCapitalize="none" autoCorrect={false} placeholder="https://..."
+            onEndEditing={() => { if (!linkError) setLinkPreview(selected); }}
+            error={attempted ? linkError : undefined} />
+        ) : null}
+        {selected ? <TextField label="Título da amostra (opcional)" value={title} onChangeText={setTitle} editable={!busy && !picking} /> : null}
+        {attempted && missingImage ? (
+          <AppText variant="bodySmall" color="dangerText" accessibilityRole="alert">Adicione uma imagem ou remova a amostra para continuar.</AppText>
+        ) : null}
+      </View>
+    </OnboardingProfileLayout>
+  );
+}
