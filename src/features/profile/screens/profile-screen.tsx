@@ -191,7 +191,7 @@ function AgenteProfileScreenContent() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} style={styles.tabStrip}>
           {([
             ['portfolio', 'Galeria'],
-            ['atelier', 'Arthere'],
+            ['atelier', 'Ateliê'],
             ['sobre', 'Sobre'],
             ['avaliacoes', 'Avaliações'],
             ['eventos', 'Eventos'],
@@ -208,8 +208,8 @@ function AgenteProfileScreenContent() {
             <SectionHeader title="Minha galeria" description={`${agente.portfolio.length} ${agente.portfolio.length === 1 ? 'trabalho publicado' : 'trabalhos publicados'}`} />
             {agente.portfolio.length === 0 ? (
               <>
-                <FeedbackState kind="empty" title="Sua galeria começa aqui" description="Adicione trabalhos ao seu perfil na Arthere para apresentar o que você cria." icon="images-outline" />
-                <Button variant="outline" fullWidth onPress={() => setAbaAtiva('atelier')}>Gerenciar trabalhos</Button>
+                <FeedbackState kind="empty" title="Sua galeria começa aqui" description="Adicione trabalhos no Ateliê para apresentar o que você cria." icon="images-outline" />
+                <Button variant="outline" fullWidth onPress={() => setAbaAtiva('atelier')}>Abrir Ateliê</Button>
               </>
             ) : <PortfolioGallery works={agente.portfolio} onEdit={editarTrabalho} />}
           </View>
@@ -217,7 +217,7 @@ function AgenteProfileScreenContent() {
 
         {abaAtiva === 'atelier' ? (
           <View style={styles.section}>
-            <SectionHeader title="Seus trabalhos na Arthere" description="Adicione trabalhos ou edite os que já fazem parte da sua galeria." />
+            <SectionHeader title="Seu ateliê" description="Adicione trabalhos ou edite os que já fazem parte da sua galeria." />
             <Button fullWidth style={{ borderRadius: radius.control }} onPress={adicionarTrabalho}>Adicionar trabalho</Button>
             <Button variant="outline" fullWidth style={{ borderRadius: radius.control }} onPress={abrirEdicaoPortfolio}>Gerenciar portfólio</Button>
             {agente.portfolio.length ? agente.portfolio.map((item) => (

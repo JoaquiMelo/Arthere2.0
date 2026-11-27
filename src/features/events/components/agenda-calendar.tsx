@@ -88,10 +88,11 @@ export function AgendaCalendar({ month, today, selected, eventsByDay, onMove, on
                     alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xs,
                     backgroundColor: column >= 5 ? color.surfaceSubtle : color.surface, opacity: pressed ? 0.75 : 1,
                   })}>
-                  <View style={{ minWidth: dimensions.icon.extraLarge, borderRadius: radius.cardCompact,
+                  <View style={{ minWidth: dimensions.icon.extraLarge, maxWidth: '100%', borderRadius: radius.cardCompact,
                     alignItems: 'center', paddingHorizontal: spacing.xxs, paddingVertical: spacing.xxs, backgroundColor: fill,
                     borderWidth: spacing.xxs, borderColor: current ? (active ? color.onAccent : color.accentText) : 'transparent' }}>
-                    <AppText variant="bodySmall" weight={active || count || current ? 'bold' : 'medium'} color={ink}
+                    <AppText variant="title" weight={active || count || current ? 'bold' : 'medium'} color={ink}
+                      numberOfLines={1} adjustsFontSizeToFit
                       style={{ fontVariant: ['tabular-nums'], textDecorationLine: current ? 'underline' : 'none' }}>
                       {Number(date.slice(-2))}
                     </AppText>

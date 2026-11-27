@@ -81,7 +81,7 @@ function AppTabs(){
    </View>
   )
  })}>
-  <Tab.Screen name="Atelier" component={AtelierScreen} options={{title:'Arthere'}}/>
+  <Tab.Screen name="Atelier" component={AtelierScreen} options={{title:'Início',tabBarAccessibilityLabel:'Início'}}/>
   <Tab.Screen name="Map" component={MapScreen} options={{title:'Mapa'}}/>
   <Tab.Screen name="Opportunities" component={OpportunitiesScreen} options={{title:'Vagas',tabBarAccessibilityLabel:'Oportunidades'}}/>
   <Tab.Screen name="Events" component={EventsScreen} options={{title:'Agenda',tabBarAccessibilityLabel:'Agenda de eventos'}}/>

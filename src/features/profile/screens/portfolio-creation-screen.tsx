@@ -164,14 +164,14 @@ export default function PortfolioCreationScreen() {
 
   if (!id) return <ScreenContainer><FeedbackState kind="error" title="Portfólio indisponível" description="Somente agentes criativos podem gerenciar trabalhos." /><Button variant="ghost" onPress={() => navigation.goBack()}>Voltar</Button></ScreenContainer>;
 
-  const title = mode === 'manage' ? 'Seus trabalhos na Arthere' : mode === 'add' ? 'Novo trabalho' : 'Editar trabalho';
+  const title = mode === 'manage' ? 'Seu ateliê' : mode === 'add' ? 'Novo trabalho' : 'Editar trabalho';
   const selected = items.find((item) => item.id === editId);
   return (
     <ScreenContainer>
       <View style={{ padding: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border }}>
         <IconButton icon="arrow-back" variant="outline" accessibilityLabel="Voltar" disabled={busy} onPress={() => mode === 'manage' ? navigation.goBack() : returnToList()} />
         <View style={{ flex: 1, minWidth: 0 }}>
-          <AppText variant="label" color="accentText" weight="bold">ARTHERE / PORTFÓLIO</AppText>
+          <AppText variant="label" color="accentText" weight="bold">ARTHERE / ATELIÊ</AppText>
           <AppText variant="h2" weight="heavy" accessibilityRole="header">{title}</AppText>
         </View>
       </View>
