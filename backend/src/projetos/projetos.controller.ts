@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ProjetosService } from './projetos.service';
 
@@ -13,5 +13,6 @@ export class ProjetosController {
  @UseGuards(JwtAuthGuard) @Post() criar(@Req() req:any,@Body() dados:any){return this.service.criar(req.user.id,dados);}
  @UseGuards(JwtAuthGuard) @Patch('candidaturas/:id') atualizarCandidatura(@Req() req:any,@Param('id') id:string,@Body() dados:any){return this.service.atualizarCandidatura(req.user.id,id,dados.status);}
  @UseGuards(JwtAuthGuard) @Patch(':id') atualizar(@Req() req:any,@Param('id') id:string,@Body() dados:any){return this.service.atualizar(req.user.id,id,dados);}
+ @UseGuards(JwtAuthGuard) @Delete(':id') excluir(@Req() req:any,@Param('id') id:string){return this.service.excluir(req.user.id,id);}
  @UseGuards(JwtAuthGuard) @Post(':id/candidaturas') candidatar(@Req() req:any,@Param('id') id:string,@Body() dados:any){return this.service.candidatar(req.user.id,id,dados?.mensagem);}
 }

@@ -5,7 +5,7 @@ import { AppText, Badge, Button, FeedbackState, ScreenContainer, ScreenHeader, S
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { useUser } from '@/providers/user-provider';
 import { useManagement } from '@/providers/management-provider';
-import { meusProjetos, updateProject, type Projeto } from '@/services/api';
+import { deleteProject, meusProjetos, updateProject, type Projeto } from '@/services/api';
 import type { RootStackParamList } from '@/navigation/app-navigator';
 
 type Form = { titulo: string; categoria: string; descricao: string; orcamento: string; data: string };
@@ -40,11 +40,13 @@ export default function EditOpportunityScreen() {
   const { color, spacing, radius } = useThemeTokens();
   const allowed = user?.tipo === 'CONTRATANTE_OPORTUNIDADES';
   const [original, setOriginal] = useState<Projeto | null>(null);
+  const [hasAccepted, setHasAccepted] = useState(false);
   const [form, setForm] = useState<Form>(initial);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [saved, setSaved] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const pending = useRef(false);
@@ -59,11 +61,12 @@ export default function EditOpportunityScreen() {
       setAttempted(false);
       try {
         // A consulta autenticada retorna somente vagas da conta atual.
-        const items: Projeto[] = await meusProjetos();
+        const items: (Projeto & { candidaturas?: { status: string }[] })[] = await meusProjetos();
         const item = items.find((vaga) => vaga.id === opportunityId);
         if (!item) throw new Error('Esta vaga não está disponível para edição na sua conta.');
         if (!active) return;
         setOriginal(item);
+        setHasAccepted(item.candidaturas?.some((candidatura) => candidatura.status === 'ACEITA') ?? false);
         setForm(toForm(item));
       } catch (err) {
         if (active) setError(err instanceof Error ? err.message : 'Tente novamente.');
@@ -77,7 +80,7 @@ export default function EditOpportunityScreen() {
   const dirty = !!original && JSON.stringify(form) !== JSON.stringify(toForm(original));
   usePreventRemove(!saved && (dirty || busy), ({ data }) => {
     if (pending.current) {
-      Alert.alert('Salvando alterações', 'Aguarde a confirmação da API.');
+      Alert.alert('Operação em andamento', 'Aguarde a confirmação da API.');
       return;
     }
     Alert.alert('Descartar alterações?', 'As mudanças não salvas serão perdidas.', [
@@ -124,6 +127,42 @@ export default function EditOpportunityScreen() {
     Alert.alert('Vaga atualizada', refreshed ? 'Suas alterações foram salvas.' : 'Suas alterações foram salvas. Atualize a lista para visualizar os dados.');
   };
 
+  const canDelete = !!original && !hasAccepted && (original.status === 'ABERTO' || original.status === 'CANCELADO');
+
+  const excluir = () => {
+    if (!allowed || !original || original.id !== opportunityId || !canDelete || pending.current || saved) return;
+    const id = original.id;
+    Alert.alert(
+      'Excluir oportunidade?',
+      'A vaga e as candidaturas recebidas serão excluídas permanentemente. Esta ação não pode ser desfeita.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Excluir', style: 'destructive', onPress: async () => {
+          if (pending.current) return;
+          pending.current = true;
+          setBusy(true);
+          setDeleting(true);
+          try {
+            await deleteProject(id);
+          } catch (err) {
+            Alert.alert('Não foi possível excluir', err instanceof Error ? err.message : 'Tente novamente.');
+            pending.current = false;
+            setBusy(false);
+            setDeleting(false);
+            return;
+          }
+          let refreshed = true;
+          try { await refresh(); } catch { refreshed = false; }
+          pending.current = false;
+          setBusy(false);
+          setDeleting(false);
+          setSaved(true);
+          Alert.alert('Oportunidade excluída', refreshed ? 'A vaga foi removida.' : 'A vaga foi removida. Atualize a lista para visualizar os dados.');
+        } },
+      ],
+    );
+  };
+
   if (!allowed) return <ScreenContainer><ScreenHeader title="Editar vaga" onBack={() => navigation.goBack()} /><FeedbackState kind="error" title="Acesso indisponível" description="Somente contratantes de oportunidades podem editar suas vagas." /></ScreenContainer>;
 
   return (
@@ -147,8 +186,17 @@ export default function EditOpportunityScreen() {
             <SectionHeader title="Condições do trabalho" />
             <TextField label="Orçamento (R$)" value={form.orcamento} onChangeText={(value) => setField('orcamento', value)} keyboardType="decimal-pad" placeholder="Ex.: 1500,00" editable={!busy} helperText="Deixe em branco para negociar o valor." error={attempted && invalidAmount ? 'Informe um valor válido, sem separador de milhar.' : undefined} />
             <TextField label="Data prevista (opcional)" value={form.data} onChangeText={(value) => setField('data', value)} placeholder="DD/MM/AAAA" maxLength={10} editable={!busy} helperText="Data prevista do trabalho, não prazo de candidatura." error={attempted && invalidDate ? 'Informe uma data válida no formato DD/MM/AAAA.' : undefined} />
-            <Button fullWidth loading={busy} disabled={!dirty || saved} onPress={salvar}>Salvar alterações</Button>
+            <Button fullWidth loading={busy && !deleting} disabled={!dirty || saved || busy} onPress={salvar}>Salvar alterações</Button>
             <Button fullWidth variant="outline" disabled={busy || saved} onPress={() => navigation.goBack()}>Cancelar</Button>
+            <View style={{ borderTopWidth: 1, borderTopColor: color.border, paddingTop: spacing.lg, gap: spacing.md }}>
+              <SectionHeader title="Gerenciar publicação" />
+              {canDelete ? (
+                <>
+                  <AppText variant="bodySmall" color="textSecondary">A exclusão remove a vaga e suas candidaturas de forma permanente.</AppText>
+                  <Button fullWidth variant="danger" loading={deleting} disabled={busy || saved} onPress={excluir}>Excluir oportunidade</Button>
+                </>
+              ) : <AppText variant="bodySmall" color="textSecondary">Vagas em andamento, concluídas ou com contratação aceita não podem ser excluídas, para preservar o histórico profissional.</AppText>}
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       )}

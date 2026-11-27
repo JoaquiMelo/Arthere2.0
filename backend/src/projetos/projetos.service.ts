@@ -100,6 +100,29 @@ export class ProjetosService {
     });
   }
 
+  async excluir(uid: string, id: string) {
+    await this.exigirTipo(uid);
+    const contratante = await this.prisma.contratante.findUnique({ where: { usuarioId: uid }, select: { id: true } });
+    if (!contratante) throw new ForbiddenException('Somente contratantes podem excluir oportunidades.');
+    const projeto = await this.prisma.projeto.findUnique({ where: { id }, select: { contratanteId: true } });
+    if (!projeto) throw new NotFoundException('Projeto não encontrado.');
+    if (projeto.contratanteId !== contratante.id) throw new ForbiddenException('Você não pode excluir este projeto.');
+
+    // O filtro é reaplicado na exclusão para não remover contratações que
+    // tenham mudado de estado desde a consulta. Candidaturas restantes
+    // são removidas pelo onDelete: Cascade já existente no schema.
+    const resultado = await this.prisma.projeto.deleteMany({
+      where: {
+        id,
+        contratanteId: contratante.id,
+        status: { in: ['ABERTO', 'CANCELADO'] },
+        candidaturas: { none: { status: 'ACEITA' } },
+      },
+    });
+    if (resultado.count === 0) throw new ConflictException('Não é possível excluir uma vaga em andamento, concluída, com contratação aceita ou que já foi removida.');
+    return { id, excluido: true };
+  }
+
   async candidatar(uid: string, projetoId: string, mensagem?: string) {
     const agente = await this.prisma.agenteCriativo.findUnique({ where: { usuarioId: uid } });
     if (!agente) throw new ForbiddenException('Somente agentes criativos podem se candidatar.');

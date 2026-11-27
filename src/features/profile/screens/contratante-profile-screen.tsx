@@ -128,7 +128,7 @@ export default function ContratanteProfileScreen() {
           </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
             <Button style={{ flexGrow: 1, flexBasis: 138, borderRadius: radius.control }} onPress={editarPerfil}>Editar perfil</Button>
-            <Button variant="outline" style={{ flexGrow: 1, flexBasis: 138, borderRadius: radius.control }} onPress={() => navigation.navigate('PublicProfile', { profileType: 'CONTRATANTE', profileId: user.id })}>Ver perfil público</Button>
+            <Button variant="outline" style={{ flexGrow: 1, flexBasis: 138, borderRadius: radius.control }} onPress={() => navigation.navigate('PublicProfile', { profileType: 'CONTRATANTE', profileId: user.id })}>{isEvents ? 'Ver perfil público' : 'Ver oportunidades'}</Button>
           </View>
           {!isEvents ? <Button fullWidth style={{ borderRadius: radius.control }} onPress={criarVaga}>Criar nova vaga</Button> : null}
           {erro ? <View style={{ gap: spacing.xs }}><AppText color="dangerText" variant="bodySmall" accessibilityLiveRegion="polite">Não foi possível atualizar todas as informações.</AppText><Button variant="ghost" onPress={recarregar} disabled={atualizando}>Tentar novamente</Button></View> : null}

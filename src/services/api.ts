@@ -464,6 +464,13 @@ export async function updateProject(
   );
 }
 
+export async function deleteProject(id: string) {
+  return requestAutenticado<{ id: string; excluido: boolean }>(
+    `/projetos/${encodeURIComponent(id)}`,
+    { method: 'DELETE' },
+  );
+}
+
 export async function applyToProject(
   id: string,
   mensagem?: string,
