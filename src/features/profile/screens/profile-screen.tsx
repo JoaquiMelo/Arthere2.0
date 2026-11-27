@@ -66,7 +66,7 @@ export default function ProfileScreen() {
 function AgenteProfileScreenContent() {
   const navigation = useNavigation<any>();
   const tokens = useThemeTokens();
-  const { color, spacing, radius, dimensions } = tokens;
+  const { color, radius, dimensions } = tokens;
   const styles = useMemo(() => createStyles(tokens), [tokens]);
   const { user, refresh: refreshUser } = useUser();
   const { refresh: refreshManagement, solicitacoesEvento, loading: loadingEventos } = useManagement();

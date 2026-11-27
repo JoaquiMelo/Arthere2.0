@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Image, Platform, StyleSheet, View } from 'react-native';
 import { Marker } from 'react-native-maps';
 
@@ -38,7 +38,7 @@ type AvatarMarkerProps = Props & {
 };
 
 function AvatarMarker({ agente, onPress, uri, frameColor, surfaceColor, fallbackColor }: AvatarMarkerProps) {
-  const marker = useRef<Marker>(null);
+  const marker = useRef<ComponentRef<typeof Marker>>(null);
   const [phase, setPhase] = useState<'loading' | 'loaded' | 'fallback'>(uri ? 'loading' : 'fallback');
   const [tracking, setTracking] = useState(true);
 
