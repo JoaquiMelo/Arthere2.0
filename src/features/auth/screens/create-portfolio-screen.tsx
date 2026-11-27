@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import React,{useState} from 'react';
 import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useUser } from '@/providers/user-provider';
 import { addPortfolio, uploadImage } from '@/services/api';
 import { colors } from '@/shared/theme/colors';
+import { Button } from '@/shared/components';
 
 export default function CreatePortfolioScreen(){
- const navigation=useNavigation<any>(); const {user,updateProfile}=useUser();
+ const {user,updateProfile,finishOnboarding}=useUser();
  const [especialidade,setEspecialidade]=useState(user?.especialidade||'');
  const [cidade,setCidade]=useState(user?.cidade||'');
  const [bio,setBio]=useState(user?.bio||'');
@@ -35,7 +35,7 @@ export default function CreatePortfolioScreen(){
     if(!/^https?:\/\//i.test(url)){Alert.alert('URL inválida','A imagem precisa ser enviada ou possuir uma URL pública.');return;}
     await addPortfolio({agenteId:user?.id,imageUrl:url,titulo:titulo.trim()||undefined});
    }
-   navigation.reset({index:0,routes:[{name:'Tabs'}]});
+   finishOnboarding();
   }catch(error){Alert.alert('Não foi possível concluir',error instanceof Error?error.message:'Falha ao salvar os dados.');}
   finally{setCarregando(false);}
  };
@@ -56,6 +56,7 @@ export default function CreatePortfolioScreen(){
    <TextInput style={styles.fullInput} placeholder="URL pública da imagem (https://...)" placeholderTextColor={colors.muted} value={imagemUrl} onChangeText={setImagemUrl} autoCapitalize="none" autoCorrect={false}/>
    <TextInput style={styles.fullInput} placeholder="Título da amostra (opcional)" placeholderTextColor={colors.muted} value={titulo} onChangeText={setTitulo}/>
    <TouchableOpacity style={styles.button} onPress={handleSalvarPerfil} disabled={carregando}>{carregando?<ActivityIndicator color={colors.white}/>:<><Text style={styles.buttonText}>CONCLUIR E IR PARA O MAPA</Text><Ionicons name="arrow-forward" size={20} color={colors.white}/></>}</TouchableOpacity>
+   <Button variant="ghost" disabled={carregando} onPress={finishOnboarding}>Configurar depois</Button>
   </ScrollView>
  </SafeAreaView>;
 }

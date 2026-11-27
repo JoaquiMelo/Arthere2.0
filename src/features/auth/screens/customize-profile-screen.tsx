@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -14,15 +13,15 @@ import {
 } from "react-native";
 import { useUser } from "@/providers/user-provider";
 import { colors } from "@/shared/theme/colors";
+import { Button } from "@/shared/components";
 
 export default function CustomizeProfileScreen() {
-  const navigation = useNavigation<any>();
-  const { user, updateProfile } = useUser();
+  const { user, updateProfile, finishOnboarding } = useUser();
 
   const [nomeEmpresa, setNomeEmpresa] = useState(user?.nome || "");
   const [cidade, setCidade] = useState(user?.cidade || "");
-  const [telefone, setTelefone] = useState("");
-  const [interessePrincipal, setInteressePrincipal] = useState("Fotografia");
+  const [telefone, setTelefone] = useState(user?.telefone || "");
+  const [interessePrincipal, setInteressePrincipal] = useState(user?.categoria || "");
   const [carregando, setCarregando] = useState(false);
 
   const categorias = ["Fotografia", "Música / DJ", "Videomaker", "Design"];
@@ -35,8 +34,8 @@ export default function CustomizeProfileScreen() {
 
     try {
       setCarregando(true);
-      await updateProfile({ nome: nomeEmpresa.trim(), cidade: cidade.trim(), telefone: telefone.trim() || undefined, categoria: interessePrincipal });
-      navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
+      await updateProfile({ nome: nomeEmpresa.trim(), cidade: cidade.trim(), telefone: telefone.trim() || undefined, categoria: interessePrincipal || undefined });
+      finishOnboarding();
     } catch (error) {
       Alert.alert("Erro", error instanceof Error ? error.message : "Falha ao salvar preferências de perfil.");
     } finally {
@@ -114,6 +113,7 @@ export default function CustomizeProfileScreen() {
             <Text style={styles.buttonText}>Concluir e Explorar Artistas</Text>
           )}
         </TouchableOpacity>
+        <Button variant="ghost" disabled={carregando} onPress={finishOnboarding}>Configurar depois</Button>
       </ScrollView>
     </SafeAreaView>
   );

@@ -44,6 +44,8 @@ export interface LocalUser {
 type UserContextType = {
   user: LocalUser | null;
   loading: boolean;
+  needsOnboarding: boolean;
+  finishOnboarding: () => void;
   login: (email: string, senha: string) => Promise<void>;
   register: (dados: Record<string, unknown>) => Promise<void>;
   updateProfile: (dados: Partial<LocalUser>) => Promise<void>;
@@ -91,6 +93,7 @@ function mapUsuario(usuario: any): LocalUser {
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<LocalUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [onboardingFor, setOnboardingFor] = useState<string | null>(null);
 
   // A mesma sessão pode receber vários pedidos de atualização simultâneos.
   // Uma resposta iniciada antes de editar o perfil ou trocar de conta é descartada.
@@ -145,15 +148,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const value: UserContextType = {
     user,
     loading,
+    needsOnboarding: Boolean(user && user.usuarioId === onboardingFor),
+    finishOnboarding: () => setOnboardingFor(null),
     login: async (email, senha) => {
       const started = ++revision.current;
       const result = await api.login(email.trim(), senha);
-      if (revision.current === started) setUser(mapUsuario(result.usuario));
+      if (revision.current === started) {
+        setOnboardingFor(null);
+        setUser(mapUsuario(result.usuario));
+      }
     },
     register: async (dados) => {
       const started = ++revision.current;
       const result = await api.register(dados);
-      if (revision.current === started) setUser(mapUsuario(result.usuario));
+      if (revision.current === started) {
+        const registered = mapUsuario(result.usuario);
+        setOnboardingFor(registered.usuarioId);
+        setUser(registered);
+      }
     },
     updateProfile: async (dados) => {
       const payload = { ...dados } as Record<string, unknown>;
@@ -182,7 +194,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     logout: async () => {
       const started = ++revision.current;
       await api.logout();
-      if (revision.current === started) setUser(null);
+      if (revision.current === started) {
+        setOnboardingFor(null);
+        setUser(null);
+      }
     },
     refresh,
   };

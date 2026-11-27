@@ -63,7 +63,7 @@ function EventRow({ event, feature, onPress }: { event: Evento; feature: boolean
 }
 
 export default function EventsScreen() {
-  const navigation = useNavigation<NavigationProp<RootStackParamList, 'Events'>>();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const inTab = navigation.getState().type === 'tab';
   const { color, dimensions, spacing } = useThemeTokens();
   const [events, setEvents] = useState<Evento[] | null>(null);

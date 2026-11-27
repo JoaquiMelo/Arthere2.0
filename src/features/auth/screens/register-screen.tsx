@@ -103,7 +103,6 @@ export default function RegisterScreen() {
         endereco: endereco.trim() || undefined,
         categoria: categoria.trim() || undefined,
       });
-      navigation.navigate(tipoUsuario === 'AGENTE' ? 'CreatePortfolio' : 'CustomizeProfile');
     } catch (error) {
       Alert.alert('Não foi possível criar a conta', error instanceof Error ? error.message : 'Tente novamente.');
     } finally {

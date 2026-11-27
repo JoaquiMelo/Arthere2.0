@@ -1,399 +1,113 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import React, { useState } from "react";
-import {
-    Alert,
-    Modal,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
+import Constants from 'expo-constants';
+import { useRef, useState } from 'react';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 
-import { palettes, type PaletteName, useTheme } from "@/providers/theme-provider";
-import { useUser } from "@/providers/user-provider";
+import type { RootStackParamList } from '@/navigation/app-navigator';
+import { palettes, type PaletteName, useTheme } from '@/providers/theme-provider';
+import { useUser } from '@/providers/user-provider';
+import { AppText, Button, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
 
-type IconName = keyof typeof Ionicons.glyphMap;
+const paletteNames = Object.keys(palettes) as PaletteName[];
 
 export default function SettingsScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NavigationProp<RootStackParamList, 'Settings'>>();
   const { user, logout } = useUser();
-  const { paletteName, palette, tokens, setPalette } = useTheme();
-  const [paletaAberta, setPaletaAberta] = useState(false);
-  const sair = () =>
-    Alert.alert("Sair da conta", "Você deseja encerrar a sessão?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Sair",
-        style: "destructive",
-        onPress: async () => {
+  const { paletteName, tokens, setPalette, paletteSaveFailed } = useTheme();
+  const { color, dimensions, radius, spacing } = tokens;
+  const [leaving, setLeaving] = useState(false);
+  const pending = useRef(false);
+
+  const editProfile = () => {
+    if (user?.tipo === 'CONTRATANTE_EVENTOS') navigation.navigate('EditContractorProfile');
+    else if (user?.tipo === 'CONTRATANTE_OPORTUNIDADES') navigation.navigate('EditOpportunityContractorProfile');
+    else if (user) navigation.navigate('EditProfile');
+  };
+
+  const signOut = () => {
+    if (pending.current) return;
+    Alert.alert('Sair da conta?', 'Você poderá entrar novamente pelo mapa.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Sair', style: 'destructive', onPress: async () => {
+        if (pending.current) return;
+        pending.current = true;
+        setLeaving(true);
+        try {
           await logout();
-          navigation.reset({ index: 0, routes: [{ name: "Login" }] });
-        },
-      },
+        } catch {
+          Alert.alert('Não foi possível sair', 'Tente novamente em instantes.');
+        } finally {
+          pending.current = false;
+          setLeaving(false);
+        }
+      } },
     ]);
+  };
+
+  const version = Constants.expoConfig?.version;
+  const role = user?.tipo === 'CONTRATANTE_EVENTOS' ? 'Contratante de eventos'
+    : user?.tipo === 'CONTRATANTE_OPORTUNIDADES' ? 'Contratante de oportunidades'
+      : user?.tipo === 'AGENTE' ? 'Agente criativo' : 'Conta Arthere';
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: palette.background }]}
-    >
-      <View style={[styles.header, { borderBottomColor: palette.border }]}>
-        <TouchableOpacity
-          style={[
-            styles.backButton,
-            { borderColor: palette.border, backgroundColor: palette.white },
-          ]}
-          onPress={() =>
-            navigation.canGoBack()
-              ? navigation.goBack()
-              : navigation.navigate("Profile")
-          }
-          accessibilityLabel="Voltar"
-        >
-          <Ionicons name="arrow-back" size={20} color={palette.brandInk} />
-        </TouchableOpacity>
-
-        <View style={styles.headerCopy}>
-          <Text style={[styles.headerKicker, { color: tokens.color.accentText }]}>
-            PREFERÊNCIAS
-          </Text>
-          <Text style={[styles.headerTitle, { color: palette.brandInk }]}>
-            Configurações
-          </Text>
+    <ScreenContainer>
+      <ScreenHeader title="Configurações" onBack={() => {
+        if (navigation.canGoBack()) navigation.goBack();
+        else navigation.navigate('Tabs', { screen: 'Profile' });
+      }} />
+      <ScrollView contentContainerStyle={{
+        width: '100%', maxWidth: dimensions.contentMaxWidth, alignSelf: 'center',
+        padding: spacing.xl, paddingBottom: spacing['3xl'], gap: spacing['2xl'],
+      }}>
+        <View style={{ gap: spacing.md }}>
+          <SectionHeader title="Conta" />
+          {user ? (
+            <View style={{ backgroundColor: color.surfaceSubtle, borderRadius: radius.cardCompact, padding: spacing.lg, gap: spacing.sm }}>
+              <AppText variant="title" weight="bold">{user.nomeSocial || user.nome || user.email}</AppText>
+              <AppText variant="bodySmall" color="textSecondary">{role}</AppText>
+              <Button variant="outline" disabled={leaving} onPress={editProfile}>Editar perfil</Button>
+            </View>
+          ) : null}
         </View>
-
-        <View
-          style={[styles.headerMark, { backgroundColor: palette.brandInk }]}
-        >
-          <View
-            style={[
-              styles.headerMarkShape,
-              { backgroundColor: palette.brandBlue },
-            ]}
-          />
+        <View style={{ gap: spacing.md }}>
+          <SectionHeader title="Aparência" description="Toque em uma paleta para aplicar. A escolha é salva neste dispositivo." />
+          {paletteNames.map((name) => {
+            const selected = name === paletteName;
+            const sample = palettes[name];
+            const swatches = [sample.brandInk, sample.brandCoral, sample.brandBlue, sample.brandSand];
+            return (
+              <Pressable key={name} accessibilityRole="radio" accessibilityLabel={`Paleta ${name}`}
+                accessibilityState={{ checked: selected, disabled: leaving }} disabled={leaving} onPress={() => setPalette(name)}
+                style={({ pressed }) => ({
+                  minHeight: dimensions.control.large, padding: spacing.md, gap: spacing.sm,
+                  borderRadius: radius.cardCompact, borderWidth: 1, borderColor: selected ? color.focus : color.border,
+                  backgroundColor: selected ? color.surfaceSubtle : color.surface, opacity: pressed ? 0.77 : 1,
+                })}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <AppText weight="bold" style={{ flex: 1 }}>{name}</AppText>
+                  {selected ? <AppText variant="caption" weight="bold" color="accentText">Em uso</AppText> : null}
+                  <Ionicons name={selected ? 'checkmark-circle' : 'ellipse-outline'} size={dimensions.icon.medium}
+                    color={selected ? color.accentText : color.textSecondary} />
+                </View>
+                <View style={{ flexDirection: 'row', overflow: 'hidden', borderRadius: radius.xs }}>
+                  {swatches.map((backgroundColor, index) => <View key={index} style={{ flex: 1, height: spacing.md, backgroundColor }} />)}
+                </View>
+              </Pressable>
+            );
+          })}
+          {paletteSaveFailed ? (
+            <View accessibilityLiveRegion="polite" style={{ gap: spacing.xs }}>
+              <AppText color="dangerText" variant="bodySmall">A paleta foi aplicada, mas não pôde ser salva neste dispositivo.</AppText>
+              <Button variant="outline" size="small" onPress={() => setPalette(paletteName)}>Tentar salvar novamente</Button>
+            </View>
+          ) : null}
         </View>
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        <Text style={[styles.groupTitle, { color: tokens.color.accentText }]}>
-          CONTA
-        </Text>
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: palette.white, borderColor: palette.border },
-          ]}
-        >
-          <SettingRow
-            palette={palette}
-            icon="person-outline"
-            label="Editar perfil"
-            last
-            onPress={() => navigation.navigate(user?.tipo === "CONTRATANTE_OPORTUNIDADES" ? "EditOpportunityContractorProfile" : user?.tipo === "CONTRATANTE_EVENTOS" ? "EditContractorProfile" : "EditProfile")}
-          />
+        <View style={{ borderTopWidth: 1, borderColor: color.border, paddingTop: spacing.lg, gap: spacing.md }}>
+          <Button fullWidth variant="danger" loading={leaving} onPress={signOut}>Sair da conta</Button>
+          {version ? <AppText variant="caption" color="textSecondary" style={{ textAlign: 'center' }}>Arthere · versão {version}</AppText> : null}
         </View>
-
-        <Text style={[styles.groupTitle, { color: tokens.color.accentText }]}>
-          APARÊNCIA
-        </Text>
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: palette.white, borderColor: palette.border },
-          ]}
-        >
-          <SettingRow
-            palette={palette}
-            icon="color-palette-outline"
-            label="Paleta de cores"
-            last
-            onPress={() => setPaletaAberta(true)}
-            right={
-              <View style={styles.swatches}>
-                <View
-                  style={[styles.swatch, { backgroundColor: palette.surface }]}
-                />
-                <View
-                  style={[
-                    styles.swatch,
-                    { backgroundColor: palette.surfaceStrong },
-                  ]}
-                />
-                <View
-                  style={[styles.swatch, { backgroundColor: palette.accent }]}
-                />
-                <View
-                  style={[styles.swatch, { backgroundColor: palette.orange }]}
-                />
-                <View
-                  style={[styles.swatch, { backgroundColor: palette.primary }]}
-                />
-                <Ionicons
-                  name="chevron-forward"
-                  size={17}
-                  color={palette.muted}
-                />
-              </View>
-            }
-          />
-        </View>
-
-        <TouchableOpacity
-          style={[
-            styles.logoutButton,
-            {
-              borderColor: palette.brandCoral,
-              backgroundColor: palette.brandPaper,
-            },
-          ]}
-          onPress={sair}
-        >
-          <Ionicons
-            name="log-out-outline"
-            size={18}
-            color={tokens.color.accentText}
-          />
-          <Text style={[styles.logoutText, { color: tokens.color.accentText }]}>
-            SAIR DA CONTA
-          </Text>
-        </TouchableOpacity>
-
-        <Text style={[styles.version, { color: palette.muted }]}>
-          ARTHERE · VERSÃO 1.0.0
-        </Text>
       </ScrollView>
-
-      <Modal
-        visible={paletaAberta}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setPaletaAberta(false)}
-      >
-        <View
-          style={[
-            styles.modalOverlay,
-            { backgroundColor: tokens.color.overlay },
-          ]}
-        >
-          <View
-            style={[
-              styles.paletteCard,
-              {
-                backgroundColor: palette.brandPaper,
-                borderTopColor: palette.brandCoral,
-              },
-            ]}
-          >
-            <View
-              style={[styles.modalHandle, { backgroundColor: palette.border }]}
-            />
-            <Text style={[styles.paletteKicker, { color: tokens.color.accentText }]}>
-              IDENTIDADE
-            </Text>
-            <Text style={[styles.paletteTitle, { color: palette.brandInk }]}>
-              Escolha sua paleta
-            </Text>
-
-            {(["Arthere", "Oceano", "Ameixa"] as PaletteName[]).map((nome) => {
-              const selecionada = nome === paletteName;
-              const amostra = palettes[nome];
-              const cores = [amostra.surface, amostra.surfaceStrong, amostra.brandSand, amostra.orange, amostra.primary];
-
-              return (
-                <TouchableOpacity
-                  key={nome}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: selecionada }}
-                  accessibilityLabel={`Paleta ${nome}`}
-                  style={[
-                    styles.paletteOption,
-                    {
-                      borderColor: selecionada
-                        ? palette.brandInk
-                        : palette.border,
-                      backgroundColor: selecionada
-                        ? palette.brandSand
-                        : palette.white,
-                    },
-                  ]}
-                  onPress={() => {
-                    setPalette(nome);
-                    setPaletaAberta(false);
-                  }}
-                >
-                  <View style={styles.paletteDots}>
-                    {cores.map((cor) => (
-                      <View
-                        key={cor}
-                        style={[styles.paletteDot, { backgroundColor: cor }]}
-                      />
-                    ))}
-                  </View>
-                  <Text
-                    style={[styles.paletteName, { color: palette.brandInk }]}
-                  >
-                    {nome}
-                  </Text>
-                  {selecionada ? (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={21}
-                      color={palette.brandInk}
-                    />
-                  ) : null}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
-
-function SettingRow({
-  palette,
-  icon,
-  label,
-  onPress,
-  right,
-  last,
-}: {
-  palette: (typeof import("@/providers/theme-provider").palettes)[PaletteName];
-  icon: IconName;
-  label: string;
-  onPress?: () => void;
-  right?: React.ReactNode;
-  last?: boolean;
-}) {
-  return (
-    <TouchableOpacity
-      style={[
-        styles.row,
-        !last && { borderBottomColor: palette.border, borderBottomWidth: 1 },
-      ]}
-      onPress={onPress}
-      disabled={!onPress}
-      activeOpacity={onPress ? 0.7 : 1}
-    >
-      <View style={[styles.rowIcon, { backgroundColor: palette.surface }]}>
-        <Ionicons name={icon} size={18} color={palette.brandInk} />
-      </View>
-      <Text style={[styles.rowText, { color: palette.brandInk }]}>{label}</Text>
-      {right ??
-        (onPress ? (
-          <Ionicons name="chevron-forward" size={17} color={palette.muted} />
-        ) : null)}
-    </TouchableOpacity>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    minHeight: 76,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-    flexDirection: "row",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    gap: 10,
-  },
-  backButton: {
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-  },
-  headerCopy: { flex: 1 },
-  headerKicker: { fontSize: 8, fontWeight: "900", letterSpacing: 1.5 },
-  headerTitle: {
-    fontSize: 23,
-    fontWeight: "900",
-    letterSpacing: -0.5,
-    marginTop: 2,
-  },
-  headerMark: {
-    width: 44,
-    height: 44,
-    overflow: "hidden",
-    position: "relative",
-  },
-  headerMarkShape: {
-    position: "absolute",
-    width: 38,
-    height: 38,
-    right: -10,
-    bottom: -10,
-    borderRadius: 8,
-    transform: [{ rotate: "20deg" }],
-  },
-  content: { paddingHorizontal: 20, paddingTop: 5, paddingBottom: 42 },
-  groupTitle: {
-    marginTop: 22,
-    marginBottom: 8,
-    fontSize: 9,
-    fontWeight: "900",
-    letterSpacing: 1.5,
-  },
-  card: { borderWidth: 1, paddingHorizontal: 12 },
-  row: { minHeight: 60, flexDirection: "row", alignItems: "center", gap: 11 },
-  rowIcon: {
-    width: 34,
-    height: 34,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rowText: { flex: 1, fontSize: 13, fontWeight: "800" },
-  swatches: { flexDirection: "row", alignItems: "center", gap: 4 },
-  swatch: { width: 14, height: 14, borderRadius: 7 },
-  logoutButton: {
-    minHeight: 48,
-    marginTop: 30,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderWidth: 1,
-  },
-  logoutText: { fontSize: 9, fontWeight: "900", letterSpacing: 1.1 },
-  version: {
-    marginTop: 17,
-    textAlign: "center",
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 1,
-  },
-  modalOverlay: { flex: 1, justifyContent: "flex-end" },
-  paletteCard: {
-    padding: 20,
-    paddingTop: 11,
-    borderTopWidth: 2,
-  },
-  modalHandle: { width: 44, height: 4, alignSelf: "center", marginBottom: 16 },
-  paletteKicker: { fontSize: 8, fontWeight: "900", letterSpacing: 1.4 },
-  paletteTitle: {
-    fontSize: 22,
-    fontWeight: "900",
-    marginTop: 3,
-    marginBottom: 15,
-  },
-  paletteOption: {
-    minHeight: 58,
-    borderWidth: 1,
-    paddingHorizontal: 13,
-    marginBottom: 9,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 11,
-  },
-  paletteDots: { flexDirection: "row", gap: 4 },
-  paletteDot: { width: 17, height: 17, borderRadius: 9 },
-  paletteName: { flex: 1, fontSize: 14, fontWeight: "900" },
-});

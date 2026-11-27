@@ -38,7 +38,7 @@ function formatarData(data?: string | null) {
 }
 
 export default function OpportunitiesScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Opportunities'>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useUser();
   const tokens = useThemeTokens();
   const consultaAtiva = useRef<symbol | null>(null);

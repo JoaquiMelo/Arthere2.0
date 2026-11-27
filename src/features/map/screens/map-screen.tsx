@@ -121,7 +121,6 @@ export function MapScreen() {
             <AppText variant="label" color="accentText" weight="bold">ARTHERE / TERRITÓRIO CRIATIVO</AppText>
             <AppText variant="h2" weight="heavy" accessibilityRole="header" style={{ letterSpacing: typography.tracking.tight }}>Explore a cena.</AppText>
           </View>
-          {user ? <IconButton icon="settings-outline" variant="outline" accessibilityLabel="Abrir configurações" onPress={() => navigation.navigate('Settings')} /> : null}
         </View>
         {!user ? (
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
