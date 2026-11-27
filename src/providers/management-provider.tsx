@@ -3,6 +3,7 @@ import {uploadImage,createEvent,createProject,events as listarEventosApi,meusPro
 import type {VagaGerenciada} from '@/features/opportunities/screens/types/management';
 import {mapVaga} from '@/features/opportunities/utils/opportunity-management';
 import type {Evento} from '@/features/events/types/event';
+import {mapEvento} from '@/features/events/utils/event-agenda';
 import {useUser} from '@/providers/user-provider';
 
 export type SolicitacaoEvento={id:string;eventId:string;eventoTitulo:string;agenteId:string;agenteNome:string;agenteEspecialidade:string;mensagem:string;status:'PENDENTE'|'ACEITA'|'RECUSADA'};
@@ -11,7 +12,6 @@ type NovaVaga={titulo:string;descricao?:string;categoria:string;orcamento?:numbe
 type Context={vagas:VagaGerenciada[];eventos:Evento[];solicitacoesEvento:SolicitacaoEvento[];loading:boolean;refresh:()=>Promise<void>;publicarVaga:(d:NovaVaga)=>Promise<void>;criarEvento:(d:NovoEvento)=>Promise<void>;aceitarCandidato:(vagaId:string,candidatoId:string)=>Promise<void>;recusarCandidato:(vagaId:string,candidatoId:string)=>Promise<void>;concluirVaga:(vagaId:string)=>Promise<void>;marcarAvaliado:(vagaId:string)=>void;enviarSolicitacaoEvento:(d:Omit<SolicitacaoEvento,'id'|'status'>)=>Promise<void>;aceitarSolicitacaoEvento:(id:string)=>Promise<void>;recusarSolicitacaoEvento:(id:string)=>Promise<void>};
 const Ctx=createContext<Context>({} as Context);
 
-function mapEvento(x:any):Evento{const d=new Date(x.dataEvento);const data=Number.isNaN(d.getTime())?String(x.dataEvento).slice(0,10):[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');return{id:x.id,titulo:x.titulo,categoria:x.categoria,descricao:x.descricao,local:x.local,cidade:x.cidade,data,horario:x.horario??'',organizador:x.organizador??'',premium:Boolean(x.premium),destaque:Boolean(x.fixado),imagemUrl:x.imagemUrl??undefined,contratanteId:x.contratanteId};}
 function mapSolicitacao(x:any):SolicitacaoEvento{return{id:x.id,eventId:x.eventoId,eventoTitulo:x.evento?.titulo??'Evento',agenteId:x.agente?.id??x.agenteId,agenteNome:x.agente?.nome??'Agente criativo',agenteEspecialidade:x.agente?.especialidade??'Profissional criativo',mensagem:x.mensagem??'',status:x.status};}
 
 export function ManagementProvider({children}:{children:React.ReactNode}){
