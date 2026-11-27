@@ -15,6 +15,7 @@ export interface AgenteCriativo {
   latitude: number;
   longitude: number;
   avatarUrl: string;
+  bannerUrl?: string;
   descricao: string;
   portfolio: PortfolioItem[];
   especialidades: string[];

@@ -29,9 +29,9 @@ export function AgendaCalendar({ month, today, selected, eventsByDay, onMove, on
   return (
     <View style={{ backgroundColor: color.surface, borderRadius: radius.card, borderWidth: 1, borderColor: color.border, overflow: 'hidden' }}>
       <View style={{ backgroundColor: color.accentSoft, padding: spacing.lg, gap: spacing.xs, borderTopWidth: spacing.xs, borderTopColor: color.accent }}>
-        <AppText variant="display" weight="black" accessibilityRole="header" accessibilityLabel={`${name} de ${year}`}
+        <AppText variant="title" weight="bold" accessibilityRole="header" accessibilityLabel={`${name} de ${year}`}
           accessibilityLiveRegion="polite"
-          style={{ textTransform: 'capitalize', letterSpacing: typography.tracking.tight }}>
+          style={{ textTransform: 'capitalize' }}>
           {name}
         </AppText>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm }}>
@@ -45,8 +45,8 @@ export function AgendaCalendar({ month, today, selected, eventsByDay, onMove, on
 
       <View style={{ flexDirection: 'row', backgroundColor: color.surfaceSubtle, paddingVertical: spacing.sm }}>
         {weekdays.map((weekday) => (
-          <AppText key={weekday} variant="caption" weight="bold" color="textSecondary" accessible={false}
-            style={{ flex: 1, textAlign: 'center', textTransform: 'uppercase' }}>
+          <AppText key={weekday} variant="caption" color="textSecondary" accessible={false}
+            style={{ flex: 1, textAlign: 'center' }}>
             {weekday}
           </AppText>
         ))}
@@ -87,7 +87,8 @@ export function AgendaCalendar({ month, today, selected, eventsByDay, onMove, on
                   gap: spacing.xxs,
                 })}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.xxs }}>
-                  <AppText variant="h3" weight="heavy" color={!active && !feature && isToday ? 'accentText' : foreground}
+                  <AppText variant="label" weight={count || active || isToday ? 'bold' : 'regular'}
+                    color={!active && !feature && isToday ? 'accentText' : foreground}
                     style={{ fontVariant: ['tabular-nums'], textDecorationLine: isToday ? 'underline' : 'none' }}>
                     {day}
                   </AppText>

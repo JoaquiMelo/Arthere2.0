@@ -175,7 +175,7 @@ export function MapScreen() {
         </View>
         {!user ? (
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <Button variant="outline" size="small" onPress={() => navigation.goBack()}>Voltar ao Ateliê</Button>
+            <Button variant="outline" size="small" onPress={() => navigation.goBack()}>Voltar à Arthere</Button>
           </View>
         ) : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingLeft: spacing.md, minHeight: dimensions.control.medium, borderWidth: 1, borderColor: color.controlBorder, backgroundColor: color.surface, borderRadius: radius.control }}>

@@ -45,9 +45,11 @@ export function mapAgent(item: any): AgenteCriativo | null {
     especialidades: especialidade ? [especialidade] : ['Especialidade não informada'],
     latitude, longitude,
     avatarUrl: typeof item.avatarUrl === 'string' ? item.avatarUrl : '',
+    bannerUrl: typeof item.bannerUrl === 'string' ? item.bannerUrl : undefined,
     descricao: typeof item.bio === 'string' ? item.bio : '',
     portfolio: Array.isArray(item.portfolio) ? item.portfolio.filter((p: any) => p && typeof p.id === 'string').map((p: any) => ({
-      id: p.id, titulo: p.titulo || 'Trabalho', imagemUrl: p.imageUrl ?? p.imagemUrl ?? undefined,
+      id: p.id, titulo: p.titulo || 'Trabalho',
+      imagemUrl: [p.imageUrl, p.imagemUrl].find((value) => typeof value === 'string'),
     })) : [],
   };
 }

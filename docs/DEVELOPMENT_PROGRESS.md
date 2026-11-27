@@ -25,7 +25,7 @@
 ## Funcionalidades e decisões
 
 - O app mantém Expo, React Navigation e os papéis AGENTE, CE e CO. A API mantém NestJS, Prisma e MySQL/MariaDB. A produção usa Render.
-- O Ateliê é a entrada principal e o mapa é uma aba própria. A Agenda distingue eventos futuros e concluídos. O organizador pode gerir o álbum de eventos concluídos.
+- A tela inicial Arthere apresenta a marca manuscrita, busca e vitrines de agentes por área. O mapa é uma aba própria. A Agenda usa a tipografia anterior do calendário e distingue eventos futuros e concluídos. O organizador pode gerir o álbum de eventos concluídos.
 - Cadastro, pré-edição, avatar e capa, portfólio, candidaturas, chat, avaliações e opções de aparência têm implementação. A confirmação em aparelho está detalhada no relatório.
 - Mantive a navegação, a identidade editorial, os tokens e as paletas. A Etapa 4.1 corrigiu os campos devolvidos por chat, eventos e perfis públicos de agentes, ajustou a persistência de sessão e fez o Expo Go usar a API de produção por padrão.
 - A Etapa 3.6 adicionou suporte à preferência de movimento, feedback de carregamento e confirmação, e refinou a acessibilidade dos controles e formulários. Skills aplicadas: Arthere Design, Mobile App UX Auditor e Expo Animation.
@@ -40,6 +40,7 @@
 - Na 3.6, passaram os testes simulados de envio único no chat e preservação de rascunho, a verificação estática de contraste e a exportação Android/iOS. VoiceOver, TalkBack e feedback tátil aguardam teste em aparelho.
 - Na 4.2, passaram a medição de contraste nas seis combinações de paleta e modo, a simulação de preferências e mapas, e os bundles Android/iOS. O relatório registra o que precisa de inspeção visual em aparelho.
 - Na 4.3, passaram as simulações de foco, teclado, envio único e carregamento acessível, além dos bundles Android/iOS. Leitores de tela, permissões e feedback tátil em aparelho continuam no checklist.
+- No ajuste visual da tela inicial e da Agenda, passaram TypeScript, lint e as exportações Android/iOS. A prévia isolada no Chromium verificou os temas claro e escuro, busca, filtros, acesso a perfis e a seleção de datas. A inspeção em aparelho está pendente.
 - Metro iniciou para Expo Go. A API de produção respondeu ao health check. A validação completa com Expo Doctor e a comparação online de dependências ficaram pendentes pelas limitações registradas no relatório.
 - A revisão encontrou exposição de dados privados nas respostas de chat, evento e agente. O código foi corrigido em desenvolvimento. O ambiente de produção requer autorização para atualizar a API e confirmar a versão efetivamente publicada.
 - O modo escuro, GPS, permissões nativas, troca de contas e fluxos ponta a ponta em aparelho ainda requerem validação manual.

@@ -51,7 +51,7 @@ const Stack=createNativeStackNavigator<RootStackParamList>();
 const Tab=createBottomTabNavigator<TabParamList>();
 
 const icons:Record<keyof TabParamList, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
- Atelier:{active:'color-palette',inactive:'color-palette-outline'},
+ Atelier:{active:'home',inactive:'home-outline'},
  Map:{active:'map',inactive:'map-outline'},
  Profile:{active:'person',inactive:'person-outline'},
  Opportunities:{active:'briefcase',inactive:'briefcase-outline'},
@@ -81,7 +81,7 @@ function AppTabs(){
    </View>
   )
  })}>
-  <Tab.Screen name="Atelier" component={AtelierScreen} options={{title:'Ateliê'}}/>
+  <Tab.Screen name="Atelier" component={AtelierScreen} options={{title:'Arthere'}}/>
   <Tab.Screen name="Map" component={MapScreen} options={{title:'Mapa'}}/>
   <Tab.Screen name="Opportunities" component={OpportunitiesScreen} options={{title:'Vagas',tabBarAccessibilityLabel:'Oportunidades'}}/>
   <Tab.Screen name="Events" component={EventsScreen} options={{title:'Agenda',tabBarAccessibilityLabel:'Agenda de eventos'}}/>

@@ -30,7 +30,7 @@ export default function SettingsScreen() {
 
   const signOut = () => {
     if (pending.current) return;
-    Alert.alert('Sair da conta?', 'Você poderá entrar novamente pelo Ateliê.', [
+    Alert.alert('Sair da conta?', 'Você poderá entrar novamente pela tela inicial da Arthere.', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Sair', style: 'destructive', onPress: async () => {
         if (pending.current) return;
