@@ -80,6 +80,11 @@ export type Avaliacao = Prisma.AvaliacaoModel
  */
 export type Evento = Prisma.EventoModel
 /**
+ * Model EventoAlbum
+ *
+ */
+export type EventoAlbum = Prisma.EventoAlbumModel
+/**
  * Model Conversa
  * 
  */
@@ -94,3 +99,8 @@ export type Mensagem = Prisma.MensagemModel
  * 
  */
 export type SolicitacaoEvento = Prisma.SolicitacaoEventoModel
+/**
+ * Model UploadImagem
+ *
+ */
+export type UploadImagem = Prisma.UploadImagemModel

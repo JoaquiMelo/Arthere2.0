@@ -13,13 +13,35 @@ const pad = (n: number) => String(n).padStart(2, '0');
 export const dateKey = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 export const monthKey = (date: Date) => dateKey(date).slice(0, 7);
 export const eventDate = (key: string) => new Date(`${key}T12:00:00`);
+const eventZone = 'America/Sao_Paulo';
+const eventDayFormat = new Intl.DateTimeFormat('sv-SE', {
+  timeZone: eventZone, year: 'numeric', month: '2-digit', day: '2-digit',
+});
+const eventClockFormat = new Intl.DateTimeFormat('sv-SE', {
+  timeZone: eventZone, year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+});
+
+export const eventDayKey = (date = new Date()) => eventDayFormat.format(date);
+export const isEventConcluded = (day: string, today = eventDayKey()) => Boolean(day) && day < today;
+
+/** Converte a data e hora civil da agenda em um instante, independente do fuso do aparelho. */
+export function eventInstant(day: string, time: string): Date | null {
+  const wanted = `${day}T${time}`;
+  const utc = new Date(`${wanted}:00Z`);
+  if (!Number.isFinite(utc.getTime())) return null;
+  const wallClock = (date: Date) => eventClockFormat.format(date).replace(' ', 'T');
+  const observed = new Date(`${wallClock(utc)}:00Z`);
+  const instant = new Date(utc.getTime() + (utc.getTime() - observed.getTime()));
+  return wallClock(instant) === wanted ? instant : null;
+}
 
 export function mapEvento(item: ApiEvent): Evento {
   const date = new Date(item.dataEvento);
   return {
     id: item.id, titulo: item.titulo, categoria: item.categoria, descricao: item.descricao,
     local: item.local, cidade: item.cidade,
-    data: Number.isFinite(date.getTime()) ? dateKey(date) : '',
+    data: Number.isFinite(date.getTime()) ? eventDayKey(date) : '',
     horario: item.horario ?? '', organizador: item.organizador ?? '',
     premium: Boolean(item.premium), destaque: Boolean(item.fixado),
     imagemUrl: item.imagemUrl ?? undefined, contratanteId: item.contratanteId ?? undefined,

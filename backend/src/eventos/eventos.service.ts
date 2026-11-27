@@ -1,5 +1,13 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { isEventoConcluido } from './evento-data';
+
+const MAX_FOTOS = 8;
+const fotoPath = /^\/uploads\/([a-f0-9-]{36}\.(?:jpg|png|webp|gif))$/i;
+
+function fotosPersistidas(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && fotoPath.test(item)) : [];
+}
 
 @Injectable()
 export class EventosService {
@@ -30,6 +38,49 @@ export class EventosService {
     });
     if (!evento) throw new NotFoundException('Evento não encontrado.');
     return evento;
+  }
+
+  async capasDosAlbuns() {
+    const now = new Date();
+    const albuns = await this.prisma.eventoAlbum.findMany({
+      where: { evento: { dataEvento: { lt: now } } },
+      select: { eventoId: true, fotos: true, evento: { select: { dataEvento: true } } },
+    });
+    return albuns.flatMap((album) => {
+      const capa = fotosPersistidas(album.fotos)[0];
+      return capa && isEventoConcluido(album.evento.dataEvento, now) ? [{ eventoId: album.eventoId, capa }] : [];
+    });
+  }
+
+  async fotos(id: string) {
+    const evento = await this.prisma.evento.findUnique({ where: { id }, select: { dataEvento: true } });
+    if (!evento) throw new NotFoundException('Evento não encontrado.');
+    if (!isEventoConcluido(evento.dataEvento)) return [];
+    const album = await this.prisma.eventoAlbum.findUnique({ where: { eventoId: id } });
+    return fotosPersistidas(album?.fotos);
+  }
+
+  async salvarFotos(uid: string, id: string, value: unknown) {
+    await this.exigirTipo(uid);
+    const contratante = await this.prisma.contratante.findUnique({ where: { usuarioId: uid }, select: { id: true } });
+    const evento = await this.prisma.evento.findUnique({ where: { id }, select: { dataEvento: true, contratanteId: true } });
+    if (!evento) throw new NotFoundException('Evento não encontrado.');
+    if (!contratante || evento.contratanteId !== contratante.id) throw new ForbiddenException('Você não pode gerenciar as fotos deste evento.');
+    if (!isEventoConcluido(evento.dataEvento)) throw new ConflictException('O álbum fica disponível depois da data do evento.');
+    if (!Array.isArray(value) || value.length > MAX_FOTOS) throw new BadRequestException(`Envie uma lista de até ${MAX_FOTOS} fotos.`);
+    const fotos = fotosPersistidas(value);
+    if (fotos.length !== value.length || new Set(fotos).size !== fotos.length) {
+      throw new BadRequestException('A lista deve conter apenas fotos enviadas pela galeria, sem duplicatas.');
+    }
+    if (fotos.length) {
+      const filenames = fotos.map((foto) => foto.split('/').pop()!);
+      const existing = await this.prisma.uploadImagem.count({ where: { filename: { in: filenames } } });
+      if (existing !== fotos.length) throw new BadRequestException('Uma ou mais fotos não foram encontradas.');
+    }
+    await this.prisma.eventoAlbum.upsert({
+      where: { eventoId: id }, create: { eventoId: id, fotos }, update: { fotos },
+    });
+    return fotos;
   }
 
   async criar(uid: string, dados: any) {
@@ -97,6 +148,7 @@ export class EventosService {
     const evento = await this.prisma.evento.findUnique({ where: { id: eventoId } });
     if (!evento) throw new NotFoundException('Evento não encontrado.');
     if (!evento.contratanteId) throw new ConflictException('Este evento não possui um contratante responsável para receber solicitações.');
+    if (isEventoConcluido(evento.dataEvento)) throw new ConflictException('Evento concluído. As solicitações de participação estão encerradas.');
 
     const existente = await this.prisma.solicitacaoEvento.findUnique({
       where: { agenteId_eventoId: { agenteId: agente.id, eventoId } },

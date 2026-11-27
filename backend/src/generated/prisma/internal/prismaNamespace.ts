@@ -405,9 +405,11 @@ export const ModelName = {
   Portfolio: 'Portfolio',
   Avaliacao: 'Avaliacao',
   Evento: 'Evento',
+  EventoAlbum: 'EventoAlbum',
   Conversa: 'Conversa',
   Mensagem: 'Mensagem',
-  SolicitacaoEvento: 'SolicitacaoEvento'
+  SolicitacaoEvento: 'SolicitacaoEvento',
+  UploadImagem: 'UploadImagem'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -423,7 +425,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "usuario" | "agenteCriativo" | "contratante" | "projeto" | "candidatura" | "portfolio" | "avaliacao" | "evento" | "conversa" | "mensagem" | "solicitacaoEvento"
+    modelProps: "usuario" | "agenteCriativo" | "contratante" | "projeto" | "candidatura" | "portfolio" | "avaliacao" | "evento" | "eventoAlbum" | "conversa" | "mensagem" | "solicitacaoEvento" | "uploadImagem"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -955,6 +957,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    EventoAlbum: {
+      payload: Prisma.$EventoAlbumPayload<ExtArgs>
+      fields: Prisma.EventoAlbumFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EventoAlbumFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventoAlbumPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EventoAlbumFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventoAlbumPayload>
+        }
+        findFirst: {
+          args: Prisma.EventoAlbumFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventoAlbumPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EventoAlbumFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventoAlbumPayload>
+        }
+        findMany: {
+          args: Prisma.EventoAlbumFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventoAlbumPayload>[]
+        }
+        create: {
+          args: Prisma.EventoAlbumCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventoAlbumPayload>
+        }
+        createMany: {
+          args: Prisma.EventoAlbumCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.EventoAlbumDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventoAlbumPayload>
+        }
+        update: {
+          args: Prisma.EventoAlbumUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventoAlbumPayload>
+        }
+        deleteMany: {
+          args: Prisma.EventoAlbumDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EventoAlbumUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.EventoAlbumUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EventoAlbumPayload>
+        }
+        aggregate: {
+          args: Prisma.EventoAlbumAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEventoAlbum>
+        }
+        groupBy: {
+          args: Prisma.EventoAlbumGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EventoAlbumGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.EventoAlbumCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EventoAlbumCountAggregateOutputType> | number
+        }
+      }
+    }
     Conversa: {
       payload: Prisma.$ConversaPayload<ExtArgs>
       fields: Prisma.ConversaFieldRefs
@@ -1153,6 +1221,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    UploadImagem: {
+      payload: Prisma.$UploadImagemPayload<ExtArgs>
+      fields: Prisma.UploadImagemFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UploadImagemFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UploadImagemPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UploadImagemFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UploadImagemPayload>
+        }
+        findFirst: {
+          args: Prisma.UploadImagemFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UploadImagemPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UploadImagemFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UploadImagemPayload>
+        }
+        findMany: {
+          args: Prisma.UploadImagemFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UploadImagemPayload>[]
+        }
+        create: {
+          args: Prisma.UploadImagemCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UploadImagemPayload>
+        }
+        createMany: {
+          args: Prisma.UploadImagemCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.UploadImagemDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UploadImagemPayload>
+        }
+        update: {
+          args: Prisma.UploadImagemUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UploadImagemPayload>
+        }
+        deleteMany: {
+          args: Prisma.UploadImagemDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UploadImagemUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.UploadImagemUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UploadImagemPayload>
+        }
+        aggregate: {
+          args: Prisma.UploadImagemAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUploadImagem>
+        }
+        groupBy: {
+          args: Prisma.UploadImagemGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UploadImagemGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UploadImagemCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UploadImagemCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1325,6 +1459,14 @@ export const EventoScalarFieldEnum = {
 export type EventoScalarFieldEnum = (typeof EventoScalarFieldEnum)[keyof typeof EventoScalarFieldEnum]
 
 
+export const EventoAlbumScalarFieldEnum = {
+  eventoId: 'eventoId',
+  fotos: 'fotos'
+} as const
+
+export type EventoAlbumScalarFieldEnum = (typeof EventoAlbumScalarFieldEnum)[keyof typeof EventoAlbumScalarFieldEnum]
+
+
 export const ConversaScalarFieldEnum = {
   id: 'id',
   usuarioAId: 'usuarioAId',
@@ -1360,12 +1502,29 @@ export const SolicitacaoEventoScalarFieldEnum = {
 export type SolicitacaoEventoScalarFieldEnum = (typeof SolicitacaoEventoScalarFieldEnum)[keyof typeof SolicitacaoEventoScalarFieldEnum]
 
 
+export const UploadImagemScalarFieldEnum = {
+  filename: 'filename',
+  mime: 'mime',
+  conteudo: 'conteudo',
+  criadoEm: 'criadoEm'
+} as const
+
+export type UploadImagemScalarFieldEnum = (typeof UploadImagemScalarFieldEnum)[keyof typeof UploadImagemScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const UsuarioOrderByRelevanceFieldEnum = {
@@ -1481,6 +1640,30 @@ export const EventoOrderByRelevanceFieldEnum = {
 export type EventoOrderByRelevanceFieldEnum = (typeof EventoOrderByRelevanceFieldEnum)[keyof typeof EventoOrderByRelevanceFieldEnum]
 
 
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
+
+
+export const QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+} as const
+
+export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+export const EventoAlbumOrderByRelevanceFieldEnum = {
+  eventoId: 'eventoId'
+} as const
+
+export type EventoAlbumOrderByRelevanceFieldEnum = (typeof EventoAlbumOrderByRelevanceFieldEnum)[keyof typeof EventoAlbumOrderByRelevanceFieldEnum]
+
+
 export const ConversaOrderByRelevanceFieldEnum = {
   id: 'id',
   usuarioAId: 'usuarioAId',
@@ -1508,6 +1691,14 @@ export const SolicitacaoEventoOrderByRelevanceFieldEnum = {
 } as const
 
 export type SolicitacaoEventoOrderByRelevanceFieldEnum = (typeof SolicitacaoEventoOrderByRelevanceFieldEnum)[keyof typeof SolicitacaoEventoOrderByRelevanceFieldEnum]
+
+
+export const UploadImagemOrderByRelevanceFieldEnum = {
+  filename: 'filename',
+  mime: 'mime'
+} as const
+
+export type UploadImagemOrderByRelevanceFieldEnum = (typeof UploadImagemOrderByRelevanceFieldEnum)[keyof typeof UploadImagemOrderByRelevanceFieldEnum]
 
 
 
@@ -1573,10 +1764,31 @@ export type EnumStatusCandidaturaFieldRefInput<$PrismaModel> = FieldRefInputType
 
 
 /**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+
+
+
+/**
  * Reference to a field of type 'StatusSolicitacaoEvento'
  */
 export type EnumStatusSolicitacaoEventoFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'StatusSolicitacaoEvento'>
     
+
+
+/**
+ * Reference to a field of type 'Bytes'
+ */
+export type BytesFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Bytes'>
+
 
 /**
  * Batch Payload for updateMany & deleteMany & createMany
@@ -1737,9 +1949,11 @@ export type GlobalOmitConfig = {
   portfolio?: Prisma.PortfolioOmit
   avaliacao?: Prisma.AvaliacaoOmit
   evento?: Prisma.EventoOmit
+  eventoAlbum?: Prisma.EventoAlbumOmit
   conversa?: Prisma.ConversaOmit
   mensagem?: Prisma.MensagemOmit
   solicitacaoEvento?: Prisma.SolicitacaoEventoOmit
+  uploadImagem?: Prisma.UploadImagemOmit
 }
 
 /* Types for Logging */

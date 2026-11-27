@@ -4,29 +4,33 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, SectionList, View } from 'react-native';
 
 import type { RootStackParamList } from '@/navigation/app-navigator';
-import { events as listEvents } from '@/services/api';
+import { completedEventCovers, events as listEvents } from '@/services/api';
 import { AppText, Badge, Button, FeedbackState, FilterChip, IconButton, MediaImage, ScreenContainer, ScreenHeader, SectionHeader, TextField } from '@/shared/components';
 import { realImageUri } from '@/shared/config/image-uri';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { AgendaCalendar } from '../components/agenda-calendar';
+import { useEventDay } from '../hooks/use-event-day';
 import type { Evento } from '../types/event';
-import { dateKey, eventDate, filterEvents, mapEvento, monthKey, normalizeEventText, sortEvents } from '../utils/event-agenda';
+import { eventDate, eventDayKey, filterEvents, isEventConcluded, mapEvento, monthKey, normalizeEventText, sortEvents } from '../utils/event-agenda';
 
 const monthFormat = new Intl.DateTimeFormat('pt-BR', { month: 'short' });
 const fullDateFormat = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full' });
 const dateFormat = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-function EventRow({ event, feature, onPress }: { event: Evento; feature: boolean; onPress: () => void }) {
+function EventRow({ event, feature, archived, albumCover, onPress }: {
+  event: Evento; feature: boolean; archived: boolean; albumCover?: string; onPress: () => void;
+}) {
   const { color, dimensions, radius, spacing } = useThemeTokens();
   const date = event.data ? eventDate(event.data) : null;
   const place = [event.local, event.cidade].filter(Boolean).join(' · ');
   const when = [date ? dateFormat.format(date) : 'Data a confirmar', event.horario].filter(Boolean).join(' · ');
-  const cover = realImageUri(event.imagemUrl);
+  const cover = realImageUri(albumCover) || realImageUri(event.imagemUrl);
   const label = [event.titulo, when, event.categoria, place, event.organizador, event.premium ? 'Premium' : '', event.destaque ? 'Destaque' : '']
     .filter(Boolean).join('. ');
 
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint="Abre os detalhes do evento"
+    <Pressable accessibilityRole="button" accessibilityLabel={label}
+      accessibilityHint={archived ? 'Abre as fotos e os detalhes do evento concluído' : 'Abre os detalhes do evento'}
       onPress={onPress}
       style={({ pressed }) => ({
         backgroundColor: color.surface, borderColor: color.border, borderWidth: 1,
@@ -46,6 +50,7 @@ function EventRow({ event, feature, onPress }: { event: Evento; feature: boolean
           <AppText variant="bodySmall" weight="semibold">{when}</AppText>
           {place ? <AppText variant="bodySmall" color="textSecondary">{place}</AppText> : null}
           {event.organizador ? <AppText variant="caption" color="textSecondary">{event.organizador}</AppText> : null}
+          {archived ? <AppText variant="bodySmall" color="accentText" weight="bold">Ver fotos e detalhes</AppText> : null}
           {event.premium || (event.destaque && !feature) ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.xs }}>
               {event.premium ? <Badge label="Premium" tone="accent" icon="star-outline" /> : null}
@@ -70,13 +75,14 @@ export default function EventsScreen() {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const request = useRef<symbol | null>(null);
-  const [mode, setMode] = useState<'calendar' | 'list'>('calendar');
+  const [mode, setMode] = useState<'calendar' | 'list' | 'completed'>('calendar');
+  const [albumCovers, setAlbumCovers] = useState<ReadonlyMap<string, string>>(() => new Map());
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [premium, setPremium] = useState(false);
-  const [month, setMonth] = useState(() => new Date());
+  const [month, setMonth] = useState(() => eventDate(eventDayKey()));
   const [day, setDay] = useState<string | null>(null);
-  const today = dateKey(new Date());
+  const today = useEventDay();
 
   const load = useCallback(async () => {
     if (request.current) return;
@@ -103,6 +109,21 @@ export default function EventsScreen() {
     return () => { request.current = null; };
   }, [load]));
 
+  const loadCovers = useCallback(async (isActive: () => boolean = () => true) => {
+    try {
+      const covers = await completedEventCovers();
+      if (isActive() && Array.isArray(covers)) setAlbumCovers(new Map(covers.map((item) => [item.eventoId, item.capa])));
+    } catch {
+      // As capas cadastradas continuam disponíveis mesmo se o álbum não carregar.
+    }
+  }, []);
+  useFocusEffect(useCallback(() => {
+    if (mode !== 'completed') return;
+    let active = true;
+    void loadCovers(() => active);
+    return () => { active = false; };
+  }, [mode, loadCovers]));
+
   const categories = useMemo(() => {
     const map = new Map<string, string>();
     for (const item of events ?? []) {
@@ -113,7 +134,8 @@ export default function EventsScreen() {
   }, [events]);
 
   const filtered = useMemo(() => filterEvents(events ?? [], search, category, premium), [events, search, category, premium]);
-  const monthEvents = useMemo(() => filtered.filter((item) => item.data.slice(0, 7) === monthKey(month)), [filtered, month]);
+  const upcoming = useMemo(() => filtered.filter((item) => !isEventConcluded(item.data, today)), [filtered, today]);
+  const monthEvents = useMemo(() => upcoming.filter((item) => item.data.slice(0, 7) === monthKey(month)), [upcoming, month]);
   const eventsByDay = useMemo(() => {
     const result = new Map<string, Evento[]>();
     for (const item of monthEvents) {
@@ -123,26 +145,28 @@ export default function EventsScreen() {
     }
     return result;
   }, [monthEvents]);
-  const sorted = useMemo(() => sortEvents(filtered, today), [filtered, today]);
+  const sorted = useMemo(() => sortEvents(upcoming, today), [upcoming, today]);
+  const completed = useMemo(() => sortEvents(filtered.filter((item) => isEventConcluded(item.data, today)), today), [filtered, today]);
   const monthResults = monthEvents.filter((item) => !day || item.data === day)
     .sort((a, b) => a.data.localeCompare(b.data) || a.horario.localeCompare(b.horario));
   const featured = sorted.filter((item) => item.destaque);
   const regular = sorted.filter((item) => !item.destaque);
   const sections = mode === 'calendar' ? [{
     key: 'calendar', title: day ? fullDateFormat.format(eventDate(day)) : 'Programação do mês', data: monthResults, feature: false,
-  }] : [
+  }] : mode === 'completed' ? [{ key: 'completed', title: 'Eventos realizados', data: completed, feature: true }] : [
     { key: 'featured', title: 'Destaques', data: featured, feature: true },
     { key: 'regular', title: featured.length ? 'Mais eventos' : 'Programação', data: regular, feature: false },
   ];
-  const total = mode === 'calendar' ? monthResults.length : sorted.length;
+  const total = mode === 'calendar' ? monthResults.length : mode === 'completed' ? completed.length : sorted.length;
   const hasFilters = Boolean(search.trim() || category !== null || premium);
   const resetFilters = () => { setSearch(''); setCategory(null); setPremium(false); };
   const eventCount = `${total} ${total === 1 ? 'evento' : 'eventos'}`;
-  const emptyTitle = events?.length === 0 ? 'Nenhum evento publicado'
+  const emptyTitle = mode === 'completed' ? (hasFilters ? 'Nenhum evento concluído com esses filtros' : 'Nenhum evento concluído')
+    : events?.length === 0 ? 'Nenhum evento publicado'
     : mode === 'calendar' && day ? 'Nenhum evento nesta data'
       : mode === 'calendar' ? 'Nenhum evento neste mês' : 'Nenhum evento encontrado';
-  const emptyHint = events?.length === 0 ? 'Os próximos eventos publicados aparecerão aqui.'
-    : hasFilters ? 'Ajuste os filtros ou pesquise por outro termo.'
+  const emptyHint = hasFilters ? 'Ajuste os filtros ou pesquise por outro termo.'
+    : mode !== 'completed' && events?.length === 0 ? 'Os próximos eventos publicados aparecerão aqui.'
       : mode === 'calendar' ? 'Escolha outra data ou veja a programação na lista.' : undefined;
 
   return (
@@ -154,7 +178,10 @@ export default function EventsScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         contentContainerStyle={{ width: '100%', maxWidth: dimensions.contentMaxWidth, alignSelf: 'center', paddingBottom: spacing['3xl'] }}
-        refreshControl={<RefreshControl refreshing={loading && events !== null} onRefresh={() => void load()}
+        refreshControl={<RefreshControl refreshing={loading && events !== null} onRefresh={() => {
+          void load();
+          if (mode === 'completed') void loadCovers();
+        }}
           tintColor={color.accentText} colors={[color.accentText]} />}
         renderSectionHeader={({ section }) => (
           <View style={{ marginHorizontal: spacing.xl, paddingBottom: spacing.sm, paddingTop: spacing.lg }}>
@@ -163,7 +190,9 @@ export default function EventsScreen() {
         )}
         renderItem={({ item, section }) => (
           <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.md }}>
-            <EventRow event={item} feature={section.feature} onPress={() => navigation.navigate('EventDetails', { eventId: item.id })} />
+            <EventRow event={item} feature={section.feature} archived={section.key === 'completed'}
+              albumCover={section.key === 'completed' ? albumCovers.get(item.id) : undefined}
+              onPress={() => navigation.navigate('EventDetails', { eventId: item.id })} />
           </View>
         )}
         ListHeaderComponent={(
@@ -176,6 +205,7 @@ export default function EventsScreen() {
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
                   <FilterChip label="Calendário" icon="calendar-outline" variant="segment" selected={mode === 'calendar'} onPress={() => setMode('calendar')} />
                   <FilterChip label="Lista" icon="list-outline" variant="segment" selected={mode === 'list'} onPress={() => setMode('list')} />
+                  <FilterChip label="Concluídos" icon="images-outline" variant="segment" selected={mode === 'completed'} onPress={() => setMode('completed')} />
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm }}>
                   <TextField label="Buscar eventos" value={search} onChangeText={setSearch} placeholder="Nome, cidade, categoria ou local"
@@ -201,7 +231,7 @@ export default function EventsScreen() {
                   <AgendaCalendar month={month} today={today} selected={day} eventsByDay={eventsByDay}
                     onMove={(delta) => { setMonth((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1)); setDay(null); }}
                     onSelect={(key) => setDay((current) => current === key ? null : key)}
-                    onToday={() => { const now = new Date(); setMonth(now); setDay(dateKey(now)); }} />
+                    onToday={() => { const key = eventDayKey(); setMonth(eventDate(key)); setDay(key); }} />
                 </View>
               ) : null}
               <View style={{ paddingHorizontal: spacing.xl, gap: spacing.md }}>

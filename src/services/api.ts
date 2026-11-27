@@ -559,6 +559,21 @@ export async function event(id: string) {
   );
 }
 
+export async function completedEventCovers() {
+  return request<{ eventoId: string; capa: string }[]>('/eventos/fotos/concluidos');
+}
+
+export async function eventPhotos(id: string) {
+  return request<string[]>(`/eventos/${encodeURIComponent(id)}/fotos`);
+}
+
+export async function saveEventPhotos(id: string, fotos: string[]) {
+  return requestAutenticado<string[]>(`/eventos/${encodeURIComponent(id)}/fotos`, {
+    method: 'PUT',
+    body: JSON.stringify({ fotos }),
+  });
+}
+
 export async function createEvent(
   data: Record<string, unknown>,
 ) {

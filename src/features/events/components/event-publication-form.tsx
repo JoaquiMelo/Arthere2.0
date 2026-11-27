@@ -1,24 +1,27 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useNavigation, usePreventRemove } from '@react-navigation/native';
+import { useNavigation, usePreventRemove, type NavigationProp } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
 import { useManagement } from '@/providers/management-provider';
+import type { RootStackParamList } from '@/navigation/app-navigator';
 import { useUser } from '@/providers/user-provider';
 import { createEvent, deleteEvent, event as getEvent, updateEvent, uploadImage } from '@/services/api';
 import { AppText, Button, FeedbackState, FilterChip, MediaImage, ScreenContainer, ScreenHeader, SectionHeader, TextField } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
-import { dateKey, eventDate } from '../utils/event-agenda';
+import { dateKey, eventDate, eventDayKey, isEventConcluded } from '../utils/event-agenda';
+import { useEventDay } from '../hooks/use-event-day';
 import { categories, formFromEvent, maskDate, maskTime, newEventForm, validateEvent, type EventData, type EventForm } from '../utils/event-form';
 
 export function EventPublicationForm({ eventId }: { eventId?: string }) {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { user } = useUser();
   const { refresh } = useManagement();
   const { color, dimensions, radius, spacing } = useThemeTokens();
   const allowed = user?.tipo === 'CONTRATANTE_EVENTOS';
   const ownerId = user?.id;
+  const today = useEventDay();
   const organizer = user?.empresa || user?.nomeSocial || user?.nome;
   const [initial, setInitial] = useState(() => newEventForm(organizer));
   const [form, setForm] = useState(initial);
@@ -72,7 +75,8 @@ export function EventPublicationForm({ eventId }: { eventId?: string }) {
   const setField = <K extends keyof EventForm,>(key: K, value: EventForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
-  const { errors, payload } = validateEvent(form, eventId ? initial : undefined);
+  const { errors, payload } = validateEvent(form, eventId ? initial : undefined, today);
+  const showAlbum = eventId && ownedEventId === eventId && isEventConcluded(initial.data.split('/').reverse().join('-'), today);
 
   const pickCover = async () => {
     if (pending.current || finished) return;
@@ -197,7 +201,7 @@ export function EventPublicationForm({ eventId }: { eventId?: string }) {
                     {picker ? (
                       <View>
                         <DateTimePicker key={picker} mode={picker} value={pickerValue} is24Hour
-                          minimumDate={picker === 'date' && !eventId ? eventDate(dateKey(new Date())) : undefined}
+                          minimumDate={picker === 'date' && !eventId ? eventDate(eventDayKey()) : undefined}
                           onChange={(event, value) => {
                             if (Platform.OS === 'android') setPicker(null);
                             if (event.type !== 'set' || !value) return;
@@ -231,6 +235,7 @@ export function EventPublicationForm({ eventId }: { eventId?: string }) {
                   {eventId ? (
                     <View style={{ gap: spacing.md, borderTopWidth: 1, borderColor: color.border, paddingTop: spacing.lg }}>
                       <SectionHeader title="Gerenciar publicação" />
+                      {showAlbum ? <Button variant="outline" disabled={blocked} onPress={() => navigation.navigate('EventAlbum', { eventId })}>Editar álbum do evento</Button> : null}
                       <AppText variant="bodySmall" color="textSecondary">Excluir o evento remove seu conteúdo da agenda e apaga as solicitações vinculadas.</AppText>
                       <Button fullWidth variant="danger" loading={busy === 'delete' && !finished} disabled={blocked} onPress={remove}>Excluir evento</Button>
                     </View>

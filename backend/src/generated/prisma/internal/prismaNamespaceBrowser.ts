@@ -59,9 +59,11 @@ export const ModelName = {
   Portfolio: 'Portfolio',
   Avaliacao: 'Avaliacao',
   Evento: 'Evento',
+  EventoAlbum: 'EventoAlbum',
   Conversa: 'Conversa',
   Mensagem: 'Mensagem',
-  SolicitacaoEvento: 'SolicitacaoEvento'
+  SolicitacaoEvento: 'SolicitacaoEvento',
+  UploadImagem: 'UploadImagem'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -213,6 +215,14 @@ export const EventoScalarFieldEnum = {
 export type EventoScalarFieldEnum = (typeof EventoScalarFieldEnum)[keyof typeof EventoScalarFieldEnum]
 
 
+export const EventoAlbumScalarFieldEnum = {
+  eventoId: 'eventoId',
+  fotos: 'fotos'
+} as const
+
+export type EventoAlbumScalarFieldEnum = (typeof EventoAlbumScalarFieldEnum)[keyof typeof EventoAlbumScalarFieldEnum]
+
+
 export const ConversaScalarFieldEnum = {
   id: 'id',
   usuarioAId: 'usuarioAId',
@@ -248,12 +258,29 @@ export const SolicitacaoEventoScalarFieldEnum = {
 export type SolicitacaoEventoScalarFieldEnum = (typeof SolicitacaoEventoScalarFieldEnum)[keyof typeof SolicitacaoEventoScalarFieldEnum]
 
 
+export const UploadImagemScalarFieldEnum = {
+  filename: 'filename',
+  mime: 'mime',
+  conteudo: 'conteudo',
+  criadoEm: 'criadoEm'
+} as const
+
+export type UploadImagemScalarFieldEnum = (typeof UploadImagemScalarFieldEnum)[keyof typeof UploadImagemScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const UsuarioOrderByRelevanceFieldEnum = {
@@ -369,6 +396,30 @@ export const EventoOrderByRelevanceFieldEnum = {
 export type EventoOrderByRelevanceFieldEnum = (typeof EventoOrderByRelevanceFieldEnum)[keyof typeof EventoOrderByRelevanceFieldEnum]
 
 
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
+
+
+export const QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+} as const
+
+export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+export const EventoAlbumOrderByRelevanceFieldEnum = {
+  eventoId: 'eventoId'
+} as const
+
+export type EventoAlbumOrderByRelevanceFieldEnum = (typeof EventoAlbumOrderByRelevanceFieldEnum)[keyof typeof EventoAlbumOrderByRelevanceFieldEnum]
+
+
 export const ConversaOrderByRelevanceFieldEnum = {
   id: 'id',
   usuarioAId: 'usuarioAId',
@@ -396,4 +447,12 @@ export const SolicitacaoEventoOrderByRelevanceFieldEnum = {
 } as const
 
 export type SolicitacaoEventoOrderByRelevanceFieldEnum = (typeof SolicitacaoEventoOrderByRelevanceFieldEnum)[keyof typeof SolicitacaoEventoOrderByRelevanceFieldEnum]
+
+
+export const UploadImagemOrderByRelevanceFieldEnum = {
+  filename: 'filename',
+  mime: 'mime'
+} as const
+
+export type UploadImagemOrderByRelevanceFieldEnum = (typeof UploadImagemOrderByRelevanceFieldEnum)[keyof typeof UploadImagemOrderByRelevanceFieldEnum]
 

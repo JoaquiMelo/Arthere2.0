@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { EventosService } from './eventos.service';
 
@@ -20,6 +20,22 @@ export class EventosController {
   @Get(':id')
   obter(@Param('id') id: string) {
     return this.service.obter(id);
+  }
+
+  @Get('fotos/concluidos')
+  capasDosAlbuns() {
+    return this.service.capasDosAlbuns();
+  }
+
+  @Get(':id/fotos')
+  fotos(@Param('id') id: string) {
+    return this.service.fotos(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/fotos')
+  salvarFotos(@Req() req: any, @Param('id') id: string, @Body() dados: { fotos?: unknown }) {
+    return this.service.salvarFotos(req.user.id, id, dados?.fotos);
   }
 
   @UseGuards(JwtAuthGuard)

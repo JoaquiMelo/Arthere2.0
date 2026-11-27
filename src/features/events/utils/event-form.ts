@@ -1,4 +1,4 @@
-import { dateKey, eventDate, mapEvento } from './event-agenda';
+import { dateKey, eventDate, eventDayKey, eventInstant, mapEvento } from './event-agenda';
 
 export type EventData = Parameters<typeof mapEvento>[0] & {
   contratante?: { id: string; nome?: string; empresa?: string } | null;
@@ -37,7 +37,7 @@ export function maskTime(value: string) {
   return [digits.slice(0, 2), digits.slice(2)].filter(Boolean).join(':');
 }
 
-export function validateEvent(form: EventForm, original?: EventForm, today = dateKey(new Date())) {
+export function validateEvent(form: EventForm, original?: EventForm, today = eventDayKey()) {
   const errors: Partial<Record<keyof EventForm, string>> = {};
   for (const field of ['titulo', 'categoria', 'descricao', 'local', 'cidade'] as const) {
     if (!form[field].trim()) errors[field] = 'Campo obrigatório.';
@@ -56,7 +56,10 @@ export function validateEvent(form: EventForm, original?: EventForm, today = dat
     else if (horario && !validTime) errors.horario = 'Informe um horário válido no formato HH:MM.';
   }
   if (!original && !form.organizador.trim()) errors.organizador = 'Informe quem organiza o evento.';
-  const scheduled = validDate && (validTime || !horario) ? new Date(`${key}T${horario || '00:00'}:00`) : null;
+  const scheduled = validDate && (validTime || !horario) ? eventInstant(key, horario || '00:00') : null;
+  if (dateChanged && validDate && !errors.data && !errors.horario && !scheduled) {
+    errors.horario = 'Este horário não está disponível nessa data.';
+  }
   return {
     errors,
     payload: {

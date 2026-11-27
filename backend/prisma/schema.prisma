@@ -166,12 +166,21 @@ model Evento {
   atualizadoEm  DateTime     @updatedAt
   contratante   Contratante? @relation(fields: [contratanteId], references: [id], onDelete: SetNull)
   solicitacoes  SolicitacaoEvento[]
+  album         EventoAlbum?
 
   @@index([cidade])
   @@index([categoria])
   @@index([dataEvento])
   @@index([fixado, premium])
   @@map("evento")
+}
+
+model EventoAlbum {
+  eventoId String @id
+  fotos    Json
+  evento   Evento @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+
+  @@map("evento_album")
 }
 
 model Conversa {

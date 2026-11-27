@@ -264,6 +264,7 @@ export type EventoWhereInput = {
   atualizadoEm?: Prisma.DateTimeFilter<"Evento"> | Date | string
   contratante?: Prisma.XOR<Prisma.ContratanteNullableScalarRelationFilter, Prisma.ContratanteWhereInput> | null
   solicitacoes?: Prisma.SolicitacaoEventoListRelationFilter
+  album?: Prisma.XOR<Prisma.EventoAlbumNullableScalarRelationFilter, Prisma.EventoAlbumWhereInput> | null
 }
 
 export type EventoOrderByWithRelationInput = {
@@ -284,6 +285,7 @@ export type EventoOrderByWithRelationInput = {
   atualizadoEm?: Prisma.SortOrder
   contratante?: Prisma.ContratanteOrderByWithRelationInput
   solicitacoes?: Prisma.SolicitacaoEventoOrderByRelationAggregateInput
+  album?: Prisma.EventoAlbumOrderByWithRelationInput
   _relevance?: Prisma.EventoOrderByRelevanceInput
 }
 
@@ -308,6 +310,7 @@ export type EventoWhereUniqueInput = Prisma.AtLeast<{
   atualizadoEm?: Prisma.DateTimeFilter<"Evento"> | Date | string
   contratante?: Prisma.XOR<Prisma.ContratanteNullableScalarRelationFilter, Prisma.ContratanteWhereInput> | null
   solicitacoes?: Prisma.SolicitacaoEventoListRelationFilter
+  album?: Prisma.XOR<Prisma.EventoAlbumNullableScalarRelationFilter, Prisma.EventoAlbumWhereInput> | null
 }, "id">
 
 export type EventoOrderByWithAggregationInput = {
@@ -369,6 +372,7 @@ export type EventoCreateInput = {
   atualizadoEm?: Date | string
   contratante?: Prisma.ContratanteCreateNestedOneWithoutEventosInput
   solicitacoes?: Prisma.SolicitacaoEventoCreateNestedManyWithoutEventoInput
+  album?: Prisma.EventoAlbumCreateNestedOneWithoutEventoInput
 }
 
 export type EventoUncheckedCreateInput = {
@@ -388,6 +392,7 @@ export type EventoUncheckedCreateInput = {
   criadoEm?: Date | string
   atualizadoEm?: Date | string
   solicitacoes?: Prisma.SolicitacaoEventoUncheckedCreateNestedManyWithoutEventoInput
+  album?: Prisma.EventoAlbumUncheckedCreateNestedOneWithoutEventoInput
 }
 
 export type EventoUpdateInput = {
@@ -407,6 +412,7 @@ export type EventoUpdateInput = {
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contratante?: Prisma.ContratanteUpdateOneWithoutEventosNestedInput
   solicitacoes?: Prisma.SolicitacaoEventoUpdateManyWithoutEventoNestedInput
+  album?: Prisma.EventoAlbumUpdateOneWithoutEventoNestedInput
 }
 
 export type EventoUncheckedUpdateInput = {
@@ -426,6 +432,7 @@ export type EventoUncheckedUpdateInput = {
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   solicitacoes?: Prisma.SolicitacaoEventoUncheckedUpdateManyWithoutEventoNestedInput
+  album?: Prisma.EventoAlbumUncheckedUpdateOneWithoutEventoNestedInput
 }
 
 export type EventoCreateManyInput = {
@@ -598,6 +605,20 @@ export type EventoUncheckedUpdateManyWithoutContratanteNestedInput = {
   deleteMany?: Prisma.EventoScalarWhereInput | Prisma.EventoScalarWhereInput[]
 }
 
+export type EventoCreateNestedOneWithoutAlbumInput = {
+  create?: Prisma.XOR<Prisma.EventoCreateWithoutAlbumInput, Prisma.EventoUncheckedCreateWithoutAlbumInput>
+  connectOrCreate?: Prisma.EventoCreateOrConnectWithoutAlbumInput
+  connect?: Prisma.EventoWhereUniqueInput
+}
+
+export type EventoUpdateOneRequiredWithoutAlbumNestedInput = {
+  create?: Prisma.XOR<Prisma.EventoCreateWithoutAlbumInput, Prisma.EventoUncheckedCreateWithoutAlbumInput>
+  connectOrCreate?: Prisma.EventoCreateOrConnectWithoutAlbumInput
+  upsert?: Prisma.EventoUpsertWithoutAlbumInput
+  connect?: Prisma.EventoWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EventoUpdateToOneWithWhereWithoutAlbumInput, Prisma.EventoUpdateWithoutAlbumInput>, Prisma.EventoUncheckedUpdateWithoutAlbumInput>
+}
+
 export type EventoCreateNestedOneWithoutSolicitacoesInput = {
   create?: Prisma.XOR<Prisma.EventoCreateWithoutSolicitacoesInput, Prisma.EventoUncheckedCreateWithoutSolicitacoesInput>
   connectOrCreate?: Prisma.EventoCreateOrConnectWithoutSolicitacoesInput
@@ -628,6 +649,7 @@ export type EventoCreateWithoutContratanteInput = {
   criadoEm?: Date | string
   atualizadoEm?: Date | string
   solicitacoes?: Prisma.SolicitacaoEventoCreateNestedManyWithoutEventoInput
+  album?: Prisma.EventoAlbumCreateNestedOneWithoutEventoInput
 }
 
 export type EventoUncheckedCreateWithoutContratanteInput = {
@@ -646,6 +668,7 @@ export type EventoUncheckedCreateWithoutContratanteInput = {
   criadoEm?: Date | string
   atualizadoEm?: Date | string
   solicitacoes?: Prisma.SolicitacaoEventoUncheckedCreateNestedManyWithoutEventoInput
+  album?: Prisma.EventoAlbumUncheckedCreateNestedOneWithoutEventoInput
 }
 
 export type EventoCreateOrConnectWithoutContratanteInput = {
@@ -695,6 +718,98 @@ export type EventoScalarWhereInput = {
   atualizadoEm?: Prisma.DateTimeFilter<"Evento"> | Date | string
 }
 
+export type EventoCreateWithoutAlbumInput = {
+  id?: string
+  titulo: string
+  descricao: string
+  categoria: string
+  local: string
+  cidade: string
+  dataEvento: Date | string
+  horario?: string | null
+  organizador?: string | null
+  imagemUrl?: string | null
+  premium?: boolean
+  fixado?: boolean
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  contratante?: Prisma.ContratanteCreateNestedOneWithoutEventosInput
+  solicitacoes?: Prisma.SolicitacaoEventoCreateNestedManyWithoutEventoInput
+}
+
+export type EventoUncheckedCreateWithoutAlbumInput = {
+  id?: string
+  titulo: string
+  descricao: string
+  categoria: string
+  local: string
+  cidade: string
+  dataEvento: Date | string
+  horario?: string | null
+  organizador?: string | null
+  imagemUrl?: string | null
+  premium?: boolean
+  fixado?: boolean
+  contratanteId?: string | null
+  criadoEm?: Date | string
+  atualizadoEm?: Date | string
+  solicitacoes?: Prisma.SolicitacaoEventoUncheckedCreateNestedManyWithoutEventoInput
+}
+
+export type EventoCreateOrConnectWithoutAlbumInput = {
+  where: Prisma.EventoWhereUniqueInput
+  create: Prisma.XOR<Prisma.EventoCreateWithoutAlbumInput, Prisma.EventoUncheckedCreateWithoutAlbumInput>
+}
+
+export type EventoUpsertWithoutAlbumInput = {
+  update: Prisma.XOR<Prisma.EventoUpdateWithoutAlbumInput, Prisma.EventoUncheckedUpdateWithoutAlbumInput>
+  create: Prisma.XOR<Prisma.EventoCreateWithoutAlbumInput, Prisma.EventoUncheckedCreateWithoutAlbumInput>
+  where?: Prisma.EventoWhereInput
+}
+
+export type EventoUpdateToOneWithWhereWithoutAlbumInput = {
+  where?: Prisma.EventoWhereInput
+  data: Prisma.XOR<Prisma.EventoUpdateWithoutAlbumInput, Prisma.EventoUncheckedUpdateWithoutAlbumInput>
+}
+
+export type EventoUpdateWithoutAlbumInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  titulo?: Prisma.StringFieldUpdateOperationsInput | string
+  descricao?: Prisma.StringFieldUpdateOperationsInput | string
+  categoria?: Prisma.StringFieldUpdateOperationsInput | string
+  local?: Prisma.StringFieldUpdateOperationsInput | string
+  cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imagemUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  contratante?: Prisma.ContratanteUpdateOneWithoutEventosNestedInput
+  solicitacoes?: Prisma.SolicitacaoEventoUpdateManyWithoutEventoNestedInput
+}
+
+export type EventoUncheckedUpdateWithoutAlbumInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  titulo?: Prisma.StringFieldUpdateOperationsInput | string
+  descricao?: Prisma.StringFieldUpdateOperationsInput | string
+  categoria?: Prisma.StringFieldUpdateOperationsInput | string
+  local?: Prisma.StringFieldUpdateOperationsInput | string
+  cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  imagemUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  premium?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fixado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  contratanteId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  solicitacoes?: Prisma.SolicitacaoEventoUncheckedUpdateManyWithoutEventoNestedInput
+}
+
 export type EventoCreateWithoutSolicitacoesInput = {
   id?: string
   titulo: string
@@ -711,6 +826,7 @@ export type EventoCreateWithoutSolicitacoesInput = {
   criadoEm?: Date | string
   atualizadoEm?: Date | string
   contratante?: Prisma.ContratanteCreateNestedOneWithoutEventosInput
+  album?: Prisma.EventoAlbumCreateNestedOneWithoutEventoInput
 }
 
 export type EventoUncheckedCreateWithoutSolicitacoesInput = {
@@ -729,6 +845,7 @@ export type EventoUncheckedCreateWithoutSolicitacoesInput = {
   contratanteId?: string | null
   criadoEm?: Date | string
   atualizadoEm?: Date | string
+  album?: Prisma.EventoAlbumUncheckedCreateNestedOneWithoutEventoInput
 }
 
 export type EventoCreateOrConnectWithoutSolicitacoesInput = {
@@ -763,6 +880,7 @@ export type EventoUpdateWithoutSolicitacoesInput = {
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   contratante?: Prisma.ContratanteUpdateOneWithoutEventosNestedInput
+  album?: Prisma.EventoAlbumUpdateOneWithoutEventoNestedInput
 }
 
 export type EventoUncheckedUpdateWithoutSolicitacoesInput = {
@@ -781,6 +899,7 @@ export type EventoUncheckedUpdateWithoutSolicitacoesInput = {
   contratanteId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  album?: Prisma.EventoAlbumUncheckedUpdateOneWithoutEventoNestedInput
 }
 
 export type EventoCreateManyContratanteInput = {
@@ -816,6 +935,7 @@ export type EventoUpdateWithoutContratanteInput = {
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   solicitacoes?: Prisma.SolicitacaoEventoUpdateManyWithoutEventoNestedInput
+  album?: Prisma.EventoAlbumUpdateOneWithoutEventoNestedInput
 }
 
 export type EventoUncheckedUpdateWithoutContratanteInput = {
@@ -834,6 +954,7 @@ export type EventoUncheckedUpdateWithoutContratanteInput = {
   criadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizadoEm?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   solicitacoes?: Prisma.SolicitacaoEventoUncheckedUpdateManyWithoutEventoNestedInput
+  album?: Prisma.EventoAlbumUncheckedUpdateOneWithoutEventoNestedInput
 }
 
 export type EventoUncheckedUpdateManyWithoutContratanteInput = {
@@ -902,6 +1023,7 @@ export type EventoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   atualizadoEm?: boolean
   contratante?: boolean | Prisma.Evento$contratanteArgs<ExtArgs>
   solicitacoes?: boolean | Prisma.Evento$solicitacoesArgs<ExtArgs>
+  album?: boolean | Prisma.Evento$albumArgs<ExtArgs>
   _count?: boolean | Prisma.EventoCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["evento"]>
 
@@ -929,6 +1051,7 @@ export type EventoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 export type EventoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   contratante?: boolean | Prisma.Evento$contratanteArgs<ExtArgs>
   solicitacoes?: boolean | Prisma.Evento$solicitacoesArgs<ExtArgs>
+  album?: boolean | Prisma.Evento$albumArgs<ExtArgs>
   _count?: boolean | Prisma.EventoCountOutputTypeDefaultArgs<ExtArgs>
 }
 
@@ -937,6 +1060,7 @@ export type $EventoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
   objects: {
     contratante: Prisma.$ContratantePayload<ExtArgs> | null
     solicitacoes: Prisma.$SolicitacaoEventoPayload<ExtArgs>[]
+    album: Prisma.$EventoAlbumPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1296,6 +1420,7 @@ export interface Prisma__EventoClient<T, Null = never, ExtArgs extends runtime.T
   readonly [Symbol.toStringTag]: "PrismaPromise"
   contratante<T extends Prisma.Evento$contratanteArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Evento$contratanteArgs<ExtArgs>>): Prisma.Prisma__ContratanteClient<runtime.Types.Result.GetResult<Prisma.$ContratantePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   solicitacoes<T extends Prisma.Evento$solicitacoesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Evento$solicitacoesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SolicitacaoEventoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  album<T extends Prisma.Evento$albumArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Evento$albumArgs<ExtArgs>>): Prisma.Prisma__EventoAlbumClient<runtime.Types.Result.GetResult<Prisma.$EventoAlbumPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1728,6 +1853,25 @@ export type Evento$solicitacoesArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.SolicitacaoEventoScalarFieldEnum | Prisma.SolicitacaoEventoScalarFieldEnum[]
+}
+
+/**
+ * Evento.album
+ */
+export type Evento$albumArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EventoAlbum
+   */
+  select?: Prisma.EventoAlbumSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EventoAlbum
+   */
+  omit?: Prisma.EventoAlbumOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EventoAlbumInclude<ExtArgs> | null
+  where?: Prisma.EventoAlbumWhereInput
 }
 
 /**

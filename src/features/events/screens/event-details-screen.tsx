@@ -10,7 +10,9 @@ import { AppText, Badge, Button, FeedbackState, MediaImage, ScreenContainer, Scr
 import { realImageUri } from '@/shared/config/image-uri';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import type { Evento } from '../types/event';
-import { eventDate, mapEvento } from '../utils/event-agenda';
+import { eventDate, isEventConcluded, mapEvento } from '../utils/event-agenda';
+import { useEventDay } from '../hooks/use-event-day';
+import { EventPhotoGallery } from '../components/event-photo-gallery';
 import type { EventData } from '../utils/event-form';
 
 const dateFormat = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full' });
@@ -98,14 +100,20 @@ function EventDetails({ eventId }: { eventId: string }) {
   }, [load, loadParticipation]));
 
   const status = solicitacoesEvento.find((item) => item.eventId === eventId && item.agenteId === user?.id)?.status;
+  const today = useEventDay();
+  const concluded = isEventConcluded(evento?.data ?? '', today);
   const owner = evento?.contratanteId;
   const requestParticipation = () => {
-    if (user?.tipo !== 'AGENTE' || !evento || !owner || checking || requestError || sendPending.current
+    if (user?.tipo !== 'AGENTE' || !evento || !owner || checking || requestError || sendPending.current || isEventConcluded(evento.data)
       || (status && status !== 'RECUSADA')) return;
     Alert.alert('Solicitar participação?', evento.titulo, [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Enviar pedido', onPress: async () => {
         if (sendPending.current) return;
+        if (isEventConcluded(evento.data)) {
+          Alert.alert('Evento concluído', 'As solicitações de participação estão encerradas.');
+          return;
+        }
         sendPending.current = true;
         setSending(true);
         try {
@@ -115,7 +123,10 @@ function EventDetails({ eventId }: { eventId: string }) {
             mensagem: 'Olá! Gostaria de participar deste evento como agente criativo.',
           });
         } catch (error) {
-          if (error instanceof ApiRequestError && error.status === 409) void loadParticipation();
+          if (error instanceof ApiRequestError && error.status === 409) {
+            void load();
+            void loadParticipation();
+          }
           Alert.alert('Não foi possível enviar', error instanceof Error ? error.message : 'Tente novamente.');
         } finally {
           sendPending.current = false;
@@ -153,6 +164,7 @@ function EventDetails({ eventId }: { eventId: string }) {
               </View> : null}
             </View>
           </View>
+          {concluded ? <EventPhotoGallery eventId={eventId} cover={cover} /> : null}
           {failed ? <FeedbackState kind="error" title="Não foi possível atualizar" description="Exibindo o último conteúdo carregado." onRetry={() => void load()} /> : null}
           <View style={{ borderBottomWidth: 1, borderColor: color.border, paddingBottom: spacing.lg, gap: spacing.md }}>
             <SectionHeader title="Quando e onde" />
@@ -170,7 +182,14 @@ function EventDetails({ eventId }: { eventId: string }) {
             {owner ? <Button variant="outline"
               onPress={() => navigation.navigate('PublicProfile', { profileType: 'CONTRATANTE', profileId: owner })}>Ver perfil da organização</Button> : null}
           </View> : null}
-          {isAgent && (status || owner) ? (
+          {concluded ? (
+            <View style={{ backgroundColor: color.surfaceSubtle, borderRadius: radius.cardCompact, padding: spacing.lg, gap: spacing.sm }}>
+              <Badge label="Evento concluído" tone="neutral" icon="checkmark-circle-outline" />
+              <AppText variant="bodySmall" color="textSecondary">Solicitações de participação encerradas.</AppText>
+              {isAgent && status ? <Badge {...participation[status]} /> : null}
+              {isAgent && requestError && !status ? <Button variant="ghost" size="small" onPress={() => void loadParticipation()}>Consultar meu histórico</Button> : null}
+            </View>
+          ) : isAgent && (status || owner) ? (
             <View style={{ backgroundColor: color.surfaceSubtle, borderRadius: radius.cardCompact, padding: spacing.lg, gap: spacing.sm }} accessibilityLiveRegion="polite">
               <SectionHeader title="Participação" />
               {status ? <Badge {...participation[status]} /> : null}
@@ -183,7 +202,7 @@ function EventDetails({ eventId }: { eventId: string }) {
                   ) : null}
             </View>
           ) : null}
-          {!user && owner ? <Button fullWidth onPress={() => navigation.navigate('Login')}>Entrar para solicitar participação</Button> : null}
+          {!concluded && !user && owner ? <Button fullWidth onPress={() => navigation.navigate('Login')}>Entrar para solicitar participação</Button> : null}
         </ScrollView>
       )}
     </ScreenContainer>

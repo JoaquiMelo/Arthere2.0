@@ -14,6 +14,7 @@ import ChatListScreen from '@/features/chat/screens/chat-list-screen';
 import EventDetailsScreen from '@/features/events/screens/event-details-screen';
 import CreateEventScreen from '@/features/events/screens/create-event-screen';
 import EditEventScreen from '@/features/events/screens/edit-event-screen';
+import EventAlbumScreen from '@/features/events/screens/event-album-screen';
 import EventsScreen from '@/features/events/screens/events-screen';
 import { MapScreen } from '@/features/map/screens/map-screen';
 import CreateOpportunityScreen from '@/features/opportunities/screens/create-opportunity-screen';
@@ -37,7 +38,7 @@ export type RootStackParamList={
  Map:undefined; Login:undefined; Register:undefined; CreatePortfolio:undefined; CustomizeProfile:undefined; Tabs:NavigatorScreenParams<TabParamList> | undefined;
  EditProfile?:{agente?:unknown; localSelecionado?:{latitude:number;longitude:number;endereco:string;cidade:string}}; SelectLocation:{latitude?:number|null;longitude?:number|null}; EditContractorProfile:undefined; EditOpportunityContractorProfile:{mode?:'presentation'}|undefined; CreateOpportunity:undefined; EditOpportunity:{opportunityId:string}; PortfolioCreation?:{portfolio?:unknown[];mode?:'manage'|'add'|'edit';itemId?:string};
  Settings:undefined; ChatConversation:{conversationId:string}; ManageOpportunities:undefined;
- OpportunityDetails:{opportunityId:string}; PublicProfile:{profileType:'AGENTE'|'CONTRATANTE';profileId:string}; EventDetails:{eventId:string}; CreateEvent:undefined; EditEvent:{eventId:string};
+ OpportunityDetails:{opportunityId:string}; PublicProfile:{profileType:'AGENTE'|'CONTRATANTE';profileId:string}; EventDetails:{eventId:string}; CreateEvent:undefined; EditEvent:{eventId:string}; EventAlbum:{eventId:string};
 };
 
 export type TabParamList={Map:undefined;Profile:undefined;Opportunities:undefined;Events:undefined;Chat:undefined};
@@ -123,6 +124,7 @@ function RootStack(){
         <Stack.Screen name="EditContractorProfile" component={EditContractorProfileScreen}/>
         <Stack.Screen name="CreateEvent" component={CreateEventScreen}/>
         <Stack.Screen name="EditEvent" component={EditEventScreen}/>
+        <Stack.Screen name="EventAlbum" component={EventAlbumScreen}/>
       </> : null}
     </>
   )}
