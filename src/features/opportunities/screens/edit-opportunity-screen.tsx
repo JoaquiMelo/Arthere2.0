@@ -1,36 +1,18 @@
 import { useNavigation, usePreventRemove, useRoute, type RouteProp } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
-import { AppText, Badge, Button, FeedbackState, ScreenContainer, ScreenHeader, SectionHeader, TextField } from '@/shared/components';
+import { Alert, View } from 'react-native';
+import { AppText, Badge, Button, FeedbackState, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { useUser } from '@/providers/user-provider';
 import { useManagement } from '@/providers/management-provider';
 import { deleteProject, meusProjetos, updateProject, type Projeto } from '@/services/api';
 import type { RootStackParamList } from '@/navigation/app-navigator';
 
-type Form = { titulo: string; categoria: string; descricao: string; orcamento: string; data: string };
-const initial: Form = { titulo: '', categoria: '', descricao: '', orcamento: '', data: '' };
-const statusLabels: Record<string, string> = { ABERTO: 'Aberta', EM_ANDAMENTO: 'Em andamento', CONCLUIDO: 'Concluída', CANCELADO: 'Cancelada' };
-
-function dateLabel(value: string | null) {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return [String(date.getDate()).padStart(2, '0'), String(date.getMonth() + 1).padStart(2, '0'), String(date.getFullYear())].join('/');
-}
-
-function parseDate(value: string) {
-  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
-  if (!match) return null;
-  const [, day, month, year] = match;
-  if (Number(year) < 1000) return null;
-  const date = new Date(Number(year), Number(month) - 1, Number(day), 12);
-  return date.getFullYear() === Number(year) && date.getMonth() === Number(month) - 1 && date.getDate() === Number(day) ? date : null;
-}
-
-function toForm(item: Projeto): Form {
-  return { titulo: item.titulo, categoria: item.categoria, descricao: item.descricao, orcamento: item.orcamento == null ? '' : String(item.orcamento).replace('.', ','), data: dateLabel(item.dataEvento) };
-}
+import { OpportunityFormFields, OpportunityFormLayout } from '../components/opportunity-form-fields';
+import {
+  emptyOpportunityForm, formFromOpportunity, opportunityDateLabel,
+  opportunityStatusLabels, validateOpportunityForm, type OpportunityForm,
+} from '../utils/opportunity-form';
 
 export default function EditOpportunityScreen() {
   const navigation = useNavigation();
@@ -41,9 +23,10 @@ export default function EditOpportunityScreen() {
   const allowed = user?.tipo === 'CONTRATANTE_OPORTUNIDADES';
   const [original, setOriginal] = useState<Projeto | null>(null);
   const [hasAccepted, setHasAccepted] = useState(false);
-  const [form, setForm] = useState<Form>(initial);
+  const [form, setForm] = useState(emptyOpportunityForm);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [saveError, setSaveError] = useState('');
   const [retry, setRetry] = useState(0);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -57,6 +40,7 @@ export default function EditOpportunityScreen() {
     void (async () => {
       setLoading(true);
       setError('');
+      setSaveError('');
       setOriginal(null);
       setAttempted(false);
       try {
@@ -67,7 +51,7 @@ export default function EditOpportunityScreen() {
         if (!active) return;
         setOriginal(item);
         setHasAccepted(item.candidaturas?.some((candidatura) => candidatura.status === 'ACEITA') ?? false);
-        setForm(toForm(item));
+        setForm(formFromOpportunity(item));
       } catch (err) {
         if (active) setError(err instanceof Error ? err.message : 'Tente novamente.');
       } finally {
@@ -77,8 +61,8 @@ export default function EditOpportunityScreen() {
     return () => { active = false; };
   }, [allowed, opportunityId, retry, user?.usuarioId]);
 
-  const dirty = !!original && JSON.stringify(form) !== JSON.stringify(toForm(original));
-  usePreventRemove(!saved && (dirty || busy), ({ data }) => {
+  const dirty = !!original && JSON.stringify(form) !== JSON.stringify(formFromOpportunity(original));
+  usePreventRemove(allowed && !saved && (dirty || busy), ({ data }) => {
     if (pending.current) {
       Alert.alert('Operação em andamento', 'Aguarde a confirmação da API.');
       return;
@@ -93,28 +77,20 @@ export default function EditOpportunityScreen() {
     if (saved && navigation.isFocused()) navigation.goBack();
   }, [saved, navigation]);
 
-  const setField = (key: keyof Form, value: string) => setForm((current) => ({ ...current, [key]: value }));
-  const raw = form.orcamento.trim();
-  const amount = raw ? Number(raw.replace(',', '.')) : null;
-  const invalidAmount = raw !== '' && (!/^\d+([,.]\d{1,2})?$/.test(raw) || !Number.isFinite(amount) || Number(amount) < 0);
-  const dateChanged = !!original && form.data.trim() !== dateLabel(original.dataEvento);
-  const parsedDate = form.data.trim() ? parseDate(form.data.trim()) : null;
-  const invalidDate = dateChanged && !!form.data.trim() && !parsedDate;
+  const setField = (key: keyof OpportunityForm, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const { errors, payload } = validateOpportunityForm(form, opportunityDateLabel(original?.dataEvento ?? null));
 
   const salvar = async () => {
     if (!allowed || !original || original.id !== opportunityId || pending.current || !dirty || saved) return;
     setAttempted(true);
-    if (!form.titulo.trim() || !form.categoria.trim() || !form.descricao.trim() || invalidAmount || invalidDate) return;
+    if (Object.keys(errors).length > 0) return;
+    setSaveError('');
     pending.current = true;
     setBusy(true);
     try {
-      await updateProject(original.id, {
-        titulo: form.titulo.trim(), categoria: form.categoria.trim(), descricao: form.descricao.trim(),
-        orcamento: amount,
-        ...(dateChanged ? { dataEvento: parsedDate?.toISOString() ?? null } : {}),
-      });
+      await updateProject(original.id, payload);
     } catch (err) {
-      Alert.alert('Não foi possível salvar', err instanceof Error ? err.message : 'Tente novamente.');
+      setSaveError(err instanceof Error ? err.message : 'Tente novamente.');
       pending.current = false;
       setBusy(false);
       return;
@@ -167,38 +143,29 @@ export default function EditOpportunityScreen() {
 
   return (
     <ScreenContainer>
-      <ScreenHeader kicker="ARTHERE / OPORTUNIDADES" title="Editar vaga" onBack={busy ? undefined : () => navigation.goBack()} />
+      <ScreenHeader kicker="OPORTUNIDADES" title="Editar vaga" onBack={() => navigation.goBack()} />
       {loading ? <FeedbackState kind="loading" title="Carregando sua vaga…" /> : !original || error ? (
         <FeedbackState kind="error" title="Não foi possível abrir a vaga" description={error} onRetry={() => setRetry((value) => value + 1)} />
       ) : (
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: spacing.lg, gap: spacing.xl, paddingBottom: spacing['3xl'] }}>
-            <View style={{ padding: spacing.lg, borderRadius: radius.cardCompact, backgroundColor: color.accentSoft, gap: spacing.sm }}>
-              <AppText variant="label" weight="semibold" color="textPrimary">OPORTUNIDADE PUBLICADA</AppText>
-              <AppText variant="h3" weight="bold">{original.titulo}</AppText>
-              <View style={{ alignSelf: 'flex-start' }}><Badge label={statusLabels[original.status] ?? original.status} tone={original.status === 'ABERTO' ? 'accent' : 'neutral'} /></View>
-              <AppText variant="bodySmall">As candidaturas e o status atual serão preservados.</AppText>
-            </View>
-            <SectionHeader title="Informações da vaga" description="Os campos com asterisco são obrigatórios." />
-            <TextField label="Título da vaga *" value={form.titulo} onChangeText={(value) => setField('titulo', value)} editable={!busy} error={attempted && !form.titulo.trim() ? 'Informe o título.' : undefined} />
-            <TextField label="Categoria *" value={form.categoria} onChangeText={(value) => setField('categoria', value)} editable={!busy} error={attempted && !form.categoria.trim() ? 'Informe a categoria.' : undefined} />
-            <TextField label="Descrição *" value={form.descricao} onChangeText={(value) => setField('descricao', value)} multiline numberOfLines={5} textAlignVertical="top" editable={!busy} error={attempted && !form.descricao.trim() ? 'Descreva o trabalho.' : undefined} />
-            <SectionHeader title="Condições do trabalho" />
-            <TextField label="Orçamento (R$)" value={form.orcamento} onChangeText={(value) => setField('orcamento', value)} keyboardType="decimal-pad" placeholder="Ex.: 1500,00" editable={!busy} helperText="Deixe em branco para negociar o valor." error={attempted && invalidAmount ? 'Informe um valor válido, sem separador de milhar.' : undefined} />
-            <TextField label="Data prevista (opcional)" value={form.data} onChangeText={(value) => setField('data', value)} placeholder="DD/MM/AAAA" maxLength={10} editable={!busy} helperText="Data prevista do trabalho, não prazo de candidatura." error={attempted && invalidDate ? 'Informe uma data válida no formato DD/MM/AAAA.' : undefined} />
-            <Button fullWidth loading={busy && !deleting} disabled={!dirty || saved || busy} onPress={salvar}>Salvar alterações</Button>
-            <Button fullWidth variant="outline" disabled={busy || saved} onPress={() => navigation.goBack()}>Cancelar</Button>
-            <View style={{ borderTopWidth: 1, borderTopColor: color.border, paddingTop: spacing.lg, gap: spacing.md }}>
-              <SectionHeader title="Gerenciar publicação" />
-              {canDelete ? (
-                <>
-                  <AppText variant="bodySmall" color="textSecondary">A exclusão remove a vaga e suas candidaturas de forma permanente.</AppText>
-                  <Button fullWidth variant="danger" loading={deleting} disabled={busy || saved} onPress={excluir}>Excluir oportunidade</Button>
-                </>
-              ) : <AppText variant="bodySmall" color="textSecondary">Vagas em andamento, concluídas ou com contratação aceita não podem ser excluídas, para preservar o histórico profissional.</AppText>}
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+        <OpportunityFormLayout>
+          <View style={{ padding: spacing.lg, borderRadius: radius.cardCompact, backgroundColor: color.surfaceSubtle, gap: spacing.sm }}>
+            <AppText variant="h3" weight="bold">{original.titulo}</AppText>
+            <View style={{ alignSelf: 'flex-start' }}><Badge label={opportunityStatusLabels[original.status] ?? original.status} tone={original.status === 'ABERTO' ? 'accent' : 'neutral'} /></View>
+            <AppText variant="bodySmall">As candidaturas e o status atual serão preservados.</AppText>
+          </View>
+          <OpportunityFormFields form={form} setField={setField} busy={busy || saved} errors={attempted ? errors : undefined} />
+          {saveError ? <FeedbackState kind="error" title="Não foi possível salvar" description={saveError} /> : null}
+          <Button fullWidth loading={busy && !deleting} disabled={!dirty || saved || busy} onPress={salvar}>Salvar alterações</Button>
+          <View style={{ borderTopWidth: 1, borderTopColor: color.border, paddingTop: spacing.lg, gap: spacing.md }}>
+            <SectionHeader title="Gerenciar publicação" />
+            {canDelete ? (
+              <>
+                <AppText variant="bodySmall" color="textSecondary">A exclusão remove a vaga e suas candidaturas de forma permanente.</AppText>
+                <Button fullWidth variant="danger" loading={deleting} disabled={busy || saved} onPress={excluir}>Excluir oportunidade</Button>
+              </>
+            ) : <AppText variant="bodySmall" color="textSecondary">Vagas em andamento, concluídas ou com contratação aceita não podem ser excluídas, para preservar o histórico profissional.</AppText>}
+          </View>
+        </OpportunityFormLayout>
       )}
     </ScreenContainer>
   );

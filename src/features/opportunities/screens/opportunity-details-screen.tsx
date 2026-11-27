@@ -1,116 +1,197 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import type { RouteProp } from '@react-navigation/native';
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { applyToProject, obterSessao, project } from '@/services/api';
-import { colors } from '@/shared/theme/colors';
-import type { RootStackParamList } from '@/navigation/app-navigator';
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, View } from 'react-native';
 
-type Route = RouteProp<RootStackParamList, 'OpportunityDetails'>;
+import type { RootStackParamList } from '@/navigation/app-navigator';
+import { useUser } from '@/providers/user-provider';
+import { ApiRequestError, candidatarProjeto, project, type Projeto } from '@/services/api';
+import { AppText, Avatar, Badge, Button, FeedbackState, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
+import { nomeMunicipio } from '@/shared/config/brazil-location';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { opportunityBudgetLabel, opportunityDateLabel, opportunityStatusLabels } from '../utils/opportunity-form';
 
 export default function OpportunityDetailsScreen() {
-  const navigation = useNavigation<any>();
-  const route = useRoute<Route>();
-  const [projeto, setProjeto] = useState<any>(null);
-  const [tipo, setTipo] = useState<string | null>(null);
-  const [carregando, setCarregando] = useState(true);
-  const [atualizando, setAtualizando] = useState(false);
-  const [enviando, setEnviando] = useState(false);
-  const [erro, setErro] = useState('');
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'OpportunityDetails'>>();
+  const { params: { opportunityId } } = useRoute<RouteProp<RootStackParamList, 'OpportunityDetails'>>();
+  const { user } = useUser();
+  const { color, dimensions, radius, spacing } = useThemeTokens();
+  const [loaded, setLoaded] = useState<Projeto | null>(null);
+  const [failure, setFailure] = useState<{ id: string; notFound: boolean } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [sending, setSending] = useState<string | null>(null);
+  const [applied, setApplied] = useState<ReadonlySet<string>>(() => new Set());
+  const request = useRef<symbol | null>(null);
+  const pendingApplication = useRef(false);
+  const confirmed = useRef(new Set<string>());
 
-  const carregar = useCallback(async () => {
-    setErro('');
+  const load = useCallback(async (byGesture = false) => {
+    if (byGesture) setRefreshing(true);
+    if (request.current) return;
+    const current = Symbol();
+    request.current = current;
+    if (!byGesture) setRefreshing(false);
+    setFailure(null);
     try {
-      const [dados, sessao] = await Promise.all([project(route.params.opportunityId), obterSessao()]);
-      setProjeto(dados);
-      setTipo(sessao?.usuario?.tipo ?? null);
-    } catch (e) {
-      setErro(e instanceof Error ? e.message : 'Não foi possível carregar a oportunidade.');
+      const result: Projeto = await project(opportunityId);
+      if (result?.id !== opportunityId) throw new Error('Resposta inválida');
+      if (request.current === current) setLoaded(result);
+    } catch (error) {
+      if (request.current !== current) return;
+      const notFound = error instanceof ApiRequestError && error.status === 404;
+      if (notFound) setLoaded(null);
+      setFailure({ id: opportunityId, notFound });
     } finally {
-      setCarregando(false);
-      setAtualizando(false);
+      if (request.current === current) {
+        request.current = null;
+        setRefreshing(false);
+      }
     }
-  }, [route.params.opportunityId]);
+  }, [opportunityId]);
 
-  useFocusEffect(useCallback(() => { void carregar(); }, [carregar]));
+  useFocusEffect(useCallback(() => {
+    void load();
+    return () => { request.current = null; };
+  }, [load]));
 
-  const candidatar = async () => {
-    if (tipo !== 'AGENTE') {
-      Alert.alert('Entre como agente criativo', 'Somente agentes criativos podem se candidatar a oportunidades.');
-      return;
-    }
-    setEnviando(true);
+  const opportunity = loaded?.id === opportunityId ? loaded : null;
+  const error = failure?.id === opportunityId ? failure : null;
+  const applicationKey = user ? `${user.usuarioId}:${opportunityId}` : '';
+  const isOpen = opportunity?.status === 'ABERTO';
+  const hasApplied = applied.has(applicationKey);
+
+  const apply = async () => {
+    if (user?.tipo !== 'AGENTE' || !isOpen || pendingApplication.current || confirmed.current.has(applicationKey)) return;
+
+    pendingApplication.current = true;
+    setSending(applicationKey);
     try {
-      await applyToProject(projeto.id);
-      Alert.alert('Candidatura enviada', 'O contratante poderá analisar sua candidatura.');
-    } catch (e) {
-      Alert.alert('Não foi possível candidatar-se', e instanceof Error ? e.message : 'Tente novamente.');
+      await candidatarProjeto(opportunityId);
+      confirmed.current.add(applicationKey);
+      setApplied(new Set(confirmed.current));
+    } catch (error) {
+      if (error instanceof ApiRequestError && error.status === 409) {
+        confirmed.current.add(applicationKey);
+        setApplied(new Set(confirmed.current));
+      } else {
+        Alert.alert('Não foi possível enviar', error instanceof Error ? error.message : 'Tente novamente.');
+        if (error instanceof ApiRequestError && error.status === 404) void load();
+      }
     } finally {
-      setEnviando(false);
+      pendingApplication.current = false;
+      setSending(null);
     }
   };
 
-  if (carregando) return <SafeAreaView style={styles.center}><ActivityIndicator size="large" color={colors.brandCoral} /><Text style={styles.muted}>Carregando oportunidade...</Text></SafeAreaView>;
-  if (!projeto || erro) return <SafeAreaView style={styles.center}><Ionicons name="briefcase-outline" size={42} color={colors.muted} /><Text style={styles.title}>Oportunidade indisponível</Text><Text style={styles.muted}>{erro || 'Este projeto não foi encontrado.'}</Text><TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}><Text style={styles.buttonText}>VOLTAR</Text></TouchableOpacity></SafeAreaView>;
+  const back = () => navigation.goBack();
+  if (!opportunity) {
+    return (
+      <ScreenContainer>
+        <ScreenHeader title="Oportunidade" onBack={back} />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          {error ? (
+            <FeedbackState
+              kind="error"
+              title={error.notFound ? 'Oportunidade indisponível' : 'Não foi possível carregar'}
+              description={error.notFound ? 'Esta publicação pode ter sido removida.' : 'Verifique sua conexão e tente novamente.'}
+              onRetry={error.notFound ? undefined : () => void load()}
+            />
+          ) : <FeedbackState kind="loading" title="Carregando oportunidade…" />}
+        </View>
+      </ScreenContainer>
+    );
+  }
 
-  const contratante = projeto.contratante;
+  const { contratante } = opportunity;
+  const name = contratante?.empresa?.trim() || contratante?.nomeSocial?.trim() || contratante?.nome?.trim() || 'Contratante';
+  const city = nomeMunicipio(contratante?.cidade);
+  const date = opportunityDateLabel(opportunity.dataEvento);
+  const budget = opportunityBudgetLabel(opportunity.orcamento);
+  const status = isOpen ? 'Recebendo candidaturas' : opportunityStatusLabels[opportunity.status] ?? 'Indisponível';
+
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={atualizando} onRefresh={() => { setAtualizando(true); void carregar(); }} />}>
-        <View style={styles.hero}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back}><Ionicons name="arrow-back" size={21} color={colors.brandInk} /></TouchableOpacity>
-          <View style={styles.shape} />
-          <Text style={styles.kicker}>OPORTUNIDADE CRIATIVA</Text>
-          <Text style={styles.heroTitle}>{projeto.titulo}</Text>
-          <View style={styles.categoryPill}><Text style={styles.category}>{projeto.categoria}</Text></View>
+    <ScreenContainer>
+      <ScreenHeader title="Oportunidade" onBack={back} />
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} tintColor={color.accentText} colors={[color.accentText]} />}
+        contentContainerStyle={{
+          width: '100%', maxWidth: dimensions.contentMaxWidth, alignSelf: 'center',
+          padding: spacing.xl, paddingBottom: spacing['3xl'], gap: spacing['2xl'],
+        }}
+      >
+        <View style={{ gap: spacing.sm }}>
+          <AppText variant="overline" color="accentText" weight="bold">{opportunity.categoria}</AppText>
+          <AppText variant="h1" weight="heavy" accessibilityRole="header">{opportunity.titulo}</AppText>
+          <Badge label={status} tone={isOpen ? 'success' : 'neutral'} />
         </View>
 
-        <View style={styles.panel}>
-          <Text style={styles.sectionTitle}>SOBRE O PROJETO</Text>
-          <Text style={styles.description}>{projeto.descricao}</Text>
-          <View style={styles.infoRow}><Ionicons name="cash-outline" size={20} color={colors.brandCoral} /><View style={styles.infoCopy}><Text style={styles.infoLabel}>ORÇAMENTO</Text><Text style={styles.infoValue}>{projeto.orcamento == null ? 'A combinar' : 'R$ ' + Number(projeto.orcamento).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</Text></View></View>
-          {!!projeto.dataEvento && <View style={styles.infoRow}><Ionicons name="calendar-outline" size={20} color={colors.brandCoral} /><View style={styles.infoCopy}><Text style={styles.infoLabel}>DATA PREVISTA</Text><Text style={styles.infoValue}>{new Date(projeto.dataEvento).toLocaleDateString('pt-BR')}</Text></View></View>}
-          <View style={styles.infoRow}><Ionicons name="checkmark-circle-outline" size={20} color={colors.brandCoral} /><View style={styles.infoCopy}><Text style={styles.infoLabel}>STATUS</Text><Text style={styles.infoValue}>{projeto.status === 'ABERTO' ? 'Recebendo candidaturas' : projeto.status}</Text></View></View>
+        {error ? (
+          <FeedbackState kind="error" title="Não foi possível atualizar" description="Exibindo a última versão carregada." onRetry={() => void load(true)} />
+        ) : null}
+
+        <View style={{
+          backgroundColor: color.surfaceSubtle, borderRadius: radius.cardCompact,
+          padding: spacing.lg, flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg,
+        }}>
+          <View style={{ flexGrow: 1, flexBasis: '45%', gap: spacing.xs }}>
+            <AppText variant="label" color="textSecondary">Orçamento</AppText>
+            <AppText variant="title" weight="bold">{budget}</AppText>
+          </View>
+          {date ? (
+            <View style={{ flexGrow: 1, flexBasis: '45%', gap: spacing.xs }}>
+              <AppText variant="label" color="textSecondary">Data prevista do trabalho</AppText>
+              <AppText variant="title" weight="bold">{date}</AppText>
+            </View>
+          ) : null}
         </View>
 
-        {contratante && <TouchableOpacity style={styles.contractorCard} onPress={() => navigation.navigate('PublicProfile', { profileType: 'CONTRATANTE', profileId: contratante.id })} activeOpacity={0.8}>
-          <View style={styles.contractorAvatar}><Ionicons name="person-outline" size={22} color={colors.brandInk} /></View>
-          <View style={styles.contractorCopy}><Text style={styles.infoLabel}>PUBLICADO POR</Text><Text style={styles.contractorName}>{contratante.nomeSocial || contratante.nome || contratante.empresa || 'Contratante'}</Text><Text style={styles.muted}>{contratante.cidade || 'Perfil público do contratante'}</Text></View>
-          <Ionicons name="chevron-forward" size={19} color={colors.muted} />
-        </TouchableOpacity>}
+        <View style={{ gap: spacing.sm }}>
+          <SectionHeader title="Sobre o trabalho" />
+          <AppText>{opportunity.descricao}</AppText>
+        </View>
 
-        {tipo === 'AGENTE' && projeto.status === 'ABERTO' ? <TouchableOpacity style={[styles.button, enviando && styles.disabled]} disabled={enviando} onPress={candidatar}><Ionicons name="send-outline" size={18} color={colors.brandPaper} /><Text style={styles.buttonText}>{enviando ? 'ENVIANDO...' : 'CANDIDATAR-ME'}</Text></TouchableOpacity> : null}
+        {contratante ? (
+          <View style={{ borderTopWidth: 1, borderTopColor: color.border, paddingTop: spacing.lg, gap: spacing.md }}>
+            <SectionHeader title="Publicado por" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+              <View accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                <Avatar
+                  uri={contratante.avatarUrl}
+                  style={{ width: dimensions.touchTarget, height: dimensions.touchTarget, borderRadius: radius.pill }}
+                  iconSize={dimensions.icon.medium}
+                />
+              </View>
+              <View style={{ flex: 1, gap: spacing.xxs }}>
+                <AppText weight="bold">{name}</AppText>
+                {city ? <AppText variant="bodySmall" color="textSecondary">Contratante em {city}</AppText> : null}
+              </View>
+            </View>
+            <Button
+              variant="outline"
+              accessibilityLabel={`Ver perfil público de ${name}`}
+              onPress={() => navigation.navigate('PublicProfile', { profileType: 'CONTRATANTE', profileId: contratante.id })}
+            >
+              Ver perfil público
+            </Button>
+          </View>
+        ) : null}
+
+        {isOpen && user?.tipo === 'AGENTE' ? (
+          <View style={{ gap: spacing.sm }}>
+            {hasApplied ? (
+              <View accessibilityLiveRegion="polite" style={{ gap: spacing.xs }}>
+                <Badge label="Candidatura registrada" tone="success" icon="checkmark" />
+                <AppText variant="bodySmall" color="textSecondary">O contratante pode analisar sua candidatura.</AppText>
+              </View>
+            ) : (
+              <Button fullWidth loading={sending === applicationKey} onPress={() => void apply()}>Candidatar-me</Button>
+            )}
+          </View>
+        ) : null}
+        {isOpen && !user ? (
+          <Button fullWidth onPress={() => navigation.navigate('Login')}>Entrar para se candidatar</Button>
+        ) : null}
       </ScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.brandPaper },
-  content: { paddingBottom: 32 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 12, backgroundColor: colors.brandPaper },
-  hero: { backgroundColor: colors.brandInk, paddingHorizontal: 22, paddingTop: 76, paddingBottom: 28, overflow: 'hidden' },
-  back: { position: 'absolute', top: 16, left: 18, width: 42, height: 42, borderRadius: 21, backgroundColor: colors.brandPaper, alignItems: 'center', justifyContent: 'center', zIndex: 2 },
-  shape: { position: 'absolute', right: -32, top: 8, width: 150, height: 150, borderRadius: 80, backgroundColor: colors.brandCoral, opacity: 0.23 },
-  kicker: { color: colors.brandSand, fontSize: 9, fontWeight: '900', letterSpacing: 1.6, marginBottom: 12 },
-  title: { color: colors.brandInk, fontSize: 25, lineHeight: 31, fontWeight: '900' },
-  heroTitle: { color: colors.brandPaper, fontSize: 28, lineHeight: 34, fontWeight: '900' },
-  categoryPill: { alignSelf: 'flex-start', backgroundColor: colors.brandSand, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, marginTop: 13 },
-  category: { color: colors.brandInk, fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
-  panel: { margin: 16, padding: 18, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, borderRadius: 18 },
-  sectionTitle: { color: colors.brandCoral, fontSize: 10, fontWeight: '900', letterSpacing: 1.4, marginBottom: 12 },
-  description: { color: colors.text, fontSize: 14, lineHeight: 22 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 13, marginTop: 13 },
-  infoCopy: { flex: 1 },
-  infoLabel: { color: colors.muted, fontSize: 8, fontWeight: '900', letterSpacing: 1.1 },
-  infoValue: { color: colors.brandInk, fontSize: 14, fontWeight: '800', marginTop: 3 },
-  contractorCard: { marginHorizontal: 16, padding: 15, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, borderRadius: 16 },
-  contractorAvatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.brandBlue, alignItems: 'center', justifyContent: 'center' },
-  contractorCopy: { flex: 1 },
-  contractorName: { color: colors.brandInk, fontSize: 14, fontWeight: '900', marginVertical: 3 },
-  muted: { color: colors.muted, fontSize: 12, lineHeight: 18 },
-  button: { marginHorizontal: 16, marginTop: 18, minHeight: 52, paddingHorizontal: 20, borderRadius: 999, backgroundColor: colors.brandInk, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 10 },
-  buttonText: { color: colors.brandPaper, fontSize: 11, fontWeight: '900', letterSpacing: 1 },
-  disabled: { opacity: 0.55 },
-});
