@@ -6,7 +6,7 @@ import { AppText, Button, FeedbackState, FilterChip, MediaImage, ScreenContainer
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { useUser } from '@/providers/user-provider';
 import { useManagement } from '@/providers/management-provider';
-import { event as buscarEvento, updateEvent, uploadImage } from '@/services/api';
+import { deleteEvent, event as buscarEvento, updateEvent, uploadImage } from '@/services/api';
 import type { RootStackParamList } from '@/navigation/app-navigator';
 
 type EventData = {
@@ -55,10 +55,12 @@ export default function EditEventScreen() {
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [picking, setPicking] = useState(false);
   const [saved, setSaved] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const pending = useRef(false);
+  const completed = useRef(false);
   const pickerPending = useRef(false);
 
   useEffect(() => {
@@ -124,7 +126,7 @@ export default function EditEventScreen() {
   };
 
   const salvar = async () => {
-    if (!allowed || !original || original.id !== eventId || original.contratanteId !== ownerId || pending.current || pickerPending.current || !dirty || saved) return;
+    if (!allowed || !original || original.id !== eventId || original.contratanteId !== ownerId || pending.current || pickerPending.current || !dirty || saved || completed.current) return;
     setAttempted(true);
     if (![form.titulo, form.categoria, form.descricao, form.local, form.cidade].every((value) => value.trim()) || !parsedDate || invalidTime) return;
     pending.current = true;
@@ -154,10 +156,45 @@ export default function EditEventScreen() {
     }
     let refreshed = true;
     try { await refresh(); } catch { refreshed = false; }
+    completed.current = true;
     pending.current = false;
     setBusy(false);
     setSaved(true);
     Alert.alert('Evento atualizado', refreshed ? 'Suas alterações foram salvas.' : 'O evento foi salvo. Atualize a lista para ver as alterações.');
+  };
+
+  const excluir = () => {
+    if (!allowed || !original || original.id !== eventId || original.contratanteId !== ownerId || pending.current || pickerPending.current || saved || completed.current) return;
+    Alert.alert(
+      'Excluir evento?',
+      `"${original.titulo}" será removido permanentemente da agenda. Todas as solicitações de participação, inclusive as aceitas, serão excluídas. Alterações não salvas também serão descartadas. Esta ação não pode ser desfeita.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Excluir evento', style: 'destructive', onPress: async () => {
+          if (pending.current || pickerPending.current || completed.current) return;
+          pending.current = true;
+          setBusy(true);
+          setDeleting(true);
+          try {
+            await deleteEvent(eventId);
+          } catch (err) {
+            Alert.alert('Não foi possível excluir', err instanceof Error ? err.message : 'Tente novamente.');
+            pending.current = false;
+            setBusy(false);
+            setDeleting(false);
+            return;
+          }
+          completed.current = true;
+          let refreshed = true;
+          try { await refresh(); } catch { refreshed = false; }
+          pending.current = false;
+          setBusy(false);
+          setDeleting(false);
+          setSaved(true);
+          Alert.alert('Evento excluído', refreshed ? 'O evento foi removido da agenda.' : 'O evento foi excluído. Atualize a lista para visualizar as alterações.');
+        } },
+      ],
+    );
   };
 
   return (
@@ -193,8 +230,13 @@ export default function EditEventScreen() {
                 <FilterChip variant="compact" label="Destaque" selected={form.fixado} disabled={blocked} onPress={() => setField('fixado', !form.fixado)} />
               </View>
             </View>
-            <Button fullWidth loading={busy} disabled={blocked || !dirty} onPress={salvar}>Salvar alterações</Button>
+            <Button fullWidth loading={busy && !deleting} disabled={blocked || !dirty} onPress={salvar}>Salvar alterações</Button>
             <Button fullWidth variant="outline" disabled={blocked} onPress={() => navigation.goBack()}>Cancelar</Button>
+            <View style={{ borderTopWidth: 1, borderTopColor: color.border, paddingTop: spacing.lg, gap: spacing.md }}>
+              <SectionHeader title="Gerenciar publicação" />
+              <AppText variant="bodySmall" color="textSecondary">A exclusão remove permanentemente o evento da agenda e todas as solicitações de participação vinculadas.</AppText>
+              <Button fullWidth variant="danger" loading={deleting} disabled={blocked} onPress={excluir}>Excluir evento</Button>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       )}
