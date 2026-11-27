@@ -8,6 +8,7 @@ import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl
 import { useManagement } from '@/providers/management-provider';
 import { useUser } from '@/providers/user-provider';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { vagaStatusLabel } from '@/features/opportunities/utils/opportunity-management';
 
 function formatDate(value: string) {
   const date = new Date(value.length === 10 ? value + 'T12:00:00' : value);
@@ -161,7 +162,7 @@ export default function ContratanteProfileScreen() {
               <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
                 <AppText variant="label" color="accentText" weight="semibold">{vaga.categoria}</AppText>
                 <AppText variant="title" weight="bold">{vaga.titulo}</AppText>
-                <Badge label={vaga.status === 'CONCLUIDA' ? 'Concluída' : vaga.status === 'EM_ANDAMENTO' ? 'Em andamento' : 'Aberta'} tone={vaga.status === 'CONCLUIDA' ? 'success' : vaga.status === 'EM_ANDAMENTO' ? 'warning' : 'accent'} />
+                <Badge label={vagaStatusLabel[vaga.status]} tone={vaga.status === 'CONCLUIDA' ? 'success' : vaga.status === 'EM_ANDAMENTO' ? 'warning' : vaga.status === 'CANCELADA' ? 'neutral' : 'accent'} />
                 <AppText variant="bodySmall" color="textSecondary">{vaga.candidatos.length} {vaga.candidatos.length === 1 ? 'candidato' : 'candidatos'}</AppText>
               </View>
               <Ionicons name="chevron-forward" size={dimensions.icon.medium} color={color.textSecondary} />

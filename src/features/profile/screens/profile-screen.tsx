@@ -179,6 +179,7 @@ function AgenteProfileScreenContent() {
             <Button style={styles.actionButton} onPress={abrirEdicaoPerfil}>Editar perfil</Button>
             <Button variant="outline" style={styles.actionButton} onPress={() => navigation.navigate('PublicProfile', { profileType: 'AGENTE', profileId: agente.id })}>Ver perfil público</Button>
           </View>
+          {user.tipo === 'AGENTE' ? <Button variant="ghost" onPress={() => navigation.navigate('ManageOpportunities')}>Minhas candidaturas</Button> : null}
           {erroAtualizacao ? (
             <View style={styles.inlineError} accessibilityLiveRegion="polite">
               <AppText variant="bodySmall" color="dangerText">Algumas informações não puderam ser atualizadas.</AppText>

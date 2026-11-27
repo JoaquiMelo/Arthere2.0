@@ -15,7 +15,7 @@ export function ReviewsProvider({children}:{children:React.ReactNode}) {
  useEffect(()=>{if(!agenteId)return;const task=setTimeout(()=>{void carregarAvaliacoes(agenteId).catch(()=>undefined);},0);return()=>clearTimeout(task);},[agenteId,carregarAvaliacoes]);
  const avaliacoesPorAgente=useCallback((id:string)=>dados[id]??[],[dados]);
  const mediaPorAgente=useCallback((id:string)=>{const lista=dados[id]??[];return lista.length?lista.reduce((s,a)=>s+a.nota,0)/lista.length:0;},[dados]);
- const adicionarAvaliacao=useCallback(async(d:NovaAvaliacao)=>{if(!Number.isInteger(d.nota)||d.nota<1||d.nota>5)throw new Error('A nota deve estar entre 1 e 5.');await rateAgent(d.agenteId,{nota:d.nota,comentario:d.comentario?.trim()||undefined});await carregarAvaliacoes(d.agenteId);},[carregarAvaliacoes]);
+ const adicionarAvaliacao=useCallback(async(d:NovaAvaliacao)=>{if(!Number.isInteger(d.nota)||d.nota<1||d.nota>5)throw new Error('A nota deve estar entre 1 e 5.');await rateAgent(d.agenteId,{nota:d.nota,comentario:d.comentario?.trim()||undefined});void carregarAvaliacoes(d.agenteId).catch(()=>undefined);},[carregarAvaliacoes]);
  const value=useMemo(()=>({avaliacoesPorAgente,mediaPorAgente,adicionarAvaliacao,carregarAvaliacoes}),[avaliacoesPorAgente,mediaPorAgente,adicionarAvaliacao,carregarAvaliacoes]);
  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

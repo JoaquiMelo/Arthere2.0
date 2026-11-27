@@ -1,6 +1,7 @@
 import React,{createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} from 'react';
 import {uploadImage,createEvent,createProject,events as listarEventosApi,meusProjetos,minhasSolicitacoesEvento,projects,responderSolicitacaoEvento,solicitarParticipacaoEvento,updateApplication,updateProject} from '@/services/api';
-import type {Candidato,StatusVaga,VagaGerenciada} from '@/features/opportunities/screens/types/management';
+import type {VagaGerenciada} from '@/features/opportunities/screens/types/management';
+import {mapVaga} from '@/features/opportunities/utils/opportunity-management';
 import type {Evento} from '@/features/events/types/event';
 import {useUser} from '@/providers/user-provider';
 
@@ -10,9 +11,6 @@ type NovaVaga={titulo:string;descricao?:string;categoria:string;orcamento?:numbe
 type Context={vagas:VagaGerenciada[];eventos:Evento[];solicitacoesEvento:SolicitacaoEvento[];loading:boolean;refresh:()=>Promise<void>;publicarVaga:(d:NovaVaga)=>Promise<void>;criarEvento:(d:NovoEvento)=>Promise<void>;aceitarCandidato:(vagaId:string,candidatoId:string)=>Promise<void>;recusarCandidato:(vagaId:string,candidatoId:string)=>Promise<void>;concluirVaga:(vagaId:string)=>Promise<void>;marcarAvaliado:(vagaId:string)=>void;enviarSolicitacaoEvento:(d:Omit<SolicitacaoEvento,'id'|'status'>)=>Promise<void>;aceitarSolicitacaoEvento:(id:string)=>Promise<void>;recusarSolicitacaoEvento:(id:string)=>Promise<void>};
 const Ctx=createContext<Context>({} as Context);
 
-function statusVaga(s:string):StatusVaga{return s==='EM_ANDAMENTO'?'EM_ANDAMENTO':s==='CONCLUIDO'?'CONCLUIDA':'ABERTA';}
-function mapCandidato(x:any):Candidato{return{id:x.id,agenteId:x.agente?.id??x.agenteId,nome:x.agente?.nome??'Agente criativo',avatarUrl:x.agente?.avatarUrl??'',especialidade:x.agente?.especialidade??'Profissional criativo',avaliacao:Number(x.agente?.notaMedia??0),mensagem:x.mensagem??'Sem mensagem.',status:x.status};}
-function mapVaga(x:any):VagaGerenciada{return{id:x.id,titulo:x.titulo,categoria:x.categoria,orcamento:x.orcamento??undefined,status:statusVaga(x.status),avaliado:false,candidatos:(x.candidaturas??[]).map(mapCandidato)};}
 function mapEvento(x:any):Evento{const d=new Date(x.dataEvento);const data=Number.isNaN(d.getTime())?String(x.dataEvento).slice(0,10):[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');return{id:x.id,titulo:x.titulo,categoria:x.categoria,descricao:x.descricao,local:x.local,cidade:x.cidade,data,horario:x.horario??'',organizador:x.organizador??'',premium:Boolean(x.premium),destaque:Boolean(x.fixado),imagemUrl:x.imagemUrl??undefined,contratanteId:x.contratanteId};}
 function mapSolicitacao(x:any):SolicitacaoEvento{return{id:x.id,eventId:x.eventoId,eventoTitulo:x.evento?.titulo??'Evento',agenteId:x.agente?.id??x.agenteId,agenteNome:x.agente?.nome??'Agente criativo',agenteEspecialidade:x.agente?.especialidade??'Profissional criativo',mensagem:x.mensagem??'',status:x.status};}
 

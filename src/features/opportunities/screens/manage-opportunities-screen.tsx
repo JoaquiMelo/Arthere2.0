@@ -1,633 +1,334 @@
-import { Avatar } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { useCallback, useState } from 'react';
-import { Button } from '@/shared/components';
-import { useUser } from '@/providers/user-provider';
-import {
-  Alert,
-  FlatList,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useCallback, useRef, useState } from 'react';
+import type { ReactElement, ReactNode } from 'react';
+import { Alert, FlatList, Pressable, RefreshControl, View } from 'react-native';
 
 import { ReviewFormModal } from '@/features/reviews/components/review-form-modal';
+import type { RootStackParamList } from '@/navigation/app-navigator';
 import { useManagement } from '@/providers/management-provider';
 import { useReviews } from '@/providers/reviews-provider';
-import { colors } from '@/shared/theme/colors';
-import type { Candidato, VagaGerenciada } from '../../../features/opportunities/screens/types/management';
-import { StarRating } from '../../../features/reviews/components/star-rating';
+import { useUser } from '@/providers/user-provider';
+import { ApiRequestError, meusProjetos, myApplications, updateApplication, updateProject } from '@/services/api';
+import { AppText, Avatar, Badge, Button, FeedbackState, FilterChip, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { opportunityBudgetLabel, opportunityStatusLabels } from '../utils/opportunity-form';
+import { candidaturaStatus, mapVaga, permiteResponder, vagaStatusLabel, type MinhaCandidatura } from '../utils/opportunity-management';
+import type { Candidato, StatusCandidato, StatusVaga, VagaGerenciada } from './types/management';
 
-const STATUS_LABEL: Record<VagaGerenciada['status'], string> = {
-  ABERTA: 'Aberta',
-  EM_ANDAMENTO: 'Em andamento',
-  CONCLUIDA: 'Concluída',
-};
+type Navigation = NativeStackNavigationProp<RootStackParamList, 'ManageOpportunities'>;
 
-const STATUS_COR: Record<VagaGerenciada['status'], string> = {
-  ABERTA: colors.brandCoral,
-  EM_ANDAMENTO: colors.brandBlue,
-  CONCLUIDA: colors.muted,
-};
+async function readJobs() {
+  const items = await meusProjetos();
+  if (!Array.isArray(items)) throw new Error('Resposta inválida');
+  return items.map(mapVaga);
+}
+
+async function readApplications(): Promise<MinhaCandidatura[]> {
+  const items = await myApplications();
+  if (!Array.isArray(items)) throw new Error('Resposta inválida');
+  return items;
+}
+
+function useManagementList<T>(read: () => Promise<T[]>) {
+  const [items, setItems] = useState<T[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const request = useRef<symbol | null>(null);
+  const load = useCallback(async () => {
+    if (request.current) return;
+    const id = Symbol();
+    request.current = id;
+    setLoading(true);
+    setFailed(false);
+    try {
+      const result = await read();
+      if (request.current === id) setItems(result);
+    } catch {
+      if (request.current === id) setFailed(true);
+    } finally {
+      if (request.current === id) {
+        request.current = null;
+        setLoading(false);
+      }
+    }
+  }, [read]);
+  useFocusEffect(useCallback(() => {
+    void load();
+    return () => { request.current = null; };
+  }, [load]));
+  return { items, setItems, failed, loading, load, request };
+}
+
+function ManagementList<T extends { id: string }>({
+  items, renderItem, header, empty, busy = false, query,
+}: {
+  items: T[]; renderItem: (item: T) => ReactNode; header?: ReactNode; empty: ReactElement; busy?: boolean;
+  query: Pick<ReturnType<typeof useManagementList<T>>, 'items' | 'failed' | 'loading' | 'load'>;
+}) {
+  const { color, dimensions, spacing } = useThemeTokens();
+  return (
+    <FlatList
+      data={items}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => <>{renderItem(item)}</>}
+      ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+      contentContainerStyle={{
+        flexGrow: 1, alignSelf: 'center', width: '100%', maxWidth: dimensions.contentMaxWidth,
+        padding: spacing.xl, paddingBottom: spacing['3xl'],
+      }}
+      refreshControl={
+        <RefreshControl
+          enabled={!busy} refreshing={query.loading && query.items !== null}
+          onRefresh={() => { if (!busy) void query.load(); }}
+          tintColor={color.accentText} colors={[color.accentText]}
+        />
+      }
+      ListHeaderComponent={
+        <View style={{ gap: spacing.md, marginBottom: header ? spacing.lg : 0 }}>
+          {header}
+          {query.failed ? (
+            <FeedbackState
+              kind="error" title={query.items === null ? 'Não foi possível carregar' : 'Não foi possível atualizar'}
+              description={query.items === null ? 'Verifique sua conexão e tente novamente.' : 'Exibindo a última lista carregada.'}
+              onRetry={() => { if (!busy) void query.load(); }}
+            />
+          ) : null}
+        </View>
+      }
+      ListEmptyComponent={query.items === null
+        ? query.loading ? <FeedbackState kind="loading" title="Carregando…" /> : undefined
+        : empty}
+    />
+  );
+}
 
 export default function ManageOpportunitiesScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<Navigation>();
   const { user } = useUser();
-  const isCO = user?.tipo === 'CONTRATANTE_OPORTUNIDADES';
-  const {
-    vagas,
-    refresh,
-    solicitacoesEvento,
-    aceitarCandidato,
-    recusarCandidato,
-    concluirVaga,
-    marcarAvaliado,
-    aceitarSolicitacaoEvento,
-    recusarSolicitacaoEvento,
-  } = useManagement();
-  useFocusEffect(useCallback(() => {
-    if (isCO) void refresh().catch(() => undefined);
-  }, [isCO, refresh]));
-  const { adicionarAvaliacao } = useReviews();
-  const [expandida, setExpandida] = useState<string | null>(null);
-  const [avaliando, setAvaliando] = useState<{
-    vagaId: string;
-    candidato: Candidato;
-  } | null>(null);
+  const contractor = user?.tipo === 'CONTRATANTE_OPORTUNIDADES';
+  const agent = user?.tipo === 'AGENTE';
+  return (
+    <ScreenContainer>
+      <ScreenHeader title={agent ? 'Minhas candidaturas' : 'Minhas vagas'} onBack={() => navigation.goBack()} />
+      {contractor ? <ContractorJobs key={user.usuarioId} />
+        : agent ? <AgentApplications key={user.usuarioId} />
+          : <FeedbackState kind="error" title="Acesso indisponível" description="Esta área é reservada a agentes criativos e contratantes de oportunidades." />}
+    </ScreenContainer>
+  );
+}
 
-  const responder = (
-    vaga: VagaGerenciada,
-    candidato: Candidato,
-    status: 'ACEITA' | 'RECUSADA',
-  ) => {
-    if (status === 'ACEITA') {
-      Alert.alert(
-        'Aceitar candidato',
-        `Confirmar ${candidato.nome} para "${vaga.titulo}"?`,
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Aceitar',
-            onPress: () => aceitarCandidato(vaga.id, candidato.id),
-          },
-        ],
-      );
-    } else {
-      recusarCandidato(vaga.id, candidato.id);
+function ContractorJobs() {
+  const navigation = useNavigation<Navigation>();
+  const { color, radius, spacing, dimensions } = useThemeTokens();
+  const { vagas: sharedJobs, marcarAvaliado } = useManagement();
+  const { adicionarAvaliacao } = useReviews();
+  const query = useManagementList(readJobs);
+  const jobs = query.items ?? [];
+  const [filter, setFilter] = useState<'all' | StatusVaga>('all');
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [review, setReview] = useState<{ jobId: string; applicant: Candidato } | null>(null);
+  const pending = useRef(false);
+
+  const run = async (key: string, operation: () => Promise<void>) => {
+    if (pending.current || query.request.current) return;
+    pending.current = true;
+    setBusy(key);
+    try {
+      await operation();
+    } catch (error) {
+      Alert.alert('Não foi possível concluir a ação', error instanceof Error ? error.message : 'Tente novamente.');
+      if (error instanceof ApiRequestError && [404, 409].includes(error.status ?? 0)) void query.load();
+    } finally {
+      pending.current = false;
+      setBusy(null);
     }
   };
 
-  const concluir = (vaga: VagaGerenciada) => {
-    Alert.alert('Concluir projeto', 'Marcar este projeto como concluído?', [
+  const updateJob = (id: string, update: (job: VagaGerenciada) => VagaGerenciada) => {
+    query.setItems((current) => current?.map((job) => job.id === id ? update(job) : job) ?? null);
+  };
+
+  const respond = (job: VagaGerenciada, applicant: Candidato, status: 'ACEITA' | 'RECUSADA') => {
+    if (!permiteResponder(job, applicant, status) || pending.current) return;
+    const label = status === 'ACEITA' ? 'Aceitar' : 'Recusar';
+    Alert.alert(`${label} candidatura?`, `${applicant.nome} · ${job.titulo}`, [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Concluir', onPress: () => concluirVaga(vaga.id) },
+      {
+        text: label, style: status === 'RECUSADA' ? 'destructive' : 'default',
+        onPress: () => void run(applicant.id, async () => {
+          await updateApplication(applicant.id, status);
+          updateJob(job.id, (current) => ({
+            ...current,
+            candidatos: current.candidatos.map((item) => item.id === applicant.id ? { ...item, status } : item),
+          }));
+        }),
+      },
     ]);
   };
 
-  const abrirAvaliacao = (vaga: VagaGerenciada) => {
-    const contratado = vaga.candidatos.find((item) => item.status === 'ACEITA');
-    if (!contratado) return;
-    setAvaliando({ vagaId: vaga.id, candidato: contratado });
+  const changeJob = (job: VagaGerenciada, start: boolean) => {
+    const label = start ? 'Iniciar trabalho' : 'Concluir trabalho';
+    Alert.alert(`${label}?`, job.titulo, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: start ? 'Iniciar' : 'Concluir',
+        onPress: () => void run(job.id, async () => {
+          await updateProject(job.id, { status: start ? 'EM_ANDAMENTO' : 'CONCLUIDO' });
+          updateJob(job.id, (current) => ({ ...current, status: start ? 'EM_ANDAMENTO' : 'CONCLUIDA' }));
+        }),
+      },
+    ]);
   };
 
-  const enviarAvaliacao = async ({ nota, comentario }: { nota: number; comentario: string }) => {
-    if (!avaliando) return;
-    try {
-      const nome = avaliando.candidato.nome;
-      await adicionarAvaliacao({ agenteId: avaliando.candidato.agenteId, autorNome: 'Você', nota, comentario });
-      marcarAvaliado(avaliando.vagaId);
-      setAvaliando(null);
-      Alert.alert('Avaliação enviada!', `Obrigado por avaliar ${nome}.`);
-    } catch (error) {
-      Alert.alert('Não foi possível avaliar', error instanceof Error ? error.message : 'Tente novamente.');
-    }
+  const submitReview = async ({ nota, comentario }: { nota: number; comentario: string }) => {
+    if (!review) return;
+    await run(review.jobId, async () => {
+      await adicionarAvaliacao({ agenteId: review.applicant.agenteId, nota, comentario });
+      marcarAvaliado(review.jobId);
+      updateJob(review.jobId, (job) => ({ ...job, avaliado: true }));
+      setReview(null);
+      Alert.alert('Avaliação enviada');
+    });
   };
+
+  const available = jobs.filter((job) => filter === 'all' || filter === job.status);
+  const pendingCount = jobs.filter((job) => job.status === 'ABERTA' || job.status === 'EM_ANDAMENTO')
+    .reduce((count, job) => count + job.candidatos.filter((item) => item.status === 'PENDENTE').length, 0);
+  const blocked = busy !== null || query.loading;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.back}
-          onPress={() => navigation.goBack()}
-          accessibilityLabel="Voltar"
-        >
-          <Ionicons name="arrow-back" size={20} color={colors.brandInk} />
-        </TouchableOpacity>
-
-        <View style={styles.headerCopy}>
-          <Text style={styles.kicker}>GESTÃO</Text>
-          <Text style={styles.title}>Minhas vagas</Text>
-        </View>
-
-        <View style={styles.headerMark}>
-          <View style={styles.headerMarkShape} />
-        </View>
-      </View>
-
-      {solicitacoesEvento.length > 0 ? (
-        <View style={styles.eventRequestsSection}>
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={styles.sectionKicker}>PARTICIPAÇÕES</Text>
-              <Text style={styles.sectionTitle}>Solicitações para eventos</Text>
+    <>
+      <ManagementList
+        query={query} items={available} busy={busy !== null}
+        header={jobs.length ? (
+          <>
+            <SectionHeader title="Candidaturas recebidas" description={`${pendingCount} aguardando resposta`} />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+              <FilterChip label="Todas" selected={filter === 'all'} onPress={() => setFilter('all')} />
+              {(Object.keys(vagaStatusLabel) as StatusVaga[]).map((status) => (
+                <FilterChip key={status} label={vagaStatusLabel[status]} selected={filter === status} onPress={() => setFilter(status)} />
+              ))}
             </View>
-            <Text style={styles.count}>{solicitacoesEvento.length}</Text>
-          </View>
-
-          {solicitacoesEvento.map((solicitacao) => (
-            <View key={solicitacao.id} style={styles.eventRequestCard}>
-              <View style={styles.flex1}>
-                <Text style={styles.eventRequestEvent}>{solicitacao.eventoTitulo}</Text>
-                <Text style={styles.candidatoNome}>{solicitacao.agenteNome}</Text>
-                <Text style={styles.candidatoEspecialidade}>
-                  {solicitacao.agenteEspecialidade}
-                </Text>
-                <Text style={styles.candidatoMensagem}>{solicitacao.mensagem}</Text>
-
-                {solicitacao.status === 'PENDENTE' ? (
-                  <View style={styles.candidatoActions}>
-                    <TouchableOpacity
-                      style={styles.recusar}
-                      onPress={() => recusarSolicitacaoEvento(solicitacao.id)}
-                    >
-                      <Text style={styles.recusarText}>RECUSAR</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.aceitar}
-                      onPress={() => aceitarSolicitacaoEvento(solicitacao.id)}
-                    >
-                      <Text style={styles.aceitarText}>ACEITAR</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <Text
-                    style={[
-                      styles.statusCandidato,
-                      solicitacao.status === 'ACEITA'
-                        ? styles.statusAceito
-                        : styles.statusRecusado,
-                    ]}
-                  >
-                    {solicitacao.status === 'ACEITA'
-                      ? '✓ Solicitação aceita'
-                      : 'Solicitação recusada'}
-                  </Text>
-                )}
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : null}
-
-      <FlatList
-        data={vagas}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyCard}>
-            <Ionicons name="briefcase-outline" size={30} color={colors.brandCoral} />
-            <Text style={styles.emptyTitle}>Você ainda não publicou vagas</Text>
-            <Text style={styles.emptyText}>
-              As vagas publicadas e suas candidaturas aparecerão aqui.
-            </Text>
-          </View>
-        }
-        renderItem={({ item: vaga }) => {
-          const aberta = expandida === vaga.id;
-          const contratado = vaga.candidatos.find((c) => c.status === 'ACEITA');
-
+          </>
+        ) : undefined}
+        empty={jobs.length ? <FeedbackState kind="empty" title="Nenhuma vaga nesse status" />
+          : <FeedbackState kind="empty" title="Nenhuma vaga publicada" description="Suas vagas e as candidaturas recebidas aparecerão aqui." icon="briefcase-outline" />}
+        renderItem={(job) => {
+          const open = expanded === job.id;
+          const hired = job.candidatos.find((item) => item.status === 'ACEITA');
+          const reviewed = job.avaliado || sharedJobs.some((item) => item.id === job.id && item.avaliado);
+          const canStart = job.status === 'ABERTA' && hired;
+          const canFinish = job.status === 'EM_ANDAMENTO' && hired;
+          const canReview = job.status === 'CONCLUIDA' && hired && !reviewed;
           return (
-            <View style={styles.card}>
-              <TouchableOpacity
-                style={styles.cardHeader}
-                onPress={() => setExpandida(aberta ? null : vaga.id)}
-                activeOpacity={0.75}
-              >
-                <View style={styles.flex1}>
-                  <Text style={styles.category}>{vaga.categoria}</Text>
-                  <Text style={styles.vagaTitulo}>{vaga.titulo}</Text>
-                  <Text style={styles.candidatosCount}>
-                    {vaga.candidatos.length} candidato
-                    {vaga.candidatos.length === 1 ? '' : 's'}
-                  </Text>
+            <View style={{ backgroundColor: color.surface, borderColor: color.border, borderWidth: 1, borderRadius: radius.cardCompact, padding: spacing.lg, gap: spacing.md }}>
+              <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} accessibilityLabel={`${job.titulo}. ${vagaStatusLabel[job.status]}. Candidaturas: ${job.candidatos.length}`} onPress={() => setExpanded(open ? null : job.id)}
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: dimensions.touchTarget, opacity: pressed ? 0.75 : 1 })}>
+                <View style={{ flex: 1, gap: spacing.xs }}>
+                  <AppText variant="label" color="accentText" weight="bold">{job.categoria}</AppText>
+                  <AppText variant="title" weight="bold">{job.titulo}</AppText>
+                  <AppText variant="bodySmall" color="textSecondary">
+                    {job.candidatos.length} {job.candidatos.length === 1 ? 'candidatura' : 'candidaturas'} · {opportunityBudgetLabel(job.orcamento ?? null)}
+                  </AppText>
+                  <Badge label={vagaStatusLabel[job.status]} tone={job.status === 'ABERTA' ? 'accent' : job.status === 'EM_ANDAMENTO' ? 'warning' : job.status === 'CONCLUIDA' ? 'success' : 'neutral'} />
                 </View>
+                <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={dimensions.icon.medium} color={color.textSecondary} />
+              </Pressable>
 
-                <View
-                  style={[
-                    styles.badge,
-                    { backgroundColor: STATUS_COR[vaga.status] },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.badgeText,
-                      vaga.status === 'EM_ANDAMENTO' && { color: colors.brandInk },
-                    ]}
-                  >
-                    {STATUS_LABEL[vaga.status]}
-                  </Text>
-                </View>
+              <Button variant="outline" size="small" accessibilityLabel={`Editar vaga ${job.titulo}`} disabled={busy !== null}
+                onPress={() => navigation.navigate('EditOpportunity', { opportunityId: job.id })}>Editar vaga</Button>
 
-                <Ionicons
-                  name={aberta ? 'chevron-up' : 'chevron-down'}
-                  size={18}
-                  color={colors.muted}
-                />
-              </TouchableOpacity>
-
-              {isCO ? <Button variant="outline" size="small" style={{ marginTop: 12 }} accessibilityLabel={`Editar vaga ${vaga.titulo}`} onPress={() => navigation.navigate('EditOpportunity', { opportunityId: vaga.id })}>Editar vaga</Button> : null}
-
-              {aberta ? (
-                <View style={styles.candidatos}>
-                  {vaga.candidatos.length === 0 ? (
-                    <Text style={styles.emptyText}>
-                      Nenhuma candidatura recebida ainda.
-                    </Text>
+              {open ? (
+                <View style={{ gap: spacing.md }}>
+                  {hired && (canStart || canFinish || canReview || reviewed) ? (
+                    <View style={{ backgroundColor: color.surfaceSubtle, borderRadius: radius.control, padding: spacing.md, gap: spacing.sm }}>
+                      <AppText variant="bodySmall" weight="bold">Candidatura aceita · {hired.nome}</AppText>
+                      {canStart || canFinish ? (
+                        <Button loading={busy === job.id} disabled={blocked} onPress={() => changeJob(job, Boolean(canStart))}>
+                          {canStart ? 'Iniciar trabalho' : 'Concluir trabalho'}
+                        </Button>
+                      ) : null}
+                      {canReview ? <Button disabled={blocked} onPress={() => setReview({ jobId: job.id, applicant: hired })}>Avaliar profissional</Button> : null}
+                      {reviewed ? <AppText variant="bodySmall" color="successText">Avaliação enviada</AppText> : null}
+                    </View>
                   ) : null}
-
-                  {vaga.candidatos.map((candidato) => (
-                    <View key={candidato.id} style={styles.candidatoCard}>
-                      <Avatar uri={candidato.avatarUrl} style={styles.avatar} iconSize={24} />
-
-                      <View style={styles.flex1}>
-                        <View style={styles.candidatoTop}>
-                          <Text style={styles.candidatoNome}>{candidato.nome}</Text>
-                          <StarRating value={candidato.avaliacao} size={12} />
+                  <SectionHeader title="Candidaturas" />
+                  {job.candidatos.length === 0 ? <AppText variant="bodySmall" color="textSecondary">Nenhuma candidatura recebida.</AppText> : null}
+                  {job.candidatos.map((applicant) => (
+                    <View key={applicant.id} style={{ gap: spacing.sm, paddingTop: spacing.md, borderTopWidth: 1, borderColor: color.border }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+                        <View accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                          <Avatar uri={applicant.avatarUrl} style={{ width: dimensions.touchTarget, height: dimensions.touchTarget, borderRadius: radius.pill }} iconSize={dimensions.icon.medium} />
                         </View>
-
-                        <Text style={styles.candidatoEspecialidade}>
-                          {candidato.especialidade}
-                        </Text>
-                        <Text style={styles.candidatoMensagem}>
-                          {candidato.mensagem}
-                        </Text>
-
-                        {candidato.status === 'PENDENTE' ? (
-                          <View style={styles.candidatoActions}>
-                            <TouchableOpacity
-                              style={styles.recusar}
-                              onPress={() => responder(vaga, candidato, 'RECUSADA')}
-                            >
-                              <Text style={styles.recusarText}>RECUSAR</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              style={styles.aceitar}
-                              onPress={() => responder(vaga, candidato, 'ACEITA')}
-                            >
-                              <Text style={styles.aceitarText}>ACEITAR</Text>
-                            </TouchableOpacity>
-                          </View>
-                        ) : (
-                          <Text
-                            style={[
-                              styles.statusCandidato,
-                              candidato.status === 'ACEITA'
-                                ? styles.statusAceito
-                                : styles.statusRecusado,
-                            ]}
-                          >
-                            {candidato.status === 'ACEITA' ? '✓ CONTRATADO' : 'RECUSADO'}
-                          </Text>
-                        )}
+                        <View style={{ flex: 1 }}>
+                          <AppText weight="bold">{applicant.nome}</AppText>
+                          <AppText variant="bodySmall" color="textSecondary">{applicant.especialidade}</AppText>
+                          {applicant.avaliacao > 0 ? <AppText variant="bodySmall" color="textSecondary">Nota média {applicant.avaliacao.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</AppText> : null}
+                        </View>
                       </View>
+                      <Badge {...candidaturaStatus[applicant.status]} />
+                      {applicant.mensagem ? <AppText>{applicant.mensagem}</AppText> : null}
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                        <Button size="small" variant="ghost" accessibilityLabel={`Ver perfil de ${applicant.nome}`}
+                          onPress={() => navigation.navigate('PublicProfile', { profileId: applicant.agenteId, profileType: 'AGENTE' })}>Ver perfil</Button>
+                        {permiteResponder(job, applicant, 'RECUSADA') ? (
+                          <Button size="small" variant="outline" disabled={blocked} accessibilityLabel={`Recusar candidatura de ${applicant.nome}`}
+                            onPress={() => respond(job, applicant, 'RECUSADA')}>Recusar</Button>
+                        ) : null}
+                        {permiteResponder(job, applicant, 'ACEITA') ? (
+                          <Button size="small" disabled={blocked} accessibilityLabel={`Aceitar candidatura de ${applicant.nome}`}
+                            onPress={() => respond(job, applicant, 'ACEITA')}>Aceitar</Button>
+                        ) : null}
+                      </View>
+                      {busy === applicant.id ? <AppText variant="bodySmall" accessibilityLiveRegion="polite">Enviando resposta…</AppText> : null}
                     </View>
                   ))}
-
-                  {vaga.status === 'EM_ANDAMENTO' && contratado ? (
-                    <TouchableOpacity style={styles.concluir} onPress={() => concluir(vaga)}>
-                      <Text style={styles.concluirText}>CONCLUIR PROJETO</Text>
-                      <Ionicons name="arrow-forward" size={15} color={colors.brandPaper} />
-                    </TouchableOpacity>
-                  ) : null}
-
-                  {vaga.status === 'CONCLUIDA' && contratado && !vaga.avaliado ? (
-                    <TouchableOpacity
-                      style={styles.avaliar}
-                      onPress={() => abrirAvaliacao(vaga)}
-                    >
-                      <Ionicons name="star" size={15} color={colors.brandInk} />
-                      <Text style={styles.avaliarText}>
-                        AVALIAR {contratado.nome.toUpperCase()}
-                      </Text>
-                    </TouchableOpacity>
-                  ) : null}
-
-                  {vaga.status === 'CONCLUIDA' && vaga.avaliado ? (
-                    <Text style={styles.avaliadoText}>
-                      Você já avaliou este profissional.
-                    </Text>
-                  ) : null}
                 </View>
               ) : null}
             </View>
           );
         }}
       />
-
-      <ReviewFormModal
-        visible={!!avaliando}
-        agenteNome={avaliando?.candidato.nome ?? ''}
-        onClose={() => setAvaliando(null)}
-        onSubmit={enviarAvaliacao}
-      />
-    </SafeAreaView>
+      {review ? (
+        <ReviewFormModal visible agenteNome={review.applicant.nome} busy={busy !== null}
+          onClose={() => { if (!pending.current) setReview(null); }} onSubmit={submitReview} />
+      ) : null}
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.brandPaper,
-  },
-  header: {
-    minHeight: 78,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    gap: 10,
-  },
-  back: {
-    width: 38,
-    height: 38,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerCopy: { flex: 1 },
-  kicker: {
-    color: colors.brandCoral,
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 1.5,
-  },
-  title: {
-    color: colors.brandInk,
-    fontSize: 23,
-    lineHeight: 27,
-    fontWeight: '900',
-    marginTop: 2,
-  },
-  headerMark: {
-    width: 44,
-    height: 44,
-    backgroundColor: colors.brandInk,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  headerMarkShape: {
-    position: 'absolute',
-    width: 38,
-    height: 38,
-    right: -10,
-    bottom: -10,
-    backgroundColor: colors.brandCoral,
-    transform: [{ rotate: '20deg' }],
-  },
-  eventRequestsSection: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 10,
-    gap: 12,
-  },
-  sectionKicker: {
-    color: colors.brandCoral,
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 1.35,
-    marginBottom: 2,
-  },
-  sectionTitle: {
-    color: colors.brandInk,
-    fontSize: 17,
-    fontWeight: '900',
-  },
-  count: {
-    color: colors.brandPaper,
-    backgroundColor: colors.brandInk,
-    minWidth: 24,
-    height: 24,
-    paddingHorizontal: 7,
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    fontSize: 9,
-    fontWeight: '900',
-  },
-  list: {
-    padding: 16,
-    paddingTop: 12,
-    paddingBottom: 34,
-    gap: 12,
-  },
-  eventRequestCard: {
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 14,
-    marginBottom: 10,
-  },
-  eventRequestEvent: {
-    color: colors.brandCoral,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  card: {
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 14,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  flex1: { flex: 1, minWidth: 0 },
-  category: {
-    color: colors.brandCoral,
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  vagaTitulo: {
-    color: colors.brandInk,
-    fontSize: 16,
-    lineHeight: 19,
-    fontWeight: '900',
-    marginTop: 3,
-  },
-  candidatosCount: {
-    color: colors.muted,
-    fontSize: 10.5,
-    marginTop: 4,
-  },
-  badge: {
-    minHeight: 24,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: {
-    color: colors.brandPaper,
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 0.6,
-  },
-  candidatos: {
-    marginTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: 13,
-    gap: 9,
-  },
-  candidatoCard: {
-    flexDirection: 'row',
-    gap: 10,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 10,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    backgroundColor: colors.white,
-  },
-  candidatoTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-  },
-  candidatoNome: {
-    color: colors.brandInk,
-    fontWeight: '900',
-    fontSize: 12,
-    flex: 1,
-  },
-  candidatoEspecialidade: {
-    color: colors.muted,
-    fontSize: 10,
-    marginTop: 2,
-  },
-  candidatoMensagem: {
-    color: colors.text,
-    fontSize: 11,
-    lineHeight: 16,
-    marginTop: 6,
-  },
-  candidatoActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-  },
-  recusar: {
-    flex: 1,
-    minHeight: 36,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recusarText: {
-    color: colors.danger,
-    fontWeight: '900',
-    fontSize: 8,
-    letterSpacing: 0.9,
-  },
-  aceitar: {
-    flex: 1,
-    minHeight: 36,
-    backgroundColor: colors.brandInk,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  aceitarText: {
-    color: colors.brandPaper,
-    fontWeight: '900',
-    fontSize: 8,
-    letterSpacing: 0.9,
-  },
-  statusCandidato: {
-    marginTop: 8,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.8,
-  },
-  statusAceito: { color: colors.brandGreen },
-  statusRecusado: { color: colors.muted },
-  concluir: {
-    minHeight: 42,
-    backgroundColor: colors.brandInk,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-  },
-  concluirText: {
-    color: colors.brandPaper,
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  avaliar: {
-    minHeight: 42,
-    backgroundColor: colors.brandSand,
-    borderWidth: 1,
-    borderColor: colors.brandInk,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-  },
-  avaliarText: {
-    color: colors.brandInk,
-    fontSize: 8,
-    fontWeight: '900',
-    letterSpacing: 0.8,
-  },
-  emptyCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    padding: 24,
-    alignItems: 'center',
-  },
-  emptyTitle: {
-    color: colors.brandInk,
-    fontSize: 15,
-    fontWeight: '900',
-    marginTop: 9,
-  },
-  emptyText: {
-    color: colors.muted,
-    fontSize: 11,
-    lineHeight: 17,
-    textAlign: 'center',
-    marginTop: 5,
-    maxWidth: 280,
-  },
-  avaliadoText: {
-    color: colors.muted,
-    fontSize: 11,
-    textAlign: 'center',
-    marginTop: 2,
-  },
-});
+function AgentApplications() {
+  const navigation = useNavigation<Navigation>();
+  const { color, radius, spacing } = useThemeTokens();
+  const query = useManagementList(readApplications);
+  const applications = query.items ?? [];
+  const [filter, setFilter] = useState<'all' | StatusCandidato>('all');
+  return (
+    <ManagementList
+      query={query} items={applications.filter((item) => filter === 'all' || item.status === filter)}
+      header={applications.length ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+          <FilterChip label="Todas" selected={filter === 'all'} onPress={() => setFilter('all')} />
+          {(Object.keys(candidaturaStatus) as StatusCandidato[]).map((status) => (
+            <FilterChip key={status} label={candidaturaStatus[status].label} selected={filter === status} onPress={() => setFilter(status)} />
+          ))}
+        </View>
+      ) : undefined}
+      empty={applications.length ? <FeedbackState kind="empty" title="Nenhuma candidatura nesse status" />
+        : <FeedbackState kind="empty" title="Nenhuma candidatura enviada" description="Aqui você acompanha as respostas às suas candidaturas." icon="paper-plane-outline" />}
+      renderItem={({ projeto, status }) => (
+        <View style={{ gap: spacing.sm, padding: spacing.lg, backgroundColor: color.surface, borderWidth: 1, borderColor: color.border, borderRadius: radius.cardCompact }}>
+          <AppText variant="label" color="accentText" weight="bold">{projeto.categoria}</AppText>
+          <AppText variant="title" weight="bold">{projeto.titulo}</AppText>
+          <Badge {...candidaturaStatus[status]} />
+          <AppText variant="bodySmall" color="textSecondary">Vaga: {opportunityStatusLabels[projeto.status] ?? 'Indisponível'}</AppText>
+          <Button size="small" variant="outline" accessibilityLabel={`Ver detalhes de ${projeto.titulo}`}
+            onPress={() => navigation.navigate('OpportunityDetails', { opportunityId: projeto.id })}>Ver oportunidade</Button>
+        </View>
+      )}
+    />
+  );
+}

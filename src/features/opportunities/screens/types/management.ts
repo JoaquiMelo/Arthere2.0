@@ -1,5 +1,5 @@
 export type StatusCandidato = 'PENDENTE' | 'ACEITA' | 'RECUSADA';
-export type StatusVaga = 'ABERTA' | 'EM_ANDAMENTO' | 'CONCLUIDA';
+export type StatusVaga = 'ABERTA' | 'EM_ANDAMENTO' | 'CONCLUIDA' | 'CANCELADA';
 
 export interface Candidato {
   id: string;
