@@ -6,12 +6,15 @@ import { Alert, FlatList, Keyboard, Pressable, RefreshControl, ScrollView, Style
 
 import type { RootStackParamList } from '@/navigation/app-navigator';
 import { useUser } from '@/providers/user-provider';
-import { candidatarProjeto, listarProjetos, type Projeto } from '@/services/api';
+import { ApiRequestError, candidatarProjeto, listarProjetos, type Projeto } from '@/services/api';
 import { AppText, Avatar, Button, FeedbackState, FilterChip, IconButton, ScreenContainer, ScreenHeader } from '@/shared/components';
+import { nomeMunicipio } from '@/shared/config/brazil-location';
+import { dimensions, radius, spacing } from '@/shared/theme';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 
 type Remuneracao = 'TODAS' | 'COM_ORCAMENTO' | 'A_COMBINAR';
-const TODAS_CATEGORIAS = 'Todas';
+type EstadoCandidatura = 'enviando' | 'enviada';
+const PROJETOS_VAZIOS: Projeto[] = [];
 
 function normalizar(valor?: string | null) {
   return (valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
@@ -37,33 +40,37 @@ export default function OpportunitiesScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Opportunities'>>();
   const { user } = useUser();
   const tokens = useThemeTokens();
-  const requestId = useRef(0);
-  const carregouAoMenosUmaVez = useRef(false);
-  const [projetos, setProjetos] = useState<Projeto[]>([]);
-  const [carregando, setCarregando] = useState(true);
+  const consultaAtiva = useRef<symbol | null>(null);
+  const candidaturasRef = useRef(new Map<string, EstadoCandidatura>());
+  const [dados, setDados] = useState<Projeto[] | null>(null);
   const [atualizando, setAtualizando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
+  const [erro, setErro] = useState(false);
   const [busca, setBusca] = useState('');
-  const [categoria, setCategoria] = useState(TODAS_CATEGORIAS);
+  const [categoria, setCategoria] = useState<string | null>(null);
   const [remuneracao, setRemuneracao] = useState<Remuneracao>('TODAS');
   const [somenteMinhaCidade, setSomenteMinhaCidade] = useState(false);
-  const [candidatando, setCandidatando] = useState<Set<string>>(() => new Set());
-  const [candidaturasEnviadas, setCandidaturasEnviadas] = useState<Set<string>>(() => new Set());
+  const [candidaturas, setCandidaturas] = useState<ReadonlyMap<string, EstadoCandidatura>>(() => new Map());
+  const projetos = dados ?? PROJETOS_VAZIOS;
+  const cidadeUsuario = nomeMunicipio(user?.cidade);
+  const filtrarMinhaCidade = somenteMinhaCidade && Boolean(cidadeUsuario);
 
-  const carregar = useCallback(async (modo: 'inicial' | 'atualizar' = 'inicial') => {
-    const currentRequest = ++requestId.current;
-    if (modo === 'atualizar') setAtualizando(true);
-    else if (!carregouAoMenosUmaVez.current) setCarregando(true);
-    setErro(null);
+  const carregar = useCallback(async (porGesto = false) => {
+    if (porGesto) setAtualizando(true);
+    if (consultaAtiva.current) return;
+
+    const consulta = Symbol();
+    consultaAtiva.current = consulta;
+    if (!porGesto) setAtualizando(false);
+    setErro(false);
     try {
       const lista = await listarProjetos();
-      if (currentRequest === requestId.current) setProjetos(lista);
-    } catch (error) {
-      if (currentRequest === requestId.current) setErro(error instanceof Error ? error.message : 'Verifique sua conexão e tente novamente.');
+      if (!Array.isArray(lista)) throw new Error('Resposta inválida');
+      if (consultaAtiva.current === consulta) setDados(lista);
+    } catch {
+      if (consultaAtiva.current === consulta) setErro(true);
     } finally {
-      if (currentRequest === requestId.current) {
-        carregouAoMenosUmaVez.current = true;
-        setCarregando(false);
+      if (consultaAtiva.current === consulta) {
+        consultaAtiva.current = null;
         setAtualizando(false);
       }
     }
@@ -71,62 +78,71 @@ export default function OpportunitiesScreen() {
 
   useFocusEffect(useCallback(() => {
     void carregar();
-    return () => { requestId.current += 1; };
+    return () => { consultaAtiva.current = null; };
   }, [carregar]));
 
-  const categorias = useMemo(() => [
-    TODAS_CATEGORIAS,
-    ...Array.from(new Set(projetos.map((item) => item.categoria.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR')),
-  ], [projetos]);
+  const categorias = useMemo(() => {
+    const opcoes = new Map<string, string>();
+    for (const projeto of projetos) {
+      const chave = normalizar(projeto.categoria);
+      if (chave && !opcoes.has(chave)) opcoes.set(chave, projeto.categoria.trim());
+    }
+    return [...opcoes].sort(([, a], [, b]) => a.localeCompare(b, 'pt-BR'));
+  }, [projetos]);
 
-  const filtrosAtivos = categoria !== TODAS_CATEGORIAS || remuneracao !== 'TODAS' || somenteMinhaCidade || busca.trim().length > 0;
+  const filtrosAtivos = categoria !== null || remuneracao !== 'TODAS' || filtrarMinhaCidade || busca.trim().length > 0;
+  const vazioPorFiltro = filtrosAtivos && projetos.length > 0;
 
   const projetosFiltrados = useMemo(() => {
     const termo = normalizar(busca);
-    const cidadeUsuario = normalizar(user?.cidade);
+    const cidade = normalizar(cidadeUsuario);
     return projetos.filter((projeto) => {
-      if (categoria !== TODAS_CATEGORIAS && projeto.categoria !== categoria) return false;
+      if (categoria !== null && normalizar(projeto.categoria) !== categoria) return false;
       if (remuneracao === 'COM_ORCAMENTO' && projeto.orcamento == null) return false;
       if (remuneracao === 'A_COMBINAR' && projeto.orcamento != null) return false;
-      if (somenteMinhaCidade && normalizar(projeto.contratante.cidade) !== cidadeUsuario) return false;
+      if (filtrarMinhaCidade && normalizar(projeto.contratante.cidade) !== cidade) return false;
       if (!termo) return true;
       return [projeto.titulo, projeto.categoria, projeto.descricao, projeto.contratante.nome, projeto.contratante.nomeSocial, projeto.contratante.empresa, projeto.contratante.cidade]
         .some((campo) => normalizar(campo).includes(termo));
     });
-  }, [busca, categoria, projetos, remuneracao, somenteMinhaCidade, user?.cidade]);
+  }, [busca, categoria, cidadeUsuario, filtrarMinhaCidade, projetos, remuneracao]);
 
   const limparFiltros = useCallback(() => {
     setBusca('');
-    setCategoria(TODAS_CATEGORIAS);
+    setCategoria(null);
     setRemuneracao('TODAS');
     setSomenteMinhaCidade(false);
     Keyboard.dismiss();
   }, []);
 
-  const candidatar = useCallback(async (projeto: Projeto) => {
-    if (!user) {
-      Alert.alert('Entre para se candidatar', 'Faça login como agente criativo para enviar sua candidatura.', [
-        { text: 'Agora não', style: 'cancel' },
-        { text: 'Entrar', onPress: () => navigation.navigate('Login') },
-      ]);
-      return;
-    }
-    if (user.tipo !== 'AGENTE' || candidatando.has(projeto.id) || candidaturasEnviadas.has(projeto.id)) return;
-    setCandidatando((atuais) => new Set(atuais).add(projeto.id));
+  const candidatar = async (projeto: Projeto) => {
+    if (user?.tipo !== 'AGENTE' || projeto.status !== 'ABERTO') return;
+
+    const chave = `${user.usuarioId}:${projeto.id}`;
+    if (candidaturasRef.current.has(chave)) return;
+
+    const atualizarCandidatura = (estado?: EstadoCandidatura) => {
+      if (estado) candidaturasRef.current.set(chave, estado);
+      else candidaturasRef.current.delete(chave);
+      setCandidaturas(new Map(candidaturasRef.current));
+    };
+
+    // Bloqueia um segundo toque antes mesmo da próxima renderização.
+    atualizarCandidatura('enviando');
     try {
       await candidatarProjeto(projeto.id);
-      setCandidaturasEnviadas((atuais) => new Set(atuais).add(projeto.id));
+      atualizarCandidatura('enviada');
       Alert.alert('Candidatura enviada', 'O contratante poderá analisar seu perfil.');
     } catch (error) {
+      if (error instanceof ApiRequestError && error.status === 409) {
+        atualizarCandidatura('enviada');
+        Alert.alert('Candidatura já registrada', 'Você já se candidatou a esta oportunidade.');
+        return;
+      }
+      atualizarCandidatura();
       Alert.alert('Não foi possível enviar', error instanceof Error ? error.message : 'Tente novamente em alguns instantes.');
-    } finally {
-      setCandidatando((atuais) => {
-        const proximas = new Set(atuais);
-        proximas.delete(projeto.id);
-        return proximas;
-      });
     }
-  }, [candidatando, candidaturasEnviadas, navigation, user]);
+  };
 
   const headerAction = user?.tipo === 'CONTRATANTE_OPORTUNIDADES' ? (
     <View style={styles.headerActions}>
@@ -145,10 +161,9 @@ export default function OpportunitiesScreen() {
             accessibilityLabel="Buscar oportunidades"
             value={busca}
             onChangeText={setBusca}
-            placeholder="Título, categoria ou contratante"
+            placeholder="Título, categoria, contratante ou cidade"
             placeholderTextColor={tokens.color.textSecondary}
             returnKeyType="search"
-            clearButtonMode="while-editing"
             autoCorrect={false}
             style={[styles.searchInput, { color: tokens.color.textPrimary, fontSize: tokens.typography.size.body, paddingVertical: tokens.spacing.sm }]}
           />
@@ -157,21 +172,30 @@ export default function OpportunitiesScreen() {
         <View style={styles.filterHeading}>
           <AppText variant="label" weight="bold">Áreas criativas</AppText>
           {filtrosAtivos ? (
-            <Pressable accessibilityRole="button" onPress={limparFiltros} hitSlop={8}>
-              <AppText variant="label" color="accentText" weight="bold">Limpar filtros</AppText>
-            </Pressable>
+            <Button variant="ghost" size="small" onPress={limparFiltros}>Limpar filtros</Button>
           ) : null}
         </View>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: tokens.spacing.xl, gap: tokens.spacing.sm }} keyboardShouldPersistTaps="handled">
-        {categorias.map((item) => <FilterChip key={item} label={item} selected={categoria === item} onPress={() => setCategoria(item)} />)}
+        <FilterChip label="Todas as áreas" selected={categoria === null} onPress={() => setCategoria(null)} />
+        {categorias.map(([chave, label]) => (
+          <FilterChip key={chave} label={label} selected={categoria === chave} onPress={() => setCategoria(chave)} />
+        ))}
       </ScrollView>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: tokens.spacing.xl, paddingTop: tokens.spacing.sm, gap: tokens.spacing.sm }} keyboardShouldPersistTaps="handled">
         <FilterChip label="Qualquer valor" selected={remuneracao === 'TODAS'} variant="compact" onPress={() => setRemuneracao('TODAS')} />
         <FilterChip label="Com orçamento" selected={remuneracao === 'COM_ORCAMENTO'} variant="compact" onPress={() => setRemuneracao('COM_ORCAMENTO')} />
         <FilterChip label="A combinar" selected={remuneracao === 'A_COMBINAR'} variant="compact" onPress={() => setRemuneracao('A_COMBINAR')} />
-        {user?.cidade ? <FilterChip label={`Em ${user.cidade}`} icon="location-outline" selected={somenteMinhaCidade} variant="compact" onPress={() => setSomenteMinhaCidade((atual) => !atual)} /> : null}
+        {cidadeUsuario ? (
+          <FilterChip
+            label={`Contratante em ${cidadeUsuario}`}
+            icon="location-outline"
+            selected={filtrarMinhaCidade}
+            variant="compact"
+            onPress={() => setSomenteMinhaCidade((atual) => !atual)}
+          />
+        ) : null}
       </ScrollView>
 
       <View style={[styles.resultSummary, { paddingHorizontal: tokens.spacing.xl, paddingVertical: tokens.spacing.lg }]}>
@@ -183,27 +207,35 @@ export default function OpportunitiesScreen() {
         </View>
       </View>
 
-      {erro && projetos.length > 0 ? (
+      {erro && dados !== null ? (
         <View style={[styles.inlineError, { backgroundColor: tokens.color.surfaceSubtle, marginHorizontal: tokens.spacing.xl, borderRadius: tokens.radius.control, padding: tokens.spacing.md }]}>
           <Ionicons name="cloud-offline-outline" size={tokens.dimensions.icon.medium} color={tokens.color.dangerText} />
           <AppText variant="bodySmall" color="dangerText" style={styles.inlineErrorText}>Não foi possível atualizar a lista.</AppText>
-          <Button size="small" variant="ghost" onPress={() => void carregar('atualizar')}>Tentar novamente</Button>
+          <Button size="small" variant="ghost" onPress={() => void carregar(true)}>Tentar novamente</Button>
         </View>
       ) : null}
     </View>
   );
 
-  if (carregando && projetos.length === 0) return (
+  if (dados === null && !erro) return (
     <ScreenContainer edges={['top', 'left', 'right']}>
       <ScreenHeader kicker="TRABALHO E COLABORAÇÃO" title="Oportunidades" description="Buscando projetos criativos para você." action={headerAction} />
       <View style={styles.centerState}><FeedbackState kind="loading" title="Carregando oportunidades" description="Isso pode levar alguns instantes." /></View>
     </ScreenContainer>
   );
 
-  if (erro && projetos.length === 0) return (
+  if (dados === null && erro) return (
     <ScreenContainer edges={['top', 'left', 'right']}>
       <ScreenHeader kicker="TRABALHO E COLABORAÇÃO" title="Oportunidades" description="Projetos e colaborações da economia criativa." action={headerAction} />
-      <View style={styles.centerState}><FeedbackState kind="error" title="Não foi possível carregar" description={erro} icon="cloud-offline-outline" onRetry={() => void carregar()} /></View>
+      <View style={styles.centerState}>
+        <FeedbackState
+          kind="error"
+          title="Não foi possível carregar"
+          description="Verifique sua conexão e tente novamente."
+          icon="cloud-offline-outline"
+          onRetry={() => void carregar()}
+        />
+      </View>
     </ScreenContainer>
   );
 
@@ -216,25 +248,40 @@ export default function OpportunitiesScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={() => void carregar('atualizar')} tintColor={tokens.color.accentText} colors={[tokens.color.accentText]} />}
+        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={() => void carregar(true)} tintColor={tokens.color.accentText} colors={[tokens.color.accentText]} />}
         contentContainerStyle={projetosFiltrados.length === 0 ? styles.emptyList : { paddingBottom: tokens.spacing['3xl'] }}
         ItemSeparatorComponent={() => <View style={{ height: tokens.spacing.md }} />}
         ListEmptyComponent={
           <View style={{ paddingHorizontal: tokens.spacing.xl, paddingBottom: tokens.spacing['3xl'] }}>
-            <FeedbackState kind="empty" title={filtrosAtivos ? 'Nenhum projeto com esses filtros' : 'Nenhuma oportunidade aberta'} description={filtrosAtivos ? 'Tente ampliar a busca ou limpar os filtros selecionados.' : 'Novos projetos da comunidade criativa aparecerão aqui.'} icon={filtrosAtivos ? 'search-outline' : 'briefcase-outline'} />
-            {filtrosAtivos ? <Button variant="outline" fullWidth onPress={limparFiltros}>Limpar filtros</Button> : null}
+            <FeedbackState
+              kind="empty"
+              title={vazioPorFiltro ? 'Nenhum projeto com esses filtros' : 'Nenhuma oportunidade aberta'}
+              description={vazioPorFiltro ? 'Tente ampliar a busca ou limpar os filtros selecionados.' : 'Novos projetos da comunidade criativa aparecerão aqui.'}
+              icon={vazioPorFiltro ? 'search-outline' : 'briefcase-outline'}
+            />
+            {vazioPorFiltro ? <Button variant="outline" fullWidth onPress={limparFiltros}>Limpar filtros</Button> : null}
           </View>
         }
         renderItem={({ item }) => {
           const data = formatarData(item.dataEvento);
-          const enviando = candidatando.has(item.id);
-          const enviada = candidaturasEnviadas.has(item.id);
+          const candidatura = user ? candidaturas.get(`${user.usuarioId}:${item.id}`) : undefined;
+          const contratante = nomeContratante(item);
+          const cidadeContratante = nomeMunicipio(item.contratante.cidade);
+          const orcamento = formatarOrcamento(item.orcamento);
+          const resumoAcessivel = [
+            item.titulo,
+            item.categoria,
+            contratante,
+            cidadeContratante && `Contratante em ${cidadeContratante}`,
+            orcamento,
+            data && `Data prevista: ${data}`,
+          ].filter(Boolean).join('. ');
           return (
             <View style={[styles.card, { marginHorizontal: tokens.spacing.xl, padding: tokens.spacing.lg, gap: tokens.spacing.md, borderColor: tokens.color.border, borderRadius: tokens.radius.cardCompact, backgroundColor: tokens.color.surface }]}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Ver detalhes da oportunidade ${item.titulo}`}
-                accessibilityHint="Abre a descrição completa e os dados da oportunidade"
+                accessibilityLabel={resumoAcessivel}
+                accessibilityHint="Abre os detalhes da oportunidade"
                 onPress={() => navigation.navigate('OpportunityDetails', { opportunityId: item.id })}
                 style={({ pressed }) => ({ gap: tokens.spacing.md, opacity: pressed ? 0.78 : 1 })}
               >
@@ -247,13 +294,13 @@ export default function OpportunitiesScreen() {
                   <AppText color="textSecondary" numberOfLines={3}>{item.descricao}</AppText>
                 </View>
                 <View style={[styles.contractorRow, { paddingTop: tokens.spacing.md, borderTopColor: tokens.color.border }]}>
-                  <Avatar uri={item.contratante.avatarUrl} style={styles.avatar} iconSize={18} />
+                  <Avatar uri={item.contratante.avatarUrl} style={styles.avatar} iconSize={tokens.dimensions.icon.medium} />
                   <View style={styles.contractorCopy}>
-                    <AppText variant="bodySmall" weight="semibold" numberOfLines={1}>{nomeContratante(item)}</AppText>
-                    {item.contratante.cidade ? (
+                    <AppText variant="bodySmall" weight="semibold">{contratante}</AppText>
+                    {cidadeContratante ? (
                       <View style={styles.metaRow}>
                         <Ionicons name="location-outline" size={tokens.dimensions.icon.small} color={tokens.color.textSecondary} />
-                        <AppText variant="caption" color="textSecondary" numberOfLines={1}>Contratante em {item.contratante.cidade}</AppText>
+                        <AppText variant="caption" color="textSecondary" style={styles.metaText}>Contratante em {cidadeContratante}</AppText>
                       </View>
                     ) : null}
                   </View>
@@ -261,14 +308,21 @@ export default function OpportunitiesScreen() {
                 <View style={styles.projectMeta}>
                   <View style={styles.metaBlock}>
                     <AppText variant="overline" color="textSecondary" weight="bold">REMUNERAÇÃO</AppText>
-                    <AppText variant="bodySmall" weight="bold">{formatarOrcamento(item.orcamento)}</AppText>
+                    <AppText variant="bodySmall" weight="bold">{orcamento}</AppText>
                   </View>
                   {data ? <View style={styles.metaBlock}><AppText variant="overline" color="textSecondary" weight="bold">DATA PREVISTA</AppText><AppText variant="bodySmall" weight="bold">{data}</AppText></View> : null}
                 </View>
               </Pressable>
-              {user?.tipo === 'AGENTE' ? (
-                <Button variant={enviada ? 'outline' : 'primary'} fullWidth loading={enviando} disabled={enviada} accessibilityLabel={enviada ? `Candidatura enviada para ${item.titulo}` : `Candidatar-se à oportunidade ${item.titulo}`} onPress={() => void candidatar(item)}>
-                  {enviada ? 'Candidatura enviada' : 'Candidatar-me'}
+              {user?.tipo === 'AGENTE' && item.status === 'ABERTO' ? (
+                <Button
+                  variant={candidatura === 'enviada' ? 'outline' : 'primary'}
+                  fullWidth
+                  loading={candidatura === 'enviando'}
+                  disabled={candidatura === 'enviada'}
+                  accessibilityLabel={candidatura === 'enviada' ? `Candidatura enviada para ${item.titulo}` : `Candidatar-se à oportunidade ${item.titulo}`}
+                  onPress={() => void candidatar(item)}
+                >
+                  {candidatura === 'enviada' ? 'Candidatura enviada' : 'Candidatar-me'}
                 </Button>
               ) : null}
             </View>
@@ -281,23 +335,24 @@ export default function OpportunitiesScreen() {
 
 const styles = StyleSheet.create({
   centerState: { flex: 1, justifyContent: 'center' },
-  headerActions: { flexDirection: 'row', gap: 8 },
-  discovery: { gap: 16, paddingBottom: 12 },
+  headerActions: { flexDirection: 'row', gap: spacing.sm },
+  discovery: { gap: spacing.lg, paddingBottom: spacing.md },
   search: { flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
-  searchInput: { flex: 1, minWidth: 0, paddingHorizontal: 12 },
-  filterHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  searchInput: { flex: 1, minWidth: 0, paddingHorizontal: spacing.md },
+  filterHeading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   resultSummary: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
-  inlineError: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
+  inlineError: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg },
   inlineErrorText: { flex: 1 },
   emptyList: { flexGrow: 1 },
   card: { borderWidth: 1 },
-  cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   category: { flex: 1, textTransform: 'uppercase' },
-  openIcon: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  contractorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: 1 },
-  avatar: { width: 40, height: 40, borderRadius: 20 },
-  contractorCopy: { flex: 1, minWidth: 0, gap: 2 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  projectMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
-  metaBlock: { flexGrow: 1, flexBasis: 132, gap: 2 },
+  openIcon: { width: dimensions.icon.extraLarge, height: dimensions.icon.extraLarge, alignItems: 'center', justifyContent: 'center' },
+  contractorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderTopWidth: 1 },
+  avatar: { width: dimensions.touchTarget, height: dimensions.touchTarget, borderRadius: radius.pill },
+  contractorCopy: { flex: 1, minWidth: 0, gap: spacing.xxs },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  metaText: { flexShrink: 1 },
+  projectMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg },
+  metaBlock: { flexGrow: 1, flexBasis: '45%', gap: spacing.xxs },
 });
