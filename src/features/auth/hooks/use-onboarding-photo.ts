@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { uploadImage } from '@/services/api';
 
-export function useOnboardingPhoto() {
+function useOnboardingPhoto() {
   const [uri, setUri] = useState('');
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState('');
@@ -19,7 +19,7 @@ export function useOnboardingPhoto() {
       if (Platform.OS !== 'web') {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
-          setError('Autorize o acesso à galeria para escolher uma foto de perfil.');
+          setError('Autorize o acesso à galeria para escolher uma imagem.');
           return;
         }
       }
@@ -45,4 +45,26 @@ export function useOnboardingPhoto() {
   };
 
   return { uri, picking, error, active, pick, upload, clear };
+}
+
+export function useOnboardingImages() {
+  const avatar = useOnboardingPhoto();
+  const cover = useOnboardingPhoto();
+  const isPicking = () => avatar.active.current || cover.active.current;
+
+  return {
+    avatar,
+    cover,
+    isPicking,
+    picking: avatar.picking || cover.picking,
+    changed: Boolean(avatar.uri || cover.uri),
+    pick: (kind: 'avatar' | 'cover') => {
+      if (!isPicking()) void (kind === 'avatar' ? avatar : cover).pick();
+    },
+    upload: async () => {
+      const avatarUrl = await avatar.upload();
+      const bannerUrl = await cover.upload();
+      return { ...(avatarUrl ? { avatarUrl } : {}), ...(bannerUrl ? { bannerUrl } : {}) };
+    },
+  };
 }

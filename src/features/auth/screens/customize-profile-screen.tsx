@@ -5,13 +5,12 @@ import { useUser } from '@/providers/user-provider';
 import { SectionHeader, TextField } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { OnboardingProfileLayout } from '../components/onboarding-profile-layout';
-import { OnboardingPhotoActions } from '../components/onboarding-photo-actions';
-import { useOnboardingPhoto } from '../hooks/use-onboarding-photo';
+import { useOnboardingImages } from '../hooks/use-onboarding-photo';
 
 export default function CustomizeProfileScreen() {
   const { user, updateProfile, finishOnboarding } = useUser();
   const { spacing } = useThemeTokens();
-  const photo = useOnboardingPhoto();
+  const images = useOnboardingImages();
   const isEventOrganizer = user?.tipo === 'CONTRATANTE_EVENTOS';
   const [publicName, setPublicName] = useState(user?.nomeSocial ?? '');
   const [organization, setOrganization] = useState(user?.empresa ?? '');
@@ -41,11 +40,11 @@ export default function CustomizeProfileScreen() {
     ...(newDescription !== (user.descricao?.trim() ?? '') ? { descricao: newDescription || null } : {}),
     ...(isEventOrganizer && newSite !== (user.site?.trim() ?? '') ? { site: newSite || null } : {}),
   };
-  const changed = Boolean(photo.uri) || Object.keys(changes).length > 0;
-  const disabled = busy || photo.picking;
+  const changed = images.changed || Object.keys(changes).length > 0;
+  const disabled = busy || images.picking;
 
   const save = async () => {
-    if (pending.current || photo.active.current) return;
+    if (pending.current || images.isPicking()) return;
     setAttempted(true);
     setError('');
     if (missingOrganization) return;
@@ -53,8 +52,7 @@ export default function CustomizeProfileScreen() {
     setBusy(true);
     try {
       if (changed) {
-        const avatarUrl = await photo.upload();
-        await updateProfile({ ...changes, ...(avatarUrl ? { avatarUrl } : {}) });
+        await updateProfile({ ...changes, ...await images.upload() });
       }
       finishOnboarding();
     } catch (cause) {
@@ -70,11 +68,9 @@ export default function CustomizeProfileScreen() {
       title={isEventOrganizer ? 'Apresente sua organização' : 'Prepare seu perfil de contratante'}
       description={isEventOrganizer ? 'Mostre quem está por trás dos seus eventos.' : 'Mostre aos agentes criativos em quais áreas você contrata.'}
       previewName={newName} previewDetail={[isEventOrganizer ? newOrganization : '', newCategory].filter(Boolean).join(' · ')}
-      photo={photo.uri || user.avatarUrl}
-      photoActions={<OnboardingPhotoActions photo={photo} disabled={busy}
-        onPick={() => { if (!pending.current) void photo.pick(); }} />}
-      busy={busy} changed={changed} disabled={photo.picking} error={error} onSave={() => void save()}
-      onSkip={() => { if (!pending.current && !photo.active.current) finishOnboarding(); }}>
+      images={images} onPickImage={(kind) => { if (!pending.current) images.pick(kind); }}
+      busy={busy} changed={changed} error={error} onSave={() => void save()}
+      onSkip={() => { if (!pending.current && !images.isPicking()) finishOnboarding(); }}>
       <View style={{ gap: spacing.md }}>
         <SectionHeader title={isEventOrganizer ? 'Sobre a organização' : 'Sua apresentação'} />
         <TextField label="Nome social (opcional)" value={publicName} onChangeText={setPublicName} editable={!disabled}

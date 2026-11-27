@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View } from 'react-native';
 
-import CreatePortfolioScreen from '@/features/auth/screens/create-portfolio-screen';
+import SetupAgentProfileScreen from '@/features/auth/screens/setup-agent-profile-screen';
 import CustomizeProfileScreen from '@/features/auth/screens/customize-profile-screen';
 import LoginScreen from '@/features/auth/screens/login-screen';
 import RegisterScreen from '@/features/auth/screens/register-screen';
@@ -99,7 +99,7 @@ function RootStack(){
     </>
   ) : needsOnboarding ? (
     user.tipo === 'AGENTE'
-      ? <Stack.Screen name="CreatePortfolio" component={CreatePortfolioScreen}/>
+      ? <Stack.Screen name="CreatePortfolio" component={SetupAgentProfileScreen}/>
       : <Stack.Screen name="CustomizeProfile" component={CustomizeProfileScreen}/>
   ) : (
     <>
