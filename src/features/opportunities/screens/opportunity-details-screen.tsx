@@ -4,12 +4,14 @@ import { useCallback, useRef, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, View } from 'react-native';
 
 import type { RootStackParamList } from '@/navigation/app-navigator';
+import { useApplications } from '@/providers/applications-provider';
 import { useUser } from '@/providers/user-provider';
-import { ApiRequestError, candidatarProjeto, project, type Projeto } from '@/services/api';
+import { ApiRequestError, project, type Projeto } from '@/services/api';
 import { AppText, Avatar, Badge, Button, FeedbackState, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
 import { nomeMunicipio } from '@/shared/config/brazil-location';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { opportunityBudgetLabel, opportunityDateLabel, opportunityStatusLabels } from '../utils/opportunity-form';
+import { candidaturaStatus } from '../utils/opportunity-management';
 
 export default function OpportunityDetailsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'OpportunityDetails'>>();
@@ -19,11 +21,8 @@ export default function OpportunityDetailsScreen() {
   const [loaded, setLoaded] = useState<Projeto | null>(null);
   const [failure, setFailure] = useState<{ id: string; notFound: boolean } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [sending, setSending] = useState<string | null>(null);
-  const [applied, setApplied] = useState<ReadonlySet<string>>(() => new Set());
   const request = useRef<symbol | null>(null);
-  const pendingApplication = useRef(false);
-  const confirmed = useRef(new Set<string>());
+  const { items, loading: checking, failed, load: loadApplications, sending, registered, statusByProject, submit } = useApplications();
 
   const load = useCallback(async (byGesture = false) => {
     if (byGesture) setRefreshing(true);
@@ -51,35 +50,23 @@ export default function OpportunityDetailsScreen() {
 
   useFocusEffect(useCallback(() => {
     void load();
+    void loadApplications();
     return () => { request.current = null; };
-  }, [load]));
+  }, [load, loadApplications]));
 
   const opportunity = loaded?.id === opportunityId ? loaded : null;
   const error = failure?.id === opportunityId ? failure : null;
-  const applicationKey = user ? `${user.usuarioId}:${opportunityId}` : '';
   const isOpen = opportunity?.status === 'ABERTO';
-  const hasApplied = applied.has(applicationKey);
+  const applicationStatus = statusByProject.get(opportunityId);
+  const hasApplied = Boolean(applicationStatus) || registered.has(opportunityId);
 
   const apply = async () => {
-    if (user?.tipo !== 'AGENTE' || !isOpen || pendingApplication.current || confirmed.current.has(applicationKey)) return;
-
-    pendingApplication.current = true;
-    setSending(applicationKey);
+    if (user?.tipo !== 'AGENTE' || !isOpen) return;
     try {
-      await candidatarProjeto(opportunityId);
-      confirmed.current.add(applicationKey);
-      setApplied(new Set(confirmed.current));
+      await submit(opportunityId);
     } catch (error) {
-      if (error instanceof ApiRequestError && error.status === 409) {
-        confirmed.current.add(applicationKey);
-        setApplied(new Set(confirmed.current));
-      } else {
-        Alert.alert('Não foi possível enviar', error instanceof Error ? error.message : 'Tente novamente.');
-        if (error instanceof ApiRequestError && error.status === 404) void load();
-      }
-    } finally {
-      pendingApplication.current = false;
-      setSending(null);
+      Alert.alert('Não foi possível enviar', error instanceof Error ? error.message : 'Tente novamente.');
+      if (error instanceof ApiRequestError && error.status === 404) void load();
     }
   };
 
@@ -113,7 +100,7 @@ export default function OpportunityDetailsScreen() {
     <ScreenContainer>
       <ScreenHeader title="Oportunidade" onBack={back} />
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} tintColor={color.accentText} colors={[color.accentText]} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { void load(true); void loadApplications(); }} tintColor={color.accentText} colors={[color.accentText]} />}
         contentContainerStyle={{
           width: '100%', maxWidth: dimensions.contentMaxWidth, alignSelf: 'center',
           padding: spacing.xl, paddingBottom: spacing['3xl'], gap: spacing['2xl'],
@@ -176,17 +163,23 @@ export default function OpportunityDetailsScreen() {
           </View>
         ) : null}
 
-        {isOpen && user?.tipo === 'AGENTE' ? (
-          <View style={{ gap: spacing.sm }}>
-            {hasApplied ? (
-              <View accessibilityLiveRegion="polite" style={{ gap: spacing.xs }}>
-                <Badge label="Candidatura registrada" tone="success" icon="checkmark" />
-                <AppText variant="bodySmall" color="textSecondary">O contratante pode analisar sua candidatura.</AppText>
-              </View>
-            ) : (
-              <Button fullWidth loading={sending === applicationKey} onPress={() => void apply()}>Candidatar-me</Button>
-            )}
+        {user?.tipo === 'AGENTE' && hasApplied ? (
+          <View accessibilityLiveRegion="polite" style={{ gap: spacing.xs }}>
+            <SectionHeader title="Sua candidatura" />
+            <Badge {...(applicationStatus ? candidaturaStatus[applicationStatus] : { label: 'Candidatura registrada', tone: 'success' })} />
           </View>
+        ) : null}
+        {isOpen && user?.tipo === 'AGENTE' && !hasApplied ? (
+          failed ? (
+            <FeedbackState
+              kind="error" title="Não foi possível verificar sua candidatura"
+              onRetry={() => void loadApplications()}
+            />
+          ) : checking || items === null ? (
+            <AppText variant="bodySmall" color="textSecondary" accessibilityLiveRegion="polite">Verificando sua candidatura…</AppText>
+          ) : (
+            <Button fullWidth loading={sending.has(opportunityId)} onPress={() => void apply()}>Candidatar-me</Button>
+          )
         ) : null}
         {isOpen && !user ? (
           <Button fullWidth onPress={() => navigation.navigate('Login')}>Entrar para se candidatar</Button>

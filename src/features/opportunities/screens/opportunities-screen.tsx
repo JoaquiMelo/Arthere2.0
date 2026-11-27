@@ -5,15 +5,16 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, FlatList, Keyboard, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import type { RootStackParamList } from '@/navigation/app-navigator';
+import { useApplications } from '@/providers/applications-provider';
 import { useUser } from '@/providers/user-provider';
-import { ApiRequestError, candidatarProjeto, listarProjetos, type Projeto } from '@/services/api';
-import { AppText, Avatar, Button, FeedbackState, FilterChip, IconButton, ScreenContainer, ScreenHeader } from '@/shared/components';
+import { ApiRequestError, listarProjetos, type Projeto } from '@/services/api';
+import { AppText, Avatar, Badge, Button, FeedbackState, FilterChip, IconButton, ScreenContainer, ScreenHeader } from '@/shared/components';
 import { nomeMunicipio } from '@/shared/config/brazil-location';
 import { dimensions, radius, spacing } from '@/shared/theme';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { candidaturaStatus } from '../utils/opportunity-management';
 
 type Remuneracao = 'TODAS' | 'COM_ORCAMENTO' | 'A_COMBINAR';
-type EstadoCandidatura = 'enviando' | 'enviada';
 const PROJETOS_VAZIOS: Projeto[] = [];
 
 function normalizar(valor?: string | null) {
@@ -41,7 +42,7 @@ export default function OpportunitiesScreen() {
   const { user } = useUser();
   const tokens = useThemeTokens();
   const consultaAtiva = useRef<symbol | null>(null);
-  const candidaturasRef = useRef(new Map<string, EstadoCandidatura>());
+  const { items: candidaturas, loading: verificando, failed: erroCandidaturas, load: carregarCandidaturas, sending, registered, statusByProject, submit } = useApplications();
   const [dados, setDados] = useState<Projeto[] | null>(null);
   const [atualizando, setAtualizando] = useState(false);
   const [erro, setErro] = useState(false);
@@ -49,7 +50,6 @@ export default function OpportunitiesScreen() {
   const [categoria, setCategoria] = useState<string | null>(null);
   const [remuneracao, setRemuneracao] = useState<Remuneracao>('TODAS');
   const [somenteMinhaCidade, setSomenteMinhaCidade] = useState(false);
-  const [candidaturas, setCandidaturas] = useState<ReadonlyMap<string, EstadoCandidatura>>(() => new Map());
   const projetos = dados ?? PROJETOS_VAZIOS;
   const cidadeUsuario = nomeMunicipio(user?.cidade);
   const filtrarMinhaCidade = somenteMinhaCidade && Boolean(cidadeUsuario);
@@ -78,8 +78,9 @@ export default function OpportunitiesScreen() {
 
   useFocusEffect(useCallback(() => {
     void carregar();
+    void carregarCandidaturas();
     return () => { consultaAtiva.current = null; };
-  }, [carregar]));
+  }, [carregar, carregarCandidaturas]));
 
   const categorias = useMemo(() => {
     const opcoes = new Map<string, string>();
@@ -118,29 +119,11 @@ export default function OpportunitiesScreen() {
   const candidatar = async (projeto: Projeto) => {
     if (user?.tipo !== 'AGENTE' || projeto.status !== 'ABERTO') return;
 
-    const chave = `${user.usuarioId}:${projeto.id}`;
-    if (candidaturasRef.current.has(chave)) return;
-
-    const atualizarCandidatura = (estado?: EstadoCandidatura) => {
-      if (estado) candidaturasRef.current.set(chave, estado);
-      else candidaturasRef.current.delete(chave);
-      setCandidaturas(new Map(candidaturasRef.current));
-    };
-
-    // Bloqueia um segundo toque antes mesmo da próxima renderização.
-    atualizarCandidatura('enviando');
     try {
-      await candidatarProjeto(projeto.id);
-      atualizarCandidatura('enviada');
-      Alert.alert('Candidatura enviada', 'O contratante poderá analisar seu perfil.');
+      await submit(projeto.id);
     } catch (error) {
-      if (error instanceof ApiRequestError && error.status === 409) {
-        atualizarCandidatura('enviada');
-        Alert.alert('Candidatura já registrada', 'Você já se candidatou a esta oportunidade.');
-        return;
-      }
-      atualizarCandidatura();
       Alert.alert('Não foi possível enviar', error instanceof Error ? error.message : 'Tente novamente em alguns instantes.');
+      if (error instanceof ApiRequestError && error.status === 404) void carregar();
     }
   };
 
@@ -207,6 +190,14 @@ export default function OpportunitiesScreen() {
         </View>
       </View>
 
+      {user?.tipo === 'AGENTE' && erroCandidaturas ? (
+        <FeedbackState kind="error" title="Não foi possível verificar suas candidaturas" onRetry={() => void carregarCandidaturas()} />
+      ) : null}
+      {user?.tipo === 'AGENTE' && !erroCandidaturas && (verificando || candidaturas === null) ? (
+        <AppText variant="bodySmall" color="textSecondary" accessibilityLiveRegion="polite" style={{ marginHorizontal: tokens.spacing.xl, marginBottom: tokens.spacing.md }}>
+          Verificando suas candidaturas…
+        </AppText>
+      ) : null}
       {erro && dados !== null ? (
         <View style={[styles.inlineError, { backgroundColor: tokens.color.surfaceSubtle, marginHorizontal: tokens.spacing.xl, borderRadius: tokens.radius.control, padding: tokens.spacing.md }]}>
           <Ionicons name="cloud-offline-outline" size={tokens.dimensions.icon.medium} color={tokens.color.dangerText} />
@@ -248,7 +239,7 @@ export default function OpportunitiesScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={() => void carregar(true)} tintColor={tokens.color.accentText} colors={[tokens.color.accentText]} />}
+        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={() => { void carregar(true); void carregarCandidaturas(); }} tintColor={tokens.color.accentText} colors={[tokens.color.accentText]} />}
         contentContainerStyle={projetosFiltrados.length === 0 ? styles.emptyList : { paddingBottom: tokens.spacing['3xl'] }}
         ItemSeparatorComponent={() => <View style={{ height: tokens.spacing.md }} />}
         ListEmptyComponent={
@@ -264,7 +255,8 @@ export default function OpportunitiesScreen() {
         }
         renderItem={({ item }) => {
           const data = formatarData(item.dataEvento);
-          const candidatura = user ? candidaturas.get(`${user.usuarioId}:${item.id}`) : undefined;
+          const status = statusByProject.get(item.id);
+          const candidatura = status ? candidaturaStatus[status] : null;
           const contratante = nomeContratante(item);
           const cidadeContratante = nomeMunicipio(item.contratante.cidade);
           const orcamento = formatarOrcamento(item.orcamento);
@@ -313,17 +305,13 @@ export default function OpportunitiesScreen() {
                   {data ? <View style={styles.metaBlock}><AppText variant="overline" color="textSecondary" weight="bold">DATA PREVISTA</AppText><AppText variant="bodySmall" weight="bold">{data}</AppText></View> : null}
                 </View>
               </Pressable>
-              {user?.tipo === 'AGENTE' && item.status === 'ABERTO' ? (
-                <Button
-                  variant={candidatura === 'enviada' ? 'outline' : 'primary'}
-                  fullWidth
-                  loading={candidatura === 'enviando'}
-                  disabled={candidatura === 'enviada'}
-                  accessibilityLabel={candidatura === 'enviada' ? `Candidatura enviada para ${item.titulo}` : `Candidatar-se à oportunidade ${item.titulo}`}
-                  onPress={() => void candidatar(item)}
-                >
-                  {candidatura === 'enviada' ? 'Candidatura enviada' : 'Candidatar-me'}
-                </Button>
+              {user?.tipo === 'AGENTE' && (candidatura || registered.has(item.id)) ? (
+                <View accessibilityLiveRegion="polite">
+                  <Badge label={candidatura ? `Candidatura · ${candidatura.label}` : 'Candidatura registrada'} tone={candidatura?.tone ?? 'success'} />
+                </View>
+              ) : user?.tipo === 'AGENTE' && item.status === 'ABERTO' && candidaturas !== null && !verificando && !erroCandidaturas ? (
+                <Button fullWidth loading={sending.has(item.id)} accessibilityLabel={`Candidatar-se à oportunidade ${item.titulo}`}
+                  onPress={() => void candidatar(item)}>Candidatar-me</Button>
               ) : null}
             </View>
           );

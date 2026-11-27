@@ -6,6 +6,7 @@ import { ChatProvider } from './src/providers/chat-provider';
 import { ReviewsProvider } from './src/providers/reviews-provider';
 import { ManagementProvider } from './src/providers/management-provider';
 import { ThemeProvider } from './src/providers/theme-provider';
+import { ApplicationsProvider } from './src/providers/applications-provider';
 import { useUser } from './src/providers/user-provider';
 
 function SessionProviders() {
@@ -19,7 +20,9 @@ function SessionProviders() {
       <ReviewsProvider>
         <ManagementProvider>
           <ChatProvider>
-            <AppNavigator />
+            <ApplicationsProvider>
+              <AppNavigator />
+            </ApplicationsProvider>
           </ChatProvider>
         </ManagementProvider>
       </ReviewsProvider>

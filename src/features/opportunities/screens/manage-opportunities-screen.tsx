@@ -7,14 +7,15 @@ import { Alert, FlatList, Pressable, RefreshControl, View } from 'react-native';
 
 import { ReviewFormModal } from '@/features/reviews/components/review-form-modal';
 import type { RootStackParamList } from '@/navigation/app-navigator';
+import { useApplications } from '@/providers/applications-provider';
 import { useManagement } from '@/providers/management-provider';
 import { useReviews } from '@/providers/reviews-provider';
 import { useUser } from '@/providers/user-provider';
-import { ApiRequestError, meusProjetos, myApplications, updateApplication, updateProject } from '@/services/api';
+import { ApiRequestError, meusProjetos, updateApplication, updateProject } from '@/services/api';
 import { AppText, Avatar, Badge, Button, FeedbackState, FilterChip, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { opportunityBudgetLabel, opportunityStatusLabels } from '../utils/opportunity-form';
-import { candidaturaStatus, mapVaga, permiteResponder, vagaStatusLabel, type MinhaCandidatura } from '../utils/opportunity-management';
+import { candidaturaStatus, mapVaga, permiteResponder, vagaStatusLabel } from '../utils/opportunity-management';
 import type { Candidato, StatusCandidato, StatusVaga, VagaGerenciada } from './types/management';
 
 type Navigation = NativeStackNavigationProp<RootStackParamList, 'ManageOpportunities'>;
@@ -23,12 +24,6 @@ async function readJobs() {
   const items = await meusProjetos();
   if (!Array.isArray(items)) throw new Error('Resposta inválida');
   return items.map(mapVaga);
-}
-
-async function readApplications(): Promise<MinhaCandidatura[]> {
-  const items = await myApplications();
-  if (!Array.isArray(items)) throw new Error('Resposta inválida');
-  return items;
 }
 
 function useManagementList<T>(read: () => Promise<T[]>) {
@@ -303,7 +298,9 @@ function ContractorJobs() {
 function AgentApplications() {
   const navigation = useNavigation<Navigation>();
   const { color, radius, spacing } = useThemeTokens();
-  const query = useManagementList(readApplications);
+  const query = useApplications();
+  const { load } = query;
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
   const applications = query.items ?? [];
   const [filter, setFilter] = useState<'all' | StatusCandidato>('all');
   return (
