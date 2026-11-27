@@ -42,7 +42,7 @@ export default function ContratanteProfileScreen() {
   }, [refreshUser, refreshManagement]);
 
   useFocusEffect(useCallback(() => {
-    if (user?.tipo === 'CONTRATANTE_OPORTUNIDADES') void refreshManagement().then(() => setErro(false)).catch(() => setErro(true));
+    if (user?.tipo === 'CONTRATANTE_OPORTUNIDADES' || user?.tipo === 'CONTRATANTE_EVENTOS') void refreshManagement().then(() => setErro(false)).catch(() => setErro(true));
   }, [user?.tipo, refreshManagement]));
 
   if (!user || (user.tipo !== 'CONTRATANTE_EVENTOS' && user.tipo !== 'CONTRATANTE_OPORTUNIDADES')) return null;
@@ -174,6 +174,17 @@ export default function ContratanteProfileScreen() {
           <SectionHeader title={isEvents ? 'Gerencie seus eventos' : 'Gerencie contratações'} description={isEvents ? 'Publique atividades e acompanhe as participações.' : 'Acompanhe as candidaturas e o andamento das suas vagas.'} />
           {isEvents ? <>
             <Button fullWidth onPress={() => navigation.navigate('CreateEvent')}>Criar evento</Button>
+            <SectionHeader title="Meus eventos" description="Edite as informações dos eventos que você publicou." />
+            {loading && eventos.length === 0 ? <FeedbackState kind="loading" title="Carregando eventos…" /> : eventos.length === 0 ? <FeedbackState kind="empty" title="Nenhum evento publicado" description="Seus eventos aparecerão aqui para edição." icon="calendar-outline" /> : eventos.map((evento) => (
+              <View key={evento.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border }}>
+                <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+                  <AppText variant="label" color="accentText">{formatDate(evento.data)}</AppText>
+                  <AppText variant="title" weight="bold">{evento.titulo}</AppText>
+                  <AppText variant="bodySmall" color="textSecondary">{evento.cidade}</AppText>
+                </View>
+                <Button variant="outline" size="small" accessibilityLabel={`Editar evento ${evento.titulo}`} onPress={() => navigation.navigate('EditEvent', { eventId: evento.id })}>Editar</Button>
+              </View>
+            ))}
             <SectionHeader title="Solicitações de participação" description={`${pedidos.filter((item) => item.status === 'PENDENTE').length} aguardando resposta`} />
             {loading && pedidos.length === 0 ? <FeedbackState kind="loading" title="Carregando solicitações…" /> : pedidos.length === 0 ? <FeedbackState kind="empty" title="Nenhuma solicitação recebida" description="Os pedidos de participação nos seus eventos aparecerão aqui." icon="people-outline" /> : pedidos.map((item) => (
               <View key={item.id} style={{ gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border }}>
