@@ -43,7 +43,7 @@ Verifique diferenças de comportamento e APIs nas versões instaladas. Não pres
 ## Mapa — etapa 3.4
 - A descoberta começa no mapa; busca e categorias são compartilhadas com a visualização em lista.
 - O mapa ocupa o espaço restante da tela, sem ScrollView vertical envolvendo gestos. A lista usa FlatList e atualização por gesto.
-- Marcadores nativos evitam depender da captura de avatares remotos no mapa. Fotos reais ficam nas linhas da lista e no cartão do profissional.
+- Os marcadores exibem o avatar real do agente em um círculo de 48 dp, com moldura da categoria definida em MAP_CATEGORIES. Sem foto ou em caso de erro, mostram um ícone de pessoa com a mesma moldura. No Android, a captura da view é limitada ao carregamento e a uma janela curta de atualização; testar imagens lentas, filtros e quantidade de marcadores em dispositivo real. Preservar o toque que abre o cartão do profissional.
 - Enquadrar resultados usa somente coordenadas cadastradas válidas. A região inicial é uma referência geográfica, não a localização do dispositivo.
 - Não deduzir disponibilidade a partir de campos ausentes nem tratar todos os profissionais como designers. Outras especialidades são agrupadas em Outras áreas.
 - O modal de profissional tem rolagem, ações explícitas, safe area e feedback de conexão. Agendamento direto ainda não tem implementação real; a ação informativa não promete enviar uma solicitação.

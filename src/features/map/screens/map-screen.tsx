@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Keyboard, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
+import MapView, { PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 
 import { AppText, Avatar, Button, FeedbackState, FilterChip, IconButton, ScreenContainer } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
@@ -10,6 +10,7 @@ import { useChat } from '@/providers/chat-provider';
 import { useUser } from '@/providers/user-provider';
 import { agents } from '@/services/api';
 import { AgentProfileCard } from '@/features/agents/components/agent-profile-card';
+import { AgentMarker } from '@/features/agents/components/agent-marker';
 import type { AgenteCriativo } from '@/features/agents/types/agent';
 import { mapAgent, matchesAgent, MAP_CATEGORIES, categoryLabel } from '../utils/map-agents';
 
@@ -175,15 +176,7 @@ export function MapScreen() {
             pitchEnabled={false}
           >
             {filtrados.map((agente) => (
-              <Marker
-                key={agente.id}
-                identifier={agente.id}
-                coordinate={{ latitude: agente.latitude, longitude: agente.longitude }}
-                title={agente.nome}
-                description={agente.especialidades[0]}
-                pinColor={color.accent}
-                onPress={() => abrirAgente(agente)}
-              />
+              <AgentMarker key={agente.id} agente={agente} onPress={abrirAgente} />
             ))}
           </MapView>
           <View style={{ position: 'absolute', top: spacing.sm, right: spacing.sm, backgroundColor: color.surface, borderRadius: radius.control, borderWidth: 1, borderColor: color.border, ...elevation.low }}>
