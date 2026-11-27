@@ -59,7 +59,7 @@ npm install
 npx expo start -c
 ```
 
-Configure EXPO_PUBLIC_API_URL no .env da raiz do mobile. Em aparelho físico, use o IPv4 do computador na rede local, não localhost.
+O app e o Expo Go usam `https://arthere-api.onrender.com` por padrão. Defina `EXPO_PUBLIC_API_URL` no ambiente do mobile apenas quando precisar apontar explicitamente para outra API. Para testes isolados em aparelho físico, use um endereço acessível pelo aparelho.
 
 ## Persistência
 

@@ -114,12 +114,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }
 
         try {
-          const remoto = await api.me();
+          const remoto = await api.me(sessao.accessToken);
           if (revision.current === started) setUser(mapUsuario(remoto));
         } catch (error) {
           if (revision.current !== started) return;
           if (error instanceof api.ApiRequestError && error.status === 401) {
-            await api.encerrarSessao();
+            await api.encerrarSessao(sessao.accessToken);
             if (revision.current === started) setUser(null);
           } else {
             // Cache local só é usado se ainda não existe um perfil em memória.

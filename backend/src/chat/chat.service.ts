@@ -1,5 +1,14 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import type { Prisma } from '../generated/prisma/client';
+
+const participante = {
+  select: {
+    id: true,
+    agente: { select: { id: true, nome: true, avatarUrl: true, especialidade: true } },
+    contratante: { select: { id: true, nome: true, nomeSocial: true, avatarUrl: true, categoria: true } },
+  },
+} satisfies { select: Prisma.UsuarioSelect };
 
 @Injectable()
 export class ChatService {
@@ -25,9 +34,9 @@ export class ChatService {
       update: {},
       create: { usuarioAId, usuarioBId },
       include: {
-        usuarioA: { include: { agente: true, contratante: true } },
-        usuarioB: { include: { agente: true, contratante: true } },
-        mensagens: { orderBy: { criadoEm: 'asc' }, take: 50 },
+        usuarioA: participante,
+        usuarioB: participante,
+        mensagens: { orderBy: { criadoEm: 'desc' }, take: 50 },
       },
     });
   }
@@ -43,8 +52,8 @@ export class ChatService {
       where: { OR: [{ usuarioAId: uid }, { usuarioBId: uid }] },
       orderBy: { atualizadoEm: 'desc' },
       include: {
-        usuarioA: { include: { agente: true, contratante: true } },
-        usuarioB: { include: { agente: true, contratante: true } },
+        usuarioA: participante,
+        usuarioB: participante,
         mensagens: { orderBy: { criadoEm: 'desc' }, take: 50 },
       },
     });

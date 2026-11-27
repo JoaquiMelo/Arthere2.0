@@ -1,28 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
-import Constants from 'expo-constants';
 
-// URL pública configurada para builds de produção.
+// O Expo Go usa a mesma API por padrão. Um ambiente de teste pode definir a própria URL.
 const configuracaoApi = process.env.EXPO_PUBLIC_API_URL?.trim();
 const API_URL_PADRAO = 'https://arthere-api.onrender.com';
-const PORTA_API = 3000;
-
-/**
- * No Expo Go, hostUri contém o IP/host do computador que iniciou o Metro.
- * Assim, o celular usa automaticamente o mesmo IP para acessar a API local.
- */
-function obterHostDoExpo(): string | undefined {
-  const hostUri =
-    Constants.expoConfig?.hostUri ??
-    Constants.manifest2?.extra?.expoGo?.debuggerHost;
-
-  if (!hostUri) return undefined;
-
-  // Remove eventual protocolo e porta, mantendo o hostname/IP.
-  const semProtocolo = hostUri.replace(/^https?:\/\//i, '');
-  const host = semProtocolo.split('/')[0].split(':')[0].trim();
-
-  return host || undefined;
-}
 
 function normalizarApiUrl(valor?: string) {
   let url = (valor || '').replace(/^['"]|['"]$/g, '').trim();
@@ -40,27 +20,7 @@ function normalizarApiUrl(valor?: string) {
   return url.replace(/\/+$/, '');
 }
 
-function obterApiUrl(): string {
-  // Prioriza a URL explicitamente configurada, inclusive no desenvolvimento.
-  if (configuracaoApi) {
-    return normalizarApiUrl(configuracaoApi);
-  }
-
-  // Sem URL configurada, permite usar a API local durante o desenvolvimento.
-  if (__DEV__) {
-    const host = obterHostDoExpo();
-
-    if (host) {
-      return `http://${host}:${PORTA_API}`;
-    }
-  }
-
-  // Fallback para a URL padrão quando nenhuma configuração estiver disponível.
-  return normalizarApiUrl();
-}
-
-export const API_URL = obterApiUrl();
-
+export const API_URL = normalizarApiUrl(configuracaoApi);
 
 export type AuthResponse = {
   access_token: string;
@@ -159,19 +119,19 @@ async function requestAutenticado<T>(
   });
 }
 
-/**
- * Salva a sessão do usuário.
- */
-async function salvarSessao(result: AuthResponse) {
-  await SecureStore.setItemAsync(
-    'access_token',
-    result.access_token,
-  );
+const SESSION_KEY = 'arthere.session';
+let sessionWrites: Promise<void> = Promise.resolve();
 
-  await SecureStore.setItemAsync(
-    'usuario',
-    JSON.stringify(result.usuario),
-  );
+function escreverSessao(action: () => Promise<void>) {
+  const result = sessionWrites.then(action);
+  sessionWrites = result.catch(() => undefined);
+  return result;
+}
+
+/** Token e perfil passam a ser gravados juntos. */
+function salvarSessao(result: AuthResponse) {
+  const sessao: Sessao = { accessToken: result.access_token, usuario: result.usuario };
+  return escreverSessao(() => SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(sessao)));
 }
 
 /**
@@ -185,21 +145,22 @@ export class SessaoStorageError extends Error {
   }
 }
 
+async function lerSessao(): Promise<Sessao | null> {
+  const stored = await SecureStore.getItemAsync(SESSION_KEY);
+  if (stored !== null) return JSON.parse(stored) as Sessao;
+
+  // Mantém as sessões das versões que guardavam o perfil em duas chaves.
+  const [accessToken, usuario] = await Promise.all([
+    SecureStore.getItemAsync('access_token'),
+    SecureStore.getItemAsync('usuario'),
+  ]);
+  return accessToken && usuario ? { accessToken, usuario: JSON.parse(usuario) } : null;
+}
+
 export async function obterSessao(): Promise<Sessao | null> {
   try {
-    const [accessToken, usuario] = await Promise.all([
-      SecureStore.getItemAsync('access_token'),
-      SecureStore.getItemAsync('usuario'),
-    ]);
-
-    if (!accessToken || !usuario) {
-      return null;
-    }
-
-    return {
-      accessToken,
-      usuario: JSON.parse(usuario),
-    };
+    await sessionWrites;
+    return await lerSessao();
   } catch (error) {
     throw new SessaoStorageError(error);
   }
@@ -219,11 +180,16 @@ export async function session() {
 /**
  * Logout.
  */
-export async function encerrarSessao() {
-  await Promise.all([
-    SecureStore.deleteItemAsync('access_token'),
-    SecureStore.deleteItemAsync('usuario'),
-  ]);
+export function encerrarSessao(expectedToken?: string) {
+  return escreverSessao(async () => {
+    if (expectedToken && (await lerSessao())?.accessToken !== expectedToken) return;
+    // Limpa as chaves antigas antes da atual para evitar restaurar uma conta anterior.
+    await Promise.all([
+      SecureStore.deleteItemAsync('access_token'),
+      SecureStore.deleteItemAsync('usuario'),
+    ]);
+    await SecureStore.deleteItemAsync(SESSION_KEY);
+  });
 }
 
 export async function logout() {
@@ -275,7 +241,8 @@ export async function register(
 /**
  * Usuário logado.
  */
-export async function me() {
+export async function me(accessToken?: string) {
+  if (accessToken) return request<AuthResponse['usuario']>('/usuarios/me', { headers: { Authorization: 'Bearer ' + accessToken } });
   return requestAutenticado<any>(
     '/usuarios/me',
   );

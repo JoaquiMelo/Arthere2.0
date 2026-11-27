@@ -1,5 +1,12 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import type { Prisma } from '../generated/prisma/client';
+
+const agentePublico = {
+  id: true, nome: true, especialidade: true, estado: true, cidade: true, bio: true,
+  avatarUrl: true, bannerUrl: true, notaMedia: true, totalAvaliacoes: true, totalProjetos: true,
+  visivelMapa: true, portfolio: { orderBy: { criadoEm: 'desc' } },
+} satisfies Prisma.AgenteCriativoSelect;
 
 @Injectable()
 export class UsuariosService {
@@ -32,7 +39,7 @@ export class UsuariosService {
           { cidade: { contains: busca } },
         ] } : {}),
       },
-      include: { portfolio: { orderBy: { criadoEm: 'desc' } } },
+      select: { ...agentePublico, latitude: true, longitude: true },
       orderBy: [{ notaMedia: 'desc' }, { nome: 'asc' }],
     });
   }
@@ -40,10 +47,11 @@ export class UsuariosService {
   async obterAgentePublico(id: string) {
     const agente = await this.prisma.agenteCriativo.findFirst({
       where: { id, usuario: { is: {} } },
-      include: { portfolio: { orderBy: { criadoEm: 'desc' } } },
+      select: { ...agentePublico, latitude: true, longitude: true },
     });
     if (!agente) throw new NotFoundException('Perfil de agente não encontrado.');
-    return agente;
+    const { latitude, longitude, ...perfil } = agente;
+    return { ...perfil, latitude: agente.visivelMapa ? latitude : null, longitude: agente.visivelMapa ? longitude : null };
   }
 
   async obterContratantePublico(id: string) {

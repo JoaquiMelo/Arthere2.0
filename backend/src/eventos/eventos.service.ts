@@ -4,6 +4,9 @@ import { isEventoConcluido } from './evento-data';
 
 const MAX_FOTOS = 8;
 const fotoPath = /^\/uploads\/([a-f0-9-]{36}\.(?:jpg|png|webp|gif))$/i;
+const contratanteDoEvento = {
+  select: { id: true, nome: true, nomeSocial: true, empresa: true, avatarUrl: true, cidade: true },
+} as const;
 
 function coordenadas(latitude: unknown, longitude: unknown) {
   if (latitude === undefined && longitude === undefined) return {};
@@ -44,7 +47,7 @@ export class EventosService {
   async obter(id: string) {
     const evento = await this.prisma.evento.findUnique({
       where: { id },
-      include: { contratante: true },
+      include: { contratante: contratanteDoEvento },
     });
     if (!evento) throw new NotFoundException('Evento não encontrado.');
     return evento;
@@ -191,7 +194,7 @@ export class EventosService {
     if (usuario.agente) {
       return this.prisma.solicitacaoEvento.findMany({
         where: { agenteId: usuario.agente.id },
-        include: { evento: { include: { contratante: true } }, agente: true },
+        include: { evento: { include: { contratante: contratanteDoEvento } }, agente: true },
         orderBy: { criadoEm: 'desc' },
       });
     }
