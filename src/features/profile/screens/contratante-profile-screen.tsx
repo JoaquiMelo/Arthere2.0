@@ -1,11 +1,11 @@
-import { AppText, Badge, Button, FeedbackState, IconButton, ScreenContainer, SectionHeader, TextField } from '@/shared/components';
+import { AppText, Badge, Button, FeedbackState, FilterChip, IconButton, ScreenContainer, SectionHeader, TextField } from '@/shared/components';
 import { formatarLocalizacao } from '@/shared/config/brazil-location';
 import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { useManagement } from '@/providers/management-provider';
+import { useManagement, type SolicitacaoEvento } from '@/providers/management-provider';
 import { useUser } from '@/providers/user-provider';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { vagaStatusLabel } from '@/features/opportunities/utils/opportunity-management';
@@ -30,6 +30,7 @@ export default function ContratanteProfileScreen() {
   const [salvando, setSalvando] = useState(false);
   const pending = useRef(false);
   const [respondendo, setRespondendo] = useState<string | null>(null);
+  const [filtroPedidos, setFiltroPedidos] = useState<'TODOS' | SolicitacaoEvento['status']>('TODOS');
   const respondendoRef = useRef(false);
 
   const recarregar = useCallback(async () => {
@@ -49,7 +50,8 @@ export default function ContratanteProfileScreen() {
   if (!user || (user.tipo !== 'CONTRATANTE_EVENTOS' && user.tipo !== 'CONTRATANTE_OPORTUNIDADES')) return null;
 
   const empresa = user.empresa?.trim() || '';
-  const pedidos = isEvents ? solicitacoesEvento.filter((item) => eventos.some((evento) => evento.id === item.eventId)) : [];
+  const pedidos = isEvents ? solicitacoesEvento : [];
+  const pedidosVisiveis = pedidos.filter((item) => filtroPedidos === 'TODOS' || item.status === filtroPedidos);
   const responder = async (id: string, aceitar: boolean) => {
     if (respondendoRef.current) return;
     respondendoRef.current = true;
@@ -187,13 +189,25 @@ export default function ContratanteProfileScreen() {
               </View>
             ))}
             <SectionHeader title="Solicitações de participação" description={`${pedidos.filter((item) => item.status === 'PENDENTE').length} aguardando resposta`} />
-            {loading && pedidos.length === 0 ? <FeedbackState kind="loading" title="Carregando solicitações…" /> : pedidos.length === 0 ? <FeedbackState kind="empty" title="Nenhuma solicitação recebida" description="Os pedidos de participação nos seus eventos aparecerão aqui." icon="people-outline" /> : pedidos.map((item) => (
+            {pedidos.length ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                {([['TODOS', 'Todas'], ['PENDENTE', 'Pendentes'], ['ACEITA', 'Aceitas'], ['RECUSADA', 'Recusadas']] as const).map(([status, label]) => (
+                  <FilterChip key={status} label={label} variant="compact" selected={status === filtroPedidos} onPress={() => setFiltroPedidos(status)} />
+                ))}
+              </View>
+            ) : null}
+            {loading && pedidos.length === 0 ? <FeedbackState kind="loading" title="Carregando solicitações…" />
+              : pedidos.length === 0 ? <FeedbackState kind="empty" title="Nenhuma solicitação recebida" description="Os pedidos de participação nos seus eventos aparecerão aqui." icon="people-outline" />
+                : pedidosVisiveis.length === 0 ? <FeedbackState kind="empty" title="Nenhuma solicitação nessa situação" />
+                  : pedidosVisiveis.map((item) => (
               <View key={item.id} style={{ gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border }}>
                 <AppText variant="label" color="accentText" weight="bold">{item.eventoTitulo}</AppText>
                 <AppText variant="title" weight="bold">{item.agenteNome}</AppText>
                 <AppText variant="bodySmall" color="textSecondary">{item.agenteEspecialidade}</AppText>
                 {item.mensagem ? <AppText>{item.mensagem}</AppText> : null}
                 <Badge label={item.status === 'ACEITA' ? 'Aceita' : item.status === 'RECUSADA' ? 'Recusada' : 'Aguardando resposta'} tone={item.status === 'ACEITA' ? 'success' : item.status === 'RECUSADA' ? 'danger' : 'warning'} />
+                {item.agenteId ? <Button variant="ghost" size="small" accessibilityLabel={`Ver perfil de ${item.agenteNome}`}
+                  onPress={() => navigation.navigate('PublicProfile', { profileType: 'AGENTE', profileId: item.agenteId })}>Ver perfil do agente</Button> : null}
                 {item.status === 'PENDENTE' ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
                   <Button variant="outline" disabled={respondendo !== null} onPress={() => Alert.alert('Recusar participação?', item.agenteNome, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Recusar', style: 'destructive', onPress: () => void responder(item.id, false) }])}>Recusar</Button>
                   <Button disabled={respondendo !== null} onPress={() => Alert.alert('Aceitar participação?', item.agenteNome, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Aceitar', onPress: () => void responder(item.id, true) }])}>Aceitar</Button>

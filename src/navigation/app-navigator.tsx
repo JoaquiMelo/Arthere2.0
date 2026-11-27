@@ -112,8 +112,10 @@ function RootStack(){
       <Stack.Screen name="PublicProfile" component={PublicProfileScreen}/>
       <Stack.Screen name="Events" component={EventsScreen}/>
       <Stack.Screen name="EventDetails" component={EventDetailsScreen}/>
-      <Stack.Screen name="CreateEvent" component={CreateEventScreen}/>
-       {user.tipo === 'CONTRATANTE_EVENTOS' ? <Stack.Screen name="EditEvent" component={EditEventScreen}/> : null}
+      {user.tipo === 'CONTRATANTE_EVENTOS' ? <>
+        <Stack.Screen name="CreateEvent" component={CreateEventScreen}/>
+        <Stack.Screen name="EditEvent" component={EditEventScreen}/>
+      </> : null}
     </>
   )}
  </Stack.Navigator>;

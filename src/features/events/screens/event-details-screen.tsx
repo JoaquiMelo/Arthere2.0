@@ -1,266 +1,191 @@
-import { MediaImage } from '@/shared/components/media-image';
-import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect, useNavigation, useRoute, type NavigationProp, type RouteProp } from '@react-navigation/native';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, View } from 'react-native';
 
-import { useNavigation, useRoute } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
-import { useTheme } from '@/providers/theme-provider';
-import { useUser } from '@/providers/user-provider';
+import type { RootStackParamList } from '@/navigation/app-navigator';
 import { useManagement } from '@/providers/management-provider';
-import { event as buscarEvento } from '@/services/api';
-import type { RootStackParamList } from '../../../navigation/app-navigator';
+import { useUser } from '@/providers/user-provider';
+import { ApiRequestError, event as getEvent } from '@/services/api';
+import { AppText, Badge, Button, FeedbackState, MediaImage, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
+import { realImageUri } from '@/shared/config/image-uri';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import type { Evento } from '../types/event';
+import { eventDate, mapEvento } from '../utils/event-agenda';
+import type { EventData } from '../utils/event-form';
 
-type Navigation = NativeStackNavigationProp<RootStackParamList, 'EventDetails'>;
-type EventRoute = RouteProp<RootStackParamList, 'EventDetails'>;
+const dateFormat = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'full' });
+const participation = {
+  PENDENTE: { label: 'Aguardando resposta', tone: 'warning' },
+  ACEITA: { label: 'Participação aceita', tone: 'success' },
+  RECUSADA: { label: 'Solicitação recusada', tone: 'danger' },
+} as const;
 
 export default function EventDetailsScreen() {
-  const navigation = useNavigation<Navigation>();
-  const route = useRoute<EventRoute>();
-  const { palette } = useTheme();
-  const { user } = useUser();
-  const { eventos, solicitacoesEvento, enviarSolicitacaoEvento } = useManagement();
-  const [enviando, setEnviando] = useState(false);
-  const [eventoApi, setEventoApi] = useState<any>(null);
-  const [erroEvento, setErroEvento] = useState<{ id: string; message: string } | null>(null);
-  const [tentativa, setTentativa] = useState(0);
-
-  useEffect(() => {
-    if (eventos.some((item) => item.id === route.params.eventId)) return;
-    let ativo = true;
-    buscarEvento(route.params.eventId).then((dados) => {
-      if (!ativo) return;
-      const dataEvento = new Date(dados.dataEvento);
-      setEventoApi({
-        id: dados.id,
-        titulo: dados.titulo,
-        categoria: dados.categoria,
-        descricao: dados.descricao,
-        local: dados.local,
-        cidade: dados.cidade,
-        data: Number.isNaN(dataEvento.getTime()) ? String(dados.dataEvento).slice(0, 10) : dataEvento.toISOString().slice(0, 10),
-        horario: dados.horario ?? '',
-        organizador: dados.organizador ?? dados.contratante?.nome ?? '',
-        imagemUrl: dados.imagemUrl ?? undefined,
-        contratanteId: dados.contratanteId ?? dados.contratante?.id,
-        premium: Boolean(dados.premium),
-        destaque: Boolean(dados.fixado),
-      });
-    }).catch((error: unknown) => {
-      if (ativo) setErroEvento({ id: route.params.eventId, message: error instanceof Error ? error.message : 'Não foi possível carregar o evento.' });
-    });
-    return () => { ativo = false; };
-  }, [eventos, route.params.eventId, tentativa]);
-
-  const evento = eventos.find((item) => item.id === route.params.eventId) ?? (eventoApi?.id === route.params.eventId ? eventoApi : null);
-  const erroAtual = erroEvento?.id === route.params.eventId ? erroEvento.message : null;
-
-  if (!evento) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
-        <View style={styles.center}>
-          {!erroAtual ? <ActivityIndicator color={palette.brandCoral} /> : null}
-          <Text style={[styles.errorTitle, { color: palette.brandInk }]}>{erroAtual ? 'Evento indisponível' : 'Carregando evento…'}</Text>
-          {erroAtual ? <>
-            <Text style={{ color: palette.muted, textAlign: 'center', marginBottom: 12 }}>{erroAtual}</Text>
-            <TouchableOpacity accessibilityRole="button" onPress={() => { setErroEvento(null); setTentativa((value) => value + 1); }} style={[styles.backButton, { backgroundColor: palette.brandInk }]}>
-              <Text style={[styles.buttonText, { color: palette.brandPaper }]}>Tentar novamente</Text>
-            </TouchableOpacity>
-          </> : null}
-          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: palette.brandCoral }]}>
-            <Text style={[styles.buttonText, { color: palette.brandPaper }]}>Voltar</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const data = new Date(evento.data + 'T12:00:00');
-  const dia = String(data.getDate()).padStart(2, '0');
-  const mes = new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(data);
-  const semana = new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(data);
-  const isAgente = user?.tipo === 'AGENTE';
-  const solicitacao = solicitacoesEvento.find((item) => item.eventId === evento.id && item.agenteId === user?.id);
-  const statusSolicitacao = solicitacao?.status;
-
-  const solicitarParticipacao = () => {
-    const agente = user;
-    if (!agente || statusSolicitacao === 'PENDENTE' || statusSolicitacao === 'ACEITA' || enviando) return;
-
-    Alert.alert(
-      'Enviar solicitação',
-      `Deseja enviar uma solicitação ao contratante para participar de "${evento.titulo}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Enviar',
-          onPress: async () => {
-            setEnviando(true);
-            try {
-              await enviarSolicitacaoEvento({
-                eventId: evento.id,
-                eventoTitulo: evento.titulo,
-                agenteId: agente.id,
-                agenteNome: agente.nomeSocial || agente.nome,
-                agenteEspecialidade: agente.especialidade || 'Profissional criativo',
-                mensagem: 'Olá! Gostaria de participar deste projeto como agente criativo.',
-              });
-              Alert.alert('Solicitação enviada', 'O contratante recebeu seu pedido de participação.');
-            } catch (error) {
-              Alert.alert('Não foi possível enviar', error instanceof Error ? error.message : 'Tente novamente.');
-            } finally {
-              setEnviando(false);
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <MediaImage uri={evento.imagemUrl} style={styles.eventImage} icon="calendar-outline" iconSize={52} />
-        <View style={[styles.hero, { backgroundColor: palette.brandInk }]}>
-          <View style={[styles.shapeBlue, { backgroundColor: palette.brandBlue }]} />
-          <View style={[styles.shapeGreen, { backgroundColor: palette.brandGreen }]} />
-          <View style={[styles.shapeCoral, { backgroundColor: palette.brandCoral }]} />
-          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backCircle, { backgroundColor: palette.brandPaper }]}>
-            <Ionicons name="arrow-back" size={22} color={palette.brandInk} />
-          </TouchableOpacity>
-          <View style={styles.heroContent}>
-            <Text style={[styles.kicker, { color: palette.brandSand }]}>{evento.categoria.toUpperCase()}</Text>
-            <Text style={[styles.heroTitle, { color: palette.brandPaper }]}>{evento.titulo}</Text>
-            {evento.premium && (
-              <View style={[styles.premium, { backgroundColor: palette.brandGreen }]}>
-                <Ionicons name="star" size={12} color={palette.brandPaper} />
-                <Text style={[styles.premiumText, { color: palette.brandPaper }]}>EVENTO PREMIUM</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <View style={[styles.datePanel, { backgroundColor: palette.brandSand, borderColor: palette.brandInk }]}>
-          <Text style={[styles.day, { color: palette.brandInk }]}>{dia}</Text>
-          <View style={styles.dateInfo}>
-            <Text style={[styles.weekday, { color: palette.brandInk }]}>{semana.toUpperCase()}</Text>
-            <Text style={[styles.month, { color: palette.brandInk }]}>{mes.toUpperCase()}</Text>
-            <Text style={[styles.time, { color: palette.brandInk }]}>{evento.horario}</Text>
-          </View>
-        </View>
-
-        <View style={[styles.card, { backgroundColor: palette.brandPaper, borderColor: palette.brandInk }]}>
-          <Text style={[styles.sectionTitle, { color: palette.brandInk }]}>SOBRE O EVENTO</Text>
-          <Text style={[styles.description, { color: palette.muted }]}>{evento.descricao}</Text>
-
-          <View style={styles.infoRow}>
-            <View style={[styles.iconBox, { backgroundColor: palette.brandBlue }]}>
-              <Ionicons name="location" size={18} color={palette.brandInk} />
-            </View>
-            <View style={styles.infoCopy}>
-              <Text style={[styles.infoLabel, { color: palette.muted }]}>LOCAL</Text>
-              <Text style={[styles.infoValue, { color: palette.brandInk }]}>{evento.local}</Text>
-              <Text style={[styles.infoSecondary, { color: palette.muted }]}>{evento.cidade}</Text>
-            </View>
-          </View>
-
-          <View style={styles.infoRow}>
-            <View style={[styles.iconBox, { backgroundColor: palette.brandGreen }]}>
-              <Ionicons name="people" size={18} color={palette.brandPaper} />
-            </View>
-            <View style={styles.infoCopy}>
-              <Text style={[styles.infoLabel, { color: palette.muted }]}>ORGANIZAÇÃO</Text>
-              {evento.contratanteId ? (
-                <TouchableOpacity onPress={() => navigation.navigate('PublicProfile', { profileType: 'CONTRATANTE', profileId: evento.contratanteId! })} accessibilityRole="button">
-                  <Text style={[styles.infoValue, { color: palette.brandCoral }]}>{evento.organizador || 'Ver perfil do organizador'} ↗</Text>
-                </TouchableOpacity>
-              ) : (
-                <Text style={[styles.infoValue, { color: palette.brandInk }]}>{evento.organizador}</Text>
-              )}
-            </View>
-          </View>
-        </View>
-
-        {isAgente ? (
-          <View style={[styles.registration, { backgroundColor: palette.brandInk }]}>
-            <View style={styles.registrationCopy}>
-              <Text style={[styles.registrationTitle, { color: palette.brandPaper }]}>
-                {statusSolicitacao === 'ACEITA' ? 'Solicitação aceita!' : statusSolicitacao === 'PENDENTE' ? 'Solicitação enviada!' : statusSolicitacao === 'RECUSADA' ? 'Solicitação recusada' : 'Quer participar?'}
-              </Text>
-              <Text style={[styles.registrationText, { color: palette.brandPaper }]}>
-                {statusSolicitacao === 'ACEITA'
-                  ? 'O contratante aceitou sua solicitação para este projeto.'
-                  : statusSolicitacao === 'PENDENTE'
-                    ? 'Aguarde o contratante analisar sua solicitação.'
-                    : 'Envie uma solicitação ao contratante para participar deste projeto.'}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={solicitarParticipacao}
-              style={[
-                styles.registerButton,
-                { backgroundColor: statusSolicitacao === 'ACEITA' ? palette.brandGreen : palette.brandCoral },
-              ]}
-            >
-              <Ionicons name={statusSolicitacao === 'ACEITA' ? 'checkmark-circle' : statusSolicitacao === 'PENDENTE' ? 'time-outline' : 'send-outline'} size={19} color={palette.brandPaper} />
-              <Text style={[styles.registerButtonText, { color: palette.brandPaper }]}>
-                {statusSolicitacao === 'ACEITA' ? 'ACEITO' : statusSolicitacao === 'PENDENTE' ? 'PENDENTE' : enviando ? 'ENVIANDO...' : 'SOLICITAR'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={[styles.restriction, { backgroundColor: palette.brandPaper, borderColor: palette.brandInk }]}>
-            <Ionicons name="information-circle-outline" size={22} color={palette.brandCoral} />
-            <Text style={[styles.restrictionText, { color: palette.brandInk }]}>
-              O cadastro em eventos está disponível para perfis de agente criativo.
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
-  );
+  const { params: { eventId } } = useRoute<RouteProp<RootStackParamList, 'EventDetails'>>();
+  return <EventDetails key={eventId} eventId={eventId} />;
 }
 
-const styles = StyleSheet.create({
-  eventImage: { width: '100%', height: 210, borderRadius: 18, marginBottom: 12 },
-  container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 34 },
-  hero: { minHeight: 290, borderRadius: 20, overflow: 'hidden', position: 'relative', marginBottom: 14 },
-  heroContent: { padding: 22, paddingTop: 76, maxWidth: 330, zIndex: 2 },
-  kicker: { fontSize: 11, fontWeight: '900', letterSpacing: 1.8, marginBottom: 8 },
-  heroTitle: { fontSize: 34, lineHeight: 38, fontWeight: '900', letterSpacing: -1 },
-  shapeBlue: { position: 'absolute', width: 115, height: 115, borderRadius: 30, right: -18, bottom: 20, transform: [{ rotate: '20deg' }] },
-  shapeGreen: { position: 'absolute', width: 90, height: 48, borderRadius: 10, right: 20, top: 38 },
-  shapeCoral: { position: 'absolute', width: 62, height: 135, borderRadius: 10, right: 100, top: -30 },
-  backCircle: { position: 'absolute', top: 18, left: 18, width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', zIndex: 3 },
-  premium: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 6, borderRadius: 8, marginTop: 14 },
-  premiumText: { fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
-  datePanel: { borderWidth: 1.5, borderRadius: 14, padding: 14, flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-  day: { fontSize: 54, lineHeight: 58, fontWeight: '900', width: 88, textAlign: 'center' },
-  dateInfo: { borderLeftWidth: 1, borderLeftColor: '#29242B', paddingLeft: 14, flex: 1 },
-  weekday: { fontSize: 11, fontWeight: '900', letterSpacing: 1 },
-  month: { fontSize: 15, fontWeight: '900', marginTop: 2 },
-  time: { fontSize: 13, fontWeight: '700', marginTop: 5 },
-  card: { borderWidth: 1.5, borderRadius: 14, padding: 16, marginBottom: 14 },
-  sectionTitle: { fontSize: 12, fontWeight: '900', letterSpacing: 1.3, marginBottom: 8 },
-  description: { fontSize: 14, lineHeight: 21 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 16 },
-  iconBox: { width: 42, height: 42, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  infoCopy: { flex: 1, marginLeft: 11 },
-  infoLabel: { fontSize: 9, fontWeight: '900', letterSpacing: 1 },
-  infoValue: { fontSize: 14, fontWeight: '900', marginTop: 2 },
-  infoSecondary: { fontSize: 12, marginTop: 1 },
-  registration: { borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  registrationCopy: { flex: 1 },
-  registrationTitle: { fontSize: 17, fontWeight: '900' },
-  registrationText: { fontSize: 11, lineHeight: 16, marginTop: 4 },
-  registerButton: { minHeight: 46, paddingHorizontal: 14, borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  registerButtonText: { fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
-  restriction: { borderWidth: 1.5, borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  restrictionText: { flex: 1, fontSize: 12, lineHeight: 17, fontWeight: '600' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  errorTitle: { fontSize: 20, fontWeight: '900', marginBottom: 16 },
-  backButton: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 },
-  buttonText: { fontWeight: '900' },
-});
+function EventDetails({ eventId }: { eventId: string }) {
+  const navigation = useNavigation<NavigationProp<RootStackParamList, 'EventDetails'>>();
+  const { user } = useUser();
+  const { solicitacoesEvento, refreshSolicitacoes, enviarSolicitacaoEvento } = useManagement();
+  const { color, dimensions, radius, spacing } = useThemeTokens();
+  const isAgent = user?.tipo === 'AGENTE';
+  const [evento, setEvento] = useState<Evento | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [missing, setMissing] = useState(false);
+  const [checking, setChecking] = useState(isAgent);
+  const [requestError, setRequestError] = useState(false);
+  const [sending, setSending] = useState(false);
+  const eventRequest = useRef<symbol | null>(null);
+  const statusRequest = useRef<symbol | null>(null);
+  const sendPending = useRef(false);
+
+  const load = useCallback(async () => {
+    if (eventRequest.current) return;
+    const id = Symbol();
+    eventRequest.current = id;
+    setLoading(true);
+    setFailed(false);
+    setMissing(false);
+    try {
+      const item: EventData = await getEvent(eventId);
+      if (item?.id !== eventId) throw new Error('Resposta inválida');
+      if (eventRequest.current === id) {
+        setEvento(mapEvento({
+          ...item, organizador: item.organizador || item.contratante?.nome,
+          contratanteId: item.contratanteId ?? item.contratante?.id,
+        }));
+      }
+    } catch (error) {
+      if (eventRequest.current !== id) return;
+      if (error instanceof ApiRequestError && error.status === 404) {
+        setEvento(null);
+        setMissing(true);
+      }
+      setFailed(true);
+    } finally {
+      if (eventRequest.current === id) {
+        eventRequest.current = null;
+        setLoading(false);
+      }
+    }
+  }, [eventId]);
+
+  const loadParticipation = useCallback(async () => {
+    if (!isAgent || statusRequest.current) return;
+    const id = Symbol();
+    statusRequest.current = id;
+    setChecking(true);
+    setRequestError(false);
+    try {
+      await refreshSolicitacoes();
+    } catch {
+      if (statusRequest.current === id) setRequestError(true);
+    } finally {
+      if (statusRequest.current === id) {
+        statusRequest.current = null;
+        setChecking(false);
+      }
+    }
+  }, [isAgent, refreshSolicitacoes]);
+
+  useFocusEffect(useCallback(() => {
+    void load();
+    void loadParticipation();
+    return () => { eventRequest.current = null; statusRequest.current = null; };
+  }, [load, loadParticipation]));
+
+  const status = solicitacoesEvento.find((item) => item.eventId === eventId && item.agenteId === user?.id)?.status;
+  const owner = evento?.contratanteId;
+  const requestParticipation = () => {
+    if (user?.tipo !== 'AGENTE' || !evento || !owner || checking || requestError || sendPending.current
+      || (status && status !== 'RECUSADA')) return;
+    Alert.alert('Solicitar participação?', evento.titulo, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Enviar pedido', onPress: async () => {
+        if (sendPending.current) return;
+        sendPending.current = true;
+        setSending(true);
+        try {
+          await enviarSolicitacaoEvento({
+            eventId, eventoTitulo: evento.titulo, agenteId: user.id, agenteNome: user.nomeSocial || user.nome,
+            agenteEspecialidade: user.especialidade || 'Profissional criativo',
+            mensagem: 'Olá! Gostaria de participar deste evento como agente criativo.',
+          });
+        } catch (error) {
+          if (error instanceof ApiRequestError && error.status === 409) void loadParticipation();
+          Alert.alert('Não foi possível enviar', error instanceof Error ? error.message : 'Tente novamente.');
+        } finally {
+          sendPending.current = false;
+          setSending(false);
+        }
+      } },
+    ]);
+  };
+
+  const cover = realImageUri(evento?.imagemUrl);
+  const date = evento?.data ? dateFormat.format(eventDate(evento.data)) : 'Data a confirmar';
+  const place = [evento?.local, evento?.cidade].filter(Boolean).join(' · ');
+  return (
+    <ScreenContainer>
+      <ScreenHeader title="Evento" onBack={() => navigation.goBack()} />
+      {!evento ? (
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          {failed ? <FeedbackState kind="error" title={missing ? 'Evento indisponível' : 'Não foi possível carregar o evento'}
+            description={missing ? 'A publicação pode ter sido removida.' : 'Verifique sua conexão e tente novamente.'}
+            onRetry={missing ? undefined : () => void load()} />
+            : <FeedbackState kind="loading" title="Carregando evento…" />}
+        </View>
+      ) : (
+        <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { void load(); void loadParticipation(); }}
+          tintColor={color.accentText} colors={[color.accentText]} />}
+          contentContainerStyle={{ width: '100%', maxWidth: dimensions.contentMaxWidth, alignSelf: 'center', padding: spacing.xl, gap: spacing['2xl'] }}>
+          <View style={{ borderRadius: radius.card, overflow: 'hidden', backgroundColor: color.accentSoft, borderTopWidth: spacing.xs, borderColor: color.accent }}>
+            {cover ? <MediaImage uri={cover} icon="calendar-outline" style={{ width: '100%', aspectRatio: 16 / 9 }} /> : null}
+            <View style={{ padding: spacing.xl, gap: spacing.sm }}>
+              <AppText variant="label" weight="bold">{evento.categoria}</AppText>
+              <AppText variant="display" weight="black" accessibilityRole="header">{evento.titulo}</AppText>
+              {evento.premium || evento.destaque ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+                {evento.premium ? <Badge label="Premium" icon="star-outline" tone="accent" /> : null}
+                {evento.destaque ? <Badge label="Destaque" icon="pin-outline" /> : null}
+              </View> : null}
+            </View>
+          </View>
+          {failed ? <FeedbackState kind="error" title="Não foi possível atualizar" description="Exibindo o último conteúdo carregado." onRetry={() => void load()} /> : null}
+          <View style={{ borderBottomWidth: 1, borderColor: color.border, paddingBottom: spacing.lg, gap: spacing.md }}>
+            <SectionHeader title="Quando e onde" />
+            <AppText variant="title" weight="bold" style={{ textTransform: 'capitalize' }}>{date}</AppText>
+            {evento.horario ? <AppText>{evento.horario}</AppText> : null}
+            {place ? <AppText variant="bodySmall" color="textSecondary">{place}</AppText> : null}
+          </View>
+          <View style={{ gap: spacing.sm }}>
+            <SectionHeader title="Sobre o evento" />
+            <AppText>{evento.descricao}</AppText>
+          </View>
+          {owner || evento.organizador ? <View style={{ gap: spacing.sm }}>
+            <SectionHeader title="Organização" />
+            {evento.organizador ? <AppText weight="semibold">{evento.organizador}</AppText> : null}
+            {owner ? <Button variant="outline"
+              onPress={() => navigation.navigate('PublicProfile', { profileType: 'CONTRATANTE', profileId: owner })}>Ver perfil da organização</Button> : null}
+          </View> : null}
+          {isAgent && (status || owner) ? (
+            <View style={{ backgroundColor: color.surfaceSubtle, borderRadius: radius.cardCompact, padding: spacing.lg, gap: spacing.sm }} accessibilityLiveRegion="polite">
+              <SectionHeader title="Participação" />
+              {status ? <Badge {...participation[status]} /> : null}
+              {checking ? <AppText variant="bodySmall" color="textSecondary">Consultando sua solicitação…</AppText>
+                : requestError ? <FeedbackState kind="error" title="Não foi possível verificar sua solicitação" onRetry={() => void loadParticipation()} />
+                  : owner && (!status || status === 'RECUSADA') ? (
+                    <Button fullWidth loading={sending} onPress={requestParticipation}>
+                      {status === 'RECUSADA' ? 'Solicitar novamente' : 'Solicitar participação'}
+                    </Button>
+                  ) : null}
+            </View>
+          ) : null}
+          {!user && owner ? <Button fullWidth onPress={() => navigation.navigate('Login')}>Entrar para solicitar participação</Button> : null}
+        </ScrollView>
+      )}
+    </ScreenContainer>
+  );
+}
