@@ -63,7 +63,8 @@ function ConversationRow({
   const styles = useMemo(() => createStyles(color), [color]);
   const last = conversation.messages.at(-1);
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}>
+    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}
+      accessibilityRole="button" accessibilityLabel={`Conversa com ${conversation.participant.nome}. ${preview(conversation)}`}>
       <View style={styles.avatarFrame}>
         <Avatar uri={conversation.participant.avatarUrl} style={styles.avatar} iconSize={24} />
         {conversation.participant.disponivel ? <View style={styles.online} /> : null}

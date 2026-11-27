@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 
@@ -11,9 +12,10 @@ type Props = Omit<PressableProps, 'children' | 'style' | 'accessibilityLabel'> &
   style?: StyleProp<ViewStyle>;
 };
 
-export function IconButton({ icon, accessibilityLabel, variant = 'subtle', size = 'small', loading = false, disabled = false, style, accessibilityState, ...props }: Props) {
+export function IconButton({ icon, accessibilityLabel, variant = 'subtle', size = 'small', loading = false, disabled = false, style, accessibilityState, onFocus, onBlur, ...props }: Props) {
   const { color, dimensions, radius } = useThemeTokens();
   const blocked = disabled || loading;
+  const [focused, setFocused] = useState(false);
   const foreground = variant === 'primary' ? color.onAccent : color.textPrimary;
   const background = variant === 'primary' ? color.accent : variant === 'subtle' ? color.surfaceSubtle : 'transparent';
   return (
@@ -23,8 +25,9 @@ export function IconButton({ icon, accessibilityLabel, variant = 'subtle', size 
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ ...accessibilityState, disabled: blocked, busy: loading }}
       disabled={blocked}
+      onFocus={(event) => { setFocused(true); onFocus?.(event); }}
+      onBlur={(event) => { setFocused(false); onBlur?.(event); }}
       style={({ pressed }) => [
-        style,
         {
           minWidth: dimensions.control[size],
           minHeight: dimensions.control[size],
@@ -32,10 +35,12 @@ export function IconButton({ icon, accessibilityLabel, variant = 'subtle', size 
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: background,
-          borderWidth: variant === 'outline' ? 1 : 0,
-          borderColor: color.border,
-          opacity: blocked ? 0.48 : pressed ? 0.76 : 1,
+          borderWidth: 1,
+          borderColor: variant === 'outline' ? color.border : 'transparent',
+          opacity: disabled && !loading ? 0.48 : pressed ? 0.76 : 1,
         },
+        style,
+        focused && !blocked ? { borderColor: color.focus } : undefined,
       ]}
     >
       {loading ? <ActivityIndicator color={foreground} /> :

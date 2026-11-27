@@ -8,6 +8,7 @@ import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import type { AgenteCriativo } from '@/features/agents/types/agent';
 import { categoryLabel } from '@/features/map/utils/map-agents';
 import { useReviews } from '@/providers/reviews-provider';
+import { useReducedMotion } from '@/shared/hooks/use-reduced-motion';
 
 interface Props {
   agente: AgenteCriativo | null;
@@ -24,6 +25,7 @@ interface Props {
 export function AgentProfileCard({ agente, visible, onClose, onAgendar, onChat, onVerPerfil, canChat = true, chatLoading = false, chatLabel = 'Conversar' }: Props) {
   const { color, spacing, radius, dimensions } = useThemeTokens();
   const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
   const { avaliacoesPorAgente, mediaPorAgente, carregarAvaliacoes } = useReviews();
   const agenteId = agente?.id;
 
@@ -36,7 +38,7 @@ export function AgentProfileCard({ agente, visible, onClose, onAgendar, onChat, 
   const media = avaliacoes.length ? mediaPorAgente(agente.id) : agente.avaliacao;
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reducedMotion ? 'fade' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.modalRoot}>
         <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: color.overlay }]} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fechar detalhes do profissional" />
         <View accessibilityViewIsModal style={[styles.sheet, { backgroundColor: color.surface, borderTopLeftRadius: radius.sheetCompact, borderTopRightRadius: radius.sheetCompact, paddingBottom: Math.max(insets.bottom, spacing.md) }]}>

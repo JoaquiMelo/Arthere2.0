@@ -5,6 +5,7 @@ import MapView, { Marker, PROVIDER_GOOGLE, type LatLng } from 'react-native-maps
 import { darkMapStyle, regionalMap } from '@/features/map/utils/map-region';
 import { useTheme } from '@/providers/theme-provider';
 import { AppText, Button, ScreenContainer, ScreenHeader } from '@/shared/components';
+import { useReducedMotion } from '@/shared/hooks/use-reduced-motion';
 
 const zoom = { latitudeDelta: 0.012, longitudeDelta: 0.012 };
 
@@ -14,6 +15,7 @@ export function EventLocationPicker({ initialPoint, onCancel, onConfirm }: {
   onConfirm: (point: LatLng) => void;
 }) {
   const { isDark, tokens: { color, spacing } } = useTheme();
+  const reducedMotion = useReducedMotion();
   const map = useRef<MapView>(null);
   const active = useRef(true);
   const [point, setPoint] = useState(initialPoint);
@@ -42,7 +44,7 @@ export function EventLocationPicker({ initialPoint, onCancel, onConfirm }: {
       if (!active.current) return;
       const current = { latitude: coords.latitude, longitude: coords.longitude };
       setPoint(current);
-      map.current?.animateToRegion({ ...current, ...zoom }, 350);
+      map.current?.animateToRegion({ ...current, ...zoom }, reducedMotion ? 0 : 350);
     } catch {
       if (active.current) setError('Não foi possível obter sua localização. Marque o local no mapa ou tente novamente.');
     } finally {

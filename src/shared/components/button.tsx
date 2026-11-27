@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps, type ViewStyle } from 'react-native';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { AppText } from './app-text';
@@ -27,9 +27,12 @@ export function Button({
   style,
   accessibilityLabel,
   accessibilityState,
+  onFocus,
+  onBlur,
   ...props
 }: ButtonProps) {
   const tokens = useThemeTokens();
+  const [focused, setFocused] = useState(false);
   const isDisabled = disabled || loading;
 
   const backgrounds: Record<ButtonVariant, string> = {
@@ -62,6 +65,8 @@ export function Button({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ ...accessibilityState, disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
+      onFocus={(event) => { setFocused(true); onFocus?.(event); }}
+      onBlur={(event) => { setFocused(false); onBlur?.(event); }}
       style={({ pressed }) => [
         styles.base,
         {
@@ -70,22 +75,19 @@ export function Button({
           paddingVertical: tokens.spacing.sm,
           borderRadius: tokens.radius.button,
           backgroundColor: backgrounds[variant],
-          borderColor: borders[variant],
-          opacity: isDisabled ? 0.48 : pressed ? 0.82 : 1,
+          borderColor: focused && !isDisabled ? tokens.color.focus : borders[variant],
+          opacity: disabled && !loading ? 0.48 : pressed ? 0.82 : 1,
           alignSelf: fullWidth ? 'stretch' : 'auto',
         },
         style,
       ]}
     >
-      {loading ? (
-        <ActivityIndicator color={tokens.color[foreground]} />
-      ) : (
-        <View style={styles.content}>
-          <AppText variant="label" weight="bold" color={foreground}>
-            {children}
-          </AppText>
-        </View>
-      )}
+      <View style={[styles.content, { gap: tokens.spacing.sm }]}>
+        {loading ? <ActivityIndicator color={tokens.color[foreground]} accessibilityElementsHidden importantForAccessibility="no" /> : null}
+        <AppText variant="label" weight="bold" color={foreground} style={{ flexShrink: 1, textAlign: 'center' }}>
+          {children}
+        </AppText>
+      </View>
     </Pressable>
   );
 }
@@ -97,6 +99,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },

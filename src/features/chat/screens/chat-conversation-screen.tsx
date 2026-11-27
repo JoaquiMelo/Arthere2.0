@@ -1,82 +1,114 @@
 import { Avatar } from '@/shared/components/media-image';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { useEffect, useMemo, useState } from 'react';
+import { useNavigation, useRoute, type NavigationProp, type RouteProp } from '@react-navigation/native';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
 import { useChat } from '@/providers/chat-provider';
+import type { RootStackParamList } from '@/navigation/app-navigator';
+import { AppText, FeedbackState, IconButton, ScreenContainer, ScreenHeader } from '@/shared/components';
+import { useStatusAnnouncement } from '@/shared/hooks/use-status-announcement';
 import type { ThemeTokens } from '@/shared/theme/tokens';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 
 export default function ChatConversationScreen() {
+  const { params: { conversationId } } = useRoute<RouteProp<RootStackParamList, 'ChatConversation'>>();
+  return <ChatConversation key={conversationId} id={conversationId} />;
+}
+
+function ChatConversation({ id }: { id: string }) {
   const { color } = useThemeTokens();
   const styles = useMemo(() => createStyles(color), [color]);
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { conversations, sendMessage, carregarMensagens } = useChat();
   const [draft, setDraft] = useState('');
-  const conversation = conversations.find((item) => item.id === route.params?.conversationId);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
+  const [history, setHistory] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [retry, setRetry] = useState(0);
+  const pending = useRef(false);
+  const conversation = conversations.find((item) => item.id === id);
+  useStatusAnnouncement(sendError);
 
   useEffect(() => {
-    if (route.params?.conversationId) void carregarMensagens(route.params.conversationId);
-  }, [route.params?.conversationId, carregarMensagens]);
+    let active = true;
+    void carregarMensagens(id).then(() => {
+      if (active) setHistory('ready');
+    }).catch(() => {
+      if (active) setHistory('error');
+    });
+    return () => { active = false; };
+  }, [id, carregarMensagens, retry]);
 
-  if (!conversation) return null;
+  const reload = () => {
+    setHistory('loading');
+    setRetry((version) => version + 1);
+  };
+  if (!conversation) return (
+    <ScreenContainer>
+      <ScreenHeader title="Conversa" onBack={() => navigation.goBack()} />
+      {history === 'loading' ? <FeedbackState kind="loading" title="Carregando conversa…" /> :
+        <FeedbackState kind="error" title="Conversa indisponível" description="Volte à lista de conversas e tente novamente." />}
+    </ScreenContainer>
+  );
 
   const submit = async () => {
     const texto = draft.trim();
-    if (!texto) return;
+    if (!texto || pending.current || history === 'loading') return;
+    pending.current = true;
+    setSending(true);
+    setSendError('');
     try {
       await sendMessage(conversation.id, texto);
-      setDraft('');
+      setDraft((current) => current.trim() === texto ? '' : current);
     } catch (error) {
-      Alert.alert('Não foi possível enviar', error instanceof Error ? error.message : 'Tente novamente.');
+      setSendError(error instanceof Error ? error.message : 'Não foi possível enviar. Tente novamente.');
+    } finally {
+      pending.current = false;
+      setSending(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ScreenContainer>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={10}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back}>
-            <Ionicons name="arrow-back" size={20} color={color.textPrimary} />
-          </TouchableOpacity>
+          <IconButton icon="arrow-back" variant="outline" accessibilityLabel="Voltar" onPress={() => navigation.goBack()} />
           <View style={styles.avatarFrame}>
             <Avatar uri={conversation.participant.avatarUrl} style={styles.avatar} iconSize={24} />
           </View>
           <View style={styles.headerInfo}>
             <Text style={styles.kicker}>CONVERSA</Text>
-            <Text style={styles.name}>{conversation.participant.nome}</Text>
+            <Text accessibilityRole="header" style={styles.name}>{conversation.participant.nome}</Text>
             <Text style={styles.status}>
               {conversation.participant.disponivel === true ? 'Disponível agora' : conversation.participant.disponivel === false ? 'Indisponível no momento' : 'Disponibilidade não informada'}
             </Text>
           </View>
         </View>
+        {history === 'error' ? <FeedbackState kind="error" title="Não foi possível carregar as mensagens" onRetry={sending ? undefined : reload} /> : null}
 
         <FlatList
           data={conversation.messages}
           keyExtractor={(item) => item.id}
           style={styles.flex}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={
             conversation.messages.length ? styles.messages : styles.empty
           }
           ListEmptyComponent={
-            <Text style={styles.emptyText}>
+            history === 'loading' ? <FeedbackState kind="loading" title="Carregando mensagens…" /> :
+            history === 'error' ? undefined : <Text style={styles.emptyText}>
               Envie uma mensagem para iniciar a conversa com {conversation.participant.nome}.
             </Text>
           }
@@ -95,34 +127,27 @@ export default function ChatConversationScreen() {
           )}
         />
 
+        {sendError ? <AppText variant="bodySmall" color="dangerText" accessibilityLiveRegion="polite" style={styles.sendError}>{sendError}</AppText> : null}
         <View style={styles.composer}>
           <TextInput
             style={styles.input}
             value={draft}
-            onChangeText={setDraft}
+            onChangeText={(value) => { setDraft(value); setSendError(''); }}
             placeholder="Escreva uma mensagem"
+            accessibilityLabel="Mensagem"
             placeholderTextColor={color.textSecondary}
             multiline
           />
-          <TouchableOpacity
-            style={[styles.send, !draft.trim() && styles.sendDisabled]}
-            onPress={submit}
-            disabled={!draft.trim()}
-            accessibilityLabel="Enviar mensagem"
-          >
-            <Ionicons name="arrow-up" size={19} color={color.onAccent} />
-          </TouchableOpacity>
+          <IconButton icon="arrow-up" variant="primary" loading={sending} onPress={() => void submit()}
+            disabled={!draft.trim() || history === 'loading'}
+            accessibilityLabel={sending ? 'Enviando mensagem' : 'Enviar mensagem'} />
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 
 const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: color.background,
-  },
   flex: {
     flex: 1,
   },
@@ -135,15 +160,6 @@ const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
     backgroundColor: color.background,
     borderBottomWidth: 1,
     borderBottomColor: color.border,
-  },
-  back: {
-    width: 36,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: color.border,
-    backgroundColor: color.surface,
   },
   avatarFrame: {
     width: 42,
@@ -257,14 +273,5 @@ const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
     paddingHorizontal: 13,
     paddingVertical: 9,
   },
-  send: {
-    width: 42,
-    height: 42,
-    backgroundColor: color.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendDisabled: {
-    opacity: 0.4,
-  },
+  sendError: { paddingHorizontal: 14, paddingVertical: 8 },
 });

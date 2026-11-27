@@ -70,7 +70,7 @@ export default function AtelierScreen() {
         contentContainerStyle={{
           width: '100%', maxWidth: dimensions.contentMaxWidth, alignSelf: 'center', padding: spacing.lg, paddingBottom: spacing['3xl'],
         }}
-        ListEmptyComponent={loading ? <FeedbackState kind="loading" title="Buscando agentes…" /> :
+        ListEmptyComponent={loading ? <AtelierLoading /> :
           failed && !people.length ? <FeedbackState kind="error" title="Não foi possível carregar os agentes" onRetry={() => void load()} /> :
             <FeedbackState kind="empty" title={query.trim() ? 'Nenhum agente encontrado' : 'Nenhum agente publicado'}
               description={query.trim() ? 'Experimente outro nome, especialidade ou cidade.' : undefined} />}
@@ -97,5 +97,28 @@ export default function AtelierScreen() {
           );
         }} />
     </ScreenContainer>
+  );
+}
+
+function AtelierLoading() {
+  const { color, dimensions, radius, spacing } = useThemeTokens();
+  return (
+    <View style={{ gap: spacing.md }}>
+      <AppText color="textSecondary" accessibilityLiveRegion="polite">Buscando agentes…</AppText>
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ gap: spacing.md }}>
+        {[0, 1].map((item) => (
+          <View key={item} style={{
+            flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg,
+            borderRadius: radius.card, borderWidth: 1, borderColor: color.border, backgroundColor: color.surface,
+          }}>
+            <View style={{ width: dimensions.control.large, height: dimensions.control.large, borderRadius: radius.control, backgroundColor: color.surfaceSubtle }} />
+            <View style={{ gap: spacing.sm, flex: 1 }}>
+              <View style={{ width: '45%', height: spacing.sm, borderRadius: radius.xs, backgroundColor: color.surfaceSubtle }} />
+              <View style={{ width: '70%', height: spacing.md, borderRadius: radius.xs, backgroundColor: color.surfaceSubtle }} />
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
   );
 }

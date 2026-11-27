@@ -10,6 +10,7 @@ import { useUser } from '@/providers/user-provider';
 import { createEvent, deleteEvent, event as getEvent, updateEvent, uploadImage } from '@/services/api';
 import { AppText, Button, FeedbackState, FilterChip, MediaImage, ScreenContainer, ScreenHeader, SectionHeader, TextField } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { confirmWithHaptic } from '@/shared/feedback';
 import { dateKey, eventDate, eventDayKey, eventPoint, isEventConcluded } from '../utils/event-agenda';
 import { useEventDay } from '../hooks/use-event-day';
 import { categories, formFromEvent, maskDate, maskTime, newEventForm, validateEvent, type EventData, type EventForm } from '../utils/event-form';
@@ -106,6 +107,7 @@ export function EventPublicationForm({ eventId }: { eventId?: string }) {
   const finish = (title: string, message: string) => {
     setFinished(true);
     void refresh().catch(() => undefined);
+    confirmWithHaptic();
     Alert.alert(title, message);
   };
 

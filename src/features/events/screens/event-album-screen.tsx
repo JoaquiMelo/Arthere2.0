@@ -7,6 +7,7 @@ import { useUser } from '@/providers/user-provider';
 import { event as getEvent, eventPhotos, saveEventPhotos, uploadImage } from '@/services/api';
 import { AppText, Button, FeedbackState, MediaImage, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { confirmWithHaptic } from '@/shared/feedback';
 import { eventDayKey, isEventConcluded } from '../utils/event-agenda';
 import type { EventData } from '../utils/event-form';
 
@@ -111,6 +112,7 @@ export default function EventAlbumScreen() {
         published.push(path);
       }
       await saveEventPhotos(eventId, published);
+      confirmWithHaptic();
       setDone(true);
     } catch (error) {
       pending.current = false;

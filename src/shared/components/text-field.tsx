@@ -26,6 +26,8 @@ export function TextField({
   onFocus,
   onBlur,
   accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
   ...inputProps
 }: TextFieldProps) {
   const tokens = useThemeTokens();
@@ -37,6 +39,8 @@ export function TextField({
       <TextInput
         {...inputProps}
         accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityHint={error ?? accessibilityHint ?? helperText}
+        accessibilityState={{ ...accessibilityState, disabled: inputProps.editable === false || accessibilityState?.disabled }}
         placeholderTextColor={tokens.color.textSecondary}
         onFocus={(event) => {
           setFocused(true);

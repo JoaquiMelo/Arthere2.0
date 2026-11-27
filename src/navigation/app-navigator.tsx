@@ -36,6 +36,7 @@ import { FeedbackState, ScreenContainer } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { useUser } from '@/providers/user-provider';
 import { useTheme } from '@/providers/theme-provider';
+import { useReducedMotion } from '@/shared/hooks/use-reduced-motion';
 
 export type RootStackParamList={
  Atelier:undefined; Map:undefined; Login:undefined; Register:undefined; CreatePortfolio:undefined; CustomizeProfile:undefined; Tabs:NavigatorScreenParams<TabParamList> | undefined;
@@ -91,8 +92,9 @@ function AppTabs(){
 
 function RootStack(){
  const{user,loading,needsOnboarding}=useUser();
+ const reducedMotion=useReducedMotion();
  if(loading)return <ScreenContainer style={{justifyContent:'center'}}><FeedbackState kind="loading" title="Abrindo Arthere…"/></ScreenContainer>;
- return <Stack.Navigator screenOptions={{headerShown:false}}>
+ return <Stack.Navigator screenOptions={{headerShown:false,animation:reducedMotion?'fade':'default'}}>
   {!user ? (
     <>
       <Stack.Screen name="Atelier" component={AtelierScreen}/>

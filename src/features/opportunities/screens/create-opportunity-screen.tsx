@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { Button, FeedbackState, ScreenContainer, ScreenHeader } from '@/shared/components';
 import { useUser } from '@/providers/user-provider';
+import { confirmWithHaptic } from '@/shared/feedback';
 import { useManagement } from '@/providers/management-provider';
 import { criarProjeto } from '@/services/api';
 import { OpportunityFormFields, OpportunityFormLayout } from '../components/opportunity-form-fields';
@@ -58,6 +59,7 @@ export default function CreateOpportunityScreen() {
     }
     setPublished(true);
     void refresh().catch(() => undefined);
+    confirmWithHaptic();
     Alert.alert('Vaga publicada', 'Sua oportunidade está disponível para agentes criativos.');
   };
 

@@ -3,15 +3,13 @@ import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -27,8 +25,12 @@ import { useThemeTokens } from "@/shared/theme/use-theme-tokens";
 import { buscarCidades, CidadeBR, ESTADOS_BR, municipioCadastrado, nomeMunicipio } from "@/shared/config/brazil-location";
 
 
+import { Button, ScreenContainer, ScreenHeader } from '@/shared/components';
+import { useReducedMotion } from '@/shared/hooks/use-reduced-motion';
+
 export default function EditContractorProfileScreen() {
   const { color } = useThemeTokens();
+  const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(color), [color]);
   const navigation = useNavigation<any>();
   const { user, updateProfile } = useUser();
@@ -54,6 +56,7 @@ export default function EditContractorProfileScreen() {
   const [site, setSite] = useState(user?.site || "");
   const [descricao, setDescricao] = useState(user?.descricao || "");
   const [salvando, setSalvando] = useState(false);
+  const savePending = useRef(false);
 
   const escolherFoto = async () => {
     const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -106,6 +109,7 @@ export default function EditContractorProfileScreen() {
   };
 
   const salvar = async () => {
+    if (savePending.current) return;
     if (!nome.trim() || !empresa.trim()) {
       Alert.alert("Campos obrigatórios", "Informe seu nome e sua empresa.");
       return;
@@ -115,6 +119,7 @@ export default function EditContractorProfileScreen() {
       return;
     }
 
+    savePending.current = true;
     setSalvando(true);
     try {
       const municipios = cidades.length ? cidades : await buscarCidades(estado);
@@ -151,33 +156,24 @@ export default function EditContractorProfileScreen() {
         e instanceof Error ? e.message : "Não foi possível salvar o perfil.",
       );
     } finally {
+      savePending.current = false;
       setSalvando(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          accessibilityLabel="Voltar"
-        >
-          <Ionicons name="chevron-back" size={25} color={color.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Editar perfil do contratante</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <ScreenContainer>
+      <ScreenHeader title="Editar perfil do contratante" onBack={() => navigation.goBack()} />
 
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView
+        <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
         >
-          <TouchableOpacity onPress={escolherBanner} style={{ height: 116, borderRadius: 14, overflow: 'hidden', marginBottom: 12, backgroundColor: color.surfaceSubtle, alignItems: 'center', justifyContent: 'center' }}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Alterar capa do perfil" onPress={escolherBanner} style={{ height: 116, borderRadius: 14, overflow: 'hidden', marginBottom: 12, backgroundColor: color.surfaceSubtle, alignItems: 'center', justifyContent: 'center' }}>
             {bannerUri ? <MediaImage uri={bannerUri} style={{ width: '100%', height: '100%' }} /> : <><Ionicons name="image-outline" size={24} color={color.accentText} /><Text style={styles.changePhoto}>Adicionar banner do perfil</Text></>}
           </TouchableOpacity>
           {/* Foto de Perfil */}
@@ -186,14 +182,14 @@ export default function EditContractorProfileScreen() {
               style={styles.avatarWrapper}
               onPress={escolherFoto}
               activeOpacity={0.8}
-              accessibilityLabel="Trocar foto de perfil"
+              accessibilityRole="button" accessibilityLabel="Trocar foto de perfil"
             >
               <Avatar uri={avatarUri} style={styles.avatar} iconSize={36} />
               <View style={styles.cameraBadge}>
                 <Ionicons name="camera" size={15} color={color.textInverse} />
               </View>
             </TouchableOpacity>
-            <TouchableOpacity onPress={escolherFoto}>
+            <TouchableOpacity accessibilityRole="button" onPress={escolherFoto}>
               <Text style={styles.changePhoto}>Alterar foto de perfil</Text>
             </TouchableOpacity>
           </View>
@@ -204,7 +200,7 @@ export default function EditContractorProfileScreen() {
           </Text>
 
           {/* Formulário */}
-          <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View style={styles.modalCard}><View style={styles.modalHeader}><Text style={styles.modalTitle}>{modalLocal === "estado" ? "Selecione seu estado" : "Selecione sua cidade"}</Text><TouchableOpacity onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={color.textPrimary} /></TouchableOpacity></View>{modalLocal === "estado" ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color={color.textSecondary} /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." placeholderTextColor={color.textSecondary} autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => {setCidade(item.nome); setBuscaCidade(''); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>}</View></View></Modal>
+          <Modal visible={modalLocal !== null} transparent animationType={reducedMotion ? 'fade' : 'slide'} onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View accessibilityViewIsModal style={styles.modalCard}><View style={styles.modalHeader}><Text accessibilityRole="header" style={styles.modalTitle}>{modalLocal === "estado" ? "Selecione seu estado" : "Selecione sua cidade"}</Text><TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar seleção" hitSlop={10} onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={color.textPrimary} /></TouchableOpacity></View>{modalLocal === "estado" ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={item.nome} style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color={color.textSecondary} /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." accessibilityLabel="Pesquisar cidade" placeholderTextColor={color.textSecondary} autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={item.nome} style={styles.option} onPress={() => {setCidade(item.nome); setBuscaCidade(''); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>}</View></View></Modal>
           <View style={styles.form}>
             <Field
               label="CPF ou CNPJ"
@@ -253,9 +249,9 @@ export default function EditContractorProfileScreen() {
               icon="call-outline"
             />
             <Text style={styles.label}>Estado</Text>
-            <TouchableOpacity style={styles.locationSelect} onPress={() => setModalLocal("estado")}><Ionicons name="map-outline" size={18} color={color.accentText} /><Text style={styles.locationSelectText}>{ESTADOS_BR.find((item) => item.sigla === estado)?.nome || "Selecione seu estado"}</Text><Ionicons name="chevron-down" size={18} color={color.textSecondary} /></TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Estado: ${ESTADOS_BR.find((item) => item.sigla === estado)?.nome || 'Selecione seu estado'}`} style={styles.locationSelect} onPress={() => setModalLocal("estado")}><Ionicons name="map-outline" size={18} color={color.accentText} /><Text style={styles.locationSelectText}>{ESTADOS_BR.find((item) => item.sigla === estado)?.nome || "Selecione seu estado"}</Text><Ionicons name="chevron-down" size={18} color={color.textSecondary} /></TouchableOpacity>
             <Text style={styles.label}>Cidade</Text>
-            <TouchableOpacity style={[styles.locationSelect, !estado && styles.locationDisabled]} disabled={!estado || carregandoCidades} onPress={() => void abrirCidades(estado)}><Ionicons name="location-outline" size={18} color={color.accentText} /><Text style={styles.locationSelectText}>{carregandoCidades ? "Carregando cidades..." : cidade || "Selecione sua cidade"}</Text><Ionicons name="chevron-down" size={18} color={color.textSecondary} /></TouchableOpacity>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Cidade: ${cidade || 'Selecione sua cidade'}`} style={[styles.locationSelect, !estado && styles.locationDisabled]} disabled={!estado || carregandoCidades} onPress={() => void abrirCidades(estado)}><Ionicons name="location-outline" size={18} color={color.accentText} /><Text style={styles.locationSelectText}>{carregandoCidades ? "Carregando cidades..." : cidade || "Selecione sua cidade"}</Text><Ionicons name="chevron-down" size={18} color={color.textSecondary} /></TouchableOpacity>
             <Field
               label="Endereço"
               value={endereco}
@@ -279,6 +275,7 @@ export default function EditContractorProfileScreen() {
                 onChangeText={setDescricao}
                 placeholder="Conte sobre a empresa, tipos de eventos e serviços..."
                 placeholderTextColor={color.textSecondary}
+                accessibilityLabel="Sobre a empresa"
                 multiline
                 maxLength={500}
                 textAlignVertical="top"
@@ -288,24 +285,11 @@ export default function EditContractorProfileScreen() {
           </View>
 
           {/* Botão Salvar */}
-          <TouchableOpacity
-            style={[styles.button, salvando && styles.buttonDisabled]}
-            onPress={salvar}
-            disabled={salvando}
-            activeOpacity={0.85}
-          >
-            {salvando ? (
-              <ActivityIndicator color={color.textInverse} />
-            ) : (
-              <>
-                <Text style={styles.buttonText}>Salvar alterações</Text>
-                <Ionicons name="checkmark" size={19} color={color.textInverse} />
-              </>
-            )}
-          </TouchableOpacity>
+          <Button fullWidth loading={salvando} accessibilityLabel={salvando ? 'Salvando alterações' : undefined}
+            onPress={() => void salvar()} style={{ marginTop: 24 }}>Salvar alterações</Button>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 
@@ -327,6 +311,7 @@ function Field({
         <TextInput
           style={styles.input}
           placeholderTextColor={color.textSecondary}
+          accessibilityLabel={label}
           {...props}
         />
       </View>
@@ -335,23 +320,7 @@ function Field({
 }
 
 const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: color.background },
   flex: { flex: 1 },
-  header: {
-    height: 58,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  backButton: {
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: { fontSize: 17, fontWeight: "900", color: color.textPrimary },
-  headerSpacer: { width: 38 },
   content: { paddingHorizontal: 20, paddingBottom: 45 },
   photoSection: { alignItems: "center", paddingVertical: 16 },
   avatarWrapper: { position: "relative" },
@@ -441,16 +410,4 @@ const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
     textAlign: "right",
     marginTop: 2,
   },
-  button: {
-    height: 50,
-    borderRadius: 11,
-    backgroundColor: color.brandInk,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 26,
-  },
-  buttonDisabled: { opacity: 0.7 },
-  buttonText: { color: color.textInverse, fontWeight: "900", fontSize: 15 },
 });

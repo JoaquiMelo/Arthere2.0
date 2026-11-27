@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Keyboard, Platform, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Keyboard, Platform, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Location from 'expo-location';
@@ -7,6 +7,8 @@ import MapView, { PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import type { ThemeTokens } from '@/shared/theme/tokens';
 import { useTheme } from '@/providers/theme-provider';
 import { darkMapStyle } from '@/features/map/utils/map-region';
+import { AppText, Button, IconButton, ScreenContainer, ScreenHeader } from '@/shared/components';
+import { useReducedMotion } from '@/shared/hooks/use-reduced-motion';
 
 type Ponto = { latitude: number; longitude: number };
 
@@ -25,12 +27,13 @@ function montarEndereco(p?: Location.LocationGeocodedAddress) {
 
 export default function SelectLocationScreen() {
   const { isDark, tokens: { color } } = useTheme();
+  const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(color), [color]);
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const mapRef = useRef<MapView>(null);
   const requisicao = useRef(0);
-  const [elevacao] = useState(() => new Animated.Value(0));
+  const gpsPending = useRef(false);
 
   const inicial = useMemo<Ponto | null>(() =>
     route.params?.latitude != null && route.params?.longitude != null
@@ -44,9 +47,6 @@ export default function SelectLocationScreen() {
   const [buscandoEndereco, setBuscandoEndereco] = useState(false);
   const [busca, setBusca] = useState('');
   const [localizando, setLocalizando] = useState(false);
-
-  const levantarPino = (alto: boolean) =>
-    Animated.spring(elevacao, { toValue: alto ? -14 : 0, useNativeDriver: true, friction: 7 }).start();
 
   const descobrirEndereco = useCallback(async (ponto: Ponto) => {
     const id = ++requisicao.current;
@@ -68,30 +68,38 @@ export default function SelectLocationScreen() {
   }, []);
 
   const irPara = useCallback((ponto: Ponto, delta = DELTA_ZOOM) =>
-    mapRef.current?.animateToRegion({ ...ponto, latitudeDelta: delta, longitudeDelta: delta }, 600), []);
+    mapRef.current?.animateToRegion({ ...ponto, latitudeDelta: delta, longitudeDelta: delta }, reducedMotion ? 0 : 350),
+  [reducedMotion]);
 
-  const usarMinhaLocalizacao = useCallback(async (silencioso = false) => {
+  const usarMinhaLocalizacao = async () => {
+    if (gpsPending.current) return;
+    gpsPending.current = true;
     setLocalizando(true);
     try {
       const permissao = await Location.requestForegroundPermissionsAsync();
       if (!permissao.granted) {
-        if (!silencioso) Alert.alert('Permissão necessária', 'Autorize a localização para centralizar o mapa onde você está, ou arraste o mapa até o local.');
+        Alert.alert('Permissão necessária', 'Autorize a localização para centralizar o mapa onde você está, ou arraste o mapa até o local.');
         return;
       }
       const posicao = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       irPara({ latitude: posicao.coords.latitude, longitude: posicao.coords.longitude });
     } catch {
-      if (!silencioso) Alert.alert('Não foi possível obter a localização', 'Verifique se o GPS está ligado ou arraste o mapa até o local.');
+      Alert.alert('Não foi possível obter a localização', 'Verifique se o GPS está ligado ou arraste o mapa até o local.');
     } finally {
+      gpsPending.current = false;
       setLocalizando(false);
     }
-  }, [irPara]);
+  };
 
   const buscarEndereco = async () => {
     const texto = busca.trim();
     if (!texto) return;
     Keyboard.dismiss();
     try {
+      if (Platform.OS === 'android' && !(await Location.requestForegroundPermissionsAsync()).granted) {
+        Alert.alert('Busca indisponível', 'Autorize a localização para buscar um endereço ou arraste o mapa até o local.');
+        return;
+      }
       const [achado] = await Location.geocodeAsync(texto);
       if (!achado) {
         Alert.alert('Endereço não encontrado', 'Tente incluir rua, número e cidade.');
@@ -106,10 +114,9 @@ export default function SelectLocationScreen() {
   useEffect(() => {
     const task = setTimeout(() => {
       if (inicial) descobrirEndereco(inicial);
-      else usarMinhaLocalizacao(true);
     }, 0);
     return () => clearTimeout(task);
-  }, [descobrirEndereco, inicial, usarMinhaLocalizacao]);
+  }, [descobrirEndereco, inicial]);
 
   const confirmar = () => {
     navigation.popTo(
@@ -127,14 +134,8 @@ export default function SelectLocationScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()} accessibilityLabel="Voltar">
-          <Ionicons name="chevron-back" size={25} color={color.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Onde você atende?</Text>
-        <View style={styles.iconButton} />
-      </View>
+    <ScreenContainer>
+      <ScreenHeader title="Onde você atende?" onBack={() => navigation.goBack()} />
 
       <View style={styles.searchBox}>
         <Ionicons name="search" size={18} color={color.textSecondary} />
@@ -143,6 +144,7 @@ export default function SelectLocationScreen() {
           value={busca}
           onChangeText={setBusca}
           placeholder="Buscar rua, bairro ou cidade"
+          accessibilityLabel="Buscar rua, bairro ou cidade"
           placeholderTextColor={color.textSecondary}
           returnKeyType="search"
           onSubmitEditing={buscarEndereco}
@@ -159,61 +161,42 @@ export default function SelectLocationScreen() {
           initialRegion={inicial ? { ...inicial, latitudeDelta: DELTA_ZOOM, longitudeDelta: DELTA_ZOOM } : REGIAO_PADRAO}
           showsUserLocation
           showsMyLocationButton={false}
-          onPanDrag={() => levantarPino(true)}
           onRegionChangeComplete={(regiao) => {
-            levantarPino(false);
             const ponto = { latitude: regiao.latitude, longitude: regiao.longitude };
             setCentro(ponto);
             descobrirEndereco(ponto);
           }}
         />
 
-        <View pointerEvents="none" style={styles.pinoArea}>
+        <View pointerEvents="none" style={styles.pinoArea} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <View style={styles.sombra} />
-          <Animated.View style={[styles.pino, { transform: [{ translateY: elevacao }] }]}>
+          <View style={styles.pino}>
             <Ionicons name="location-sharp" size={46} color={color.accentText} />
-          </Animated.View>
+          </View>
         </View>
 
-        <TouchableOpacity style={styles.gpsButton} onPress={() => usarMinhaLocalizacao()} accessibilityLabel="Usar minha localização atual">
-          {localizando ? <ActivityIndicator color={color.accentText} /> : <Ionicons name="locate" size={22} color={color.accentText} />}
-        </TouchableOpacity>
+        <IconButton icon="locate" variant="outline" style={styles.gpsButton} loading={localizando}
+          onPress={() => void usarMinhaLocalizacao()} accessibilityLabel={localizando ? 'Buscando sua localização' : 'Usar minha localização atual'} />
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardLabel}>Local escolhido</Text>
-        {buscandoEndereco ? (
-          <ActivityIndicator style={styles.cardLoading} color={color.accentText} />
-        ) : (
-          <Text style={styles.cardEndereco} numberOfLines={2}>
-            {endereco || 'Endereço não identificado. O ponto no mapa será usado.'}
-          </Text>
-        )}
-        <TouchableOpacity style={[styles.confirmButton, buscandoEndereco && styles.confirmDisabled]} onPress={confirmar} disabled={buscandoEndereco}>
-          <Text style={styles.confirmText}>Confirmar local</Text>
-        </TouchableOpacity>
+        <AppText variant="label" color="textSecondary">Local escolhido</AppText>
+        <AppText weight="semibold" accessibilityLiveRegion="polite">
+          {buscandoEndereco ? 'Buscando o endereço…' : endereco || 'Endereço não identificado. O ponto no mapa será usado.'}
+        </AppText>
+        <Button fullWidth onPress={confirmar} disabled={buscandoEndereco || localizando}>Confirmar local</Button>
       </View>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
 
 const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: color.background },
-  header: { height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
-  iconButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
-  title: { color: color.textPrimary, fontSize: 17, fontWeight: '800' },
-  searchBox: { marginHorizontal: 16, marginBottom: 10, minHeight: 46, borderWidth: 1, borderColor: color.border, borderRadius: 10, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: color.surface },
+  searchBox: { marginHorizontal: 16, marginVertical: 10, minHeight: 48, borderWidth: 1, borderColor: color.border, borderRadius: 10, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: color.surface },
   searchInput: { flex: 1, paddingVertical: 11, color: color.textPrimary, fontSize: 14 },
   mapArea: { flex: 1, overflow: 'hidden' },
   pinoArea: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   pino: { position: 'absolute', bottom: '50%' },
   sombra: { position: 'absolute', width: 10, height: 4, borderRadius: 5, backgroundColor: 'rgba(41,36,43,0.35)' },
-  gpsButton: { position: 'absolute', right: 14, bottom: 14, width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: color.surface, borderWidth: 1, borderColor: color.border },
+  gpsButton: { position: 'absolute', right: 14, bottom: 14, backgroundColor: color.surface },
   card: { padding: 18, gap: 8, backgroundColor: color.surface, borderTopWidth: 1, borderTopColor: color.border },
-  cardLabel: { color: color.textSecondary, fontSize: 12, fontWeight: '700' },
-  cardEndereco: { color: color.textPrimary, fontSize: 15, fontWeight: '700', minHeight: 40 },
-  cardLoading: { alignSelf: 'flex-start', minHeight: 40 },
-  confirmButton: { height: 50, marginTop: 6, borderRadius: 9, backgroundColor: color.brandInk, alignItems: 'center', justifyContent: 'center' },
-  confirmDisabled: { opacity: 0.6 },
-  confirmText: { color: color.textInverse, fontSize: 15, fontWeight: '800' },
 });

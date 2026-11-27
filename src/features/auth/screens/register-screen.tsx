@@ -7,6 +7,7 @@ import type { RootStackParamList } from '@/navigation/app-navigator';
 import { useUser, type TipoUsuario } from '@/providers/user-provider';
 import { AppText, Button, SectionHeader, TextField } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { useStatusAnnouncement } from '@/shared/hooks/use-status-announcement';
 import { ProfileFormLayout } from '../components/profile-form-layout';
 import { RegistrationLocation } from '../components/registration-location';
 
@@ -42,6 +43,9 @@ export default function RegisterScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [failure, setFailure] = useState('');
+  const hasErrors = Object.keys(errors).length > 0;
+  const errorSummary = failure || (hasErrors ? 'Revise os campos indicados acima.' : '');
+  useStatusAnnouncement(errorSummary);
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
   const organizer = role === 'CONTRATANTE_EVENTOS';
@@ -223,8 +227,7 @@ export default function RegisterScreen() {
         </>
       )}
       <View style={{ gap: spacing.sm }}>
-        {Object.keys(errors).length ? <AppText variant="bodySmall" color="dangerText" accessibilityRole="alert">Revise os campos indicados acima.</AppText> : null}
-        {failure ? <AppText variant="bodySmall" color="dangerText" accessibilityRole="alert">{failure}</AppText> : null}
+        {errorSummary ? <AppText variant="bodySmall" color="dangerText" accessibilityLiveRegion="polite">{errorSummary}</AppText> : null}
         <Button fullWidth loading={busy} accessibilityLabel={busy ? 'Criando conta' : undefined}
           onPress={() => void next()}>{step === 2 ? 'Criar conta' : 'Continuar'}</Button>
         {step === 0 ? <Button variant="ghost" onPress={() => navigation.popTo('Login')}>Já tenho conta</Button> : null}

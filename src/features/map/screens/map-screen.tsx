@@ -6,6 +6,7 @@ import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { AppText, Avatar, Button, FeedbackState, FilterChip, IconButton, ScreenContainer } from '@/shared/components';
 import { useTheme } from '@/providers/theme-provider';
+import { useReducedMotion } from '@/shared/hooks/use-reduced-motion';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { useChat } from '@/providers/chat-provider';
 import { useUser } from '@/providers/user-provider';
@@ -27,6 +28,7 @@ type MapEntry =
 export function MapScreen() {
   const navigation = useNavigation<any>();
   const { isDark, tokens: { color, spacing, radius, dimensions, typography, elevation } } = useTheme();
+  const reducedMotion = useReducedMotion();
   const { user } = useUser();
   const { startConversation } = useChat();
   const mapRef = useRef<MapView>(null);
@@ -126,11 +128,11 @@ export function MapScreen() {
     if (!mapRef.current || !mapReady) return;
     const pontos = [...filtrados.map(({ latitude, longitude }) => ({ latitude, longitude })), ...eventPins.map(({ point }) => point)];
     if (!pontos.length) {
-      mapRef.current.animateToRegion(REGIAO_INICIAL, 250);
+      mapRef.current.animateToRegion(REGIAO_INICIAL, reducedMotion ? 0 : 250);
     } else if (pontos.every((p) => p.latitude === pontos[0].latitude && p.longitude === pontos[0].longitude)) {
-      mapRef.current.animateToRegion({ ...pontos[0], latitudeDelta: 0.05, longitudeDelta: 0.05 }, 250);
+      mapRef.current.animateToRegion({ ...pontos[0], latitudeDelta: 0.05, longitudeDelta: 0.05 }, reducedMotion ? 0 : 250);
     } else {
-      mapRef.current.fitToCoordinates(pontos, { edgePadding: { top: 48, right: 48, bottom: 72, left: 48 }, animated: true });
+      mapRef.current.fitToCoordinates(pontos, { edgePadding: { top: 48, right: 48, bottom: 72, left: 48 }, animated: !reducedMotion });
     }
   };
 
