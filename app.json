@@ -5,7 +5,7 @@
     "version": "2.0.0",
     "orientation": "portrait",
     "scheme": "arthere",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "extra": {
       "eas": {
         "projectId": "310e7e1c-2ede-40df-856b-f8e2ecb9b444"

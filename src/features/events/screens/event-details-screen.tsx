@@ -1,6 +1,6 @@
 import { useFocusEffect, useNavigation, useRoute, type NavigationProp, type RouteProp } from '@react-navigation/native';
 import { useCallback, useRef, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, View } from 'react-native';
+import { Alert, Linking, RefreshControl, ScrollView, View } from 'react-native';
 
 import type { RootStackParamList } from '@/navigation/app-navigator';
 import { useManagement } from '@/providers/management-provider';
@@ -10,7 +10,7 @@ import { AppText, Badge, Button, FeedbackState, MediaImage, ScreenContainer, Scr
 import { realImageUri } from '@/shared/config/image-uri';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import type { Evento } from '../types/event';
-import { eventDate, isEventConcluded, mapEvento } from '../utils/event-agenda';
+import { eventDate, eventPoint, isEventConcluded, mapEvento } from '../utils/event-agenda';
 import { useEventDay } from '../hooks/use-event-day';
 import { EventPhotoGallery } from '../components/event-photo-gallery';
 import type { EventData } from '../utils/event-form';
@@ -139,6 +139,8 @@ function EventDetails({ eventId }: { eventId: string }) {
   const cover = realImageUri(evento?.imagemUrl);
   const date = evento?.data ? dateFormat.format(eventDate(evento.data)) : 'Data a confirmar';
   const place = [evento?.local, evento?.cidade].filter(Boolean).join(' · ');
+  const point = eventPoint(evento);
+  const canEditAlbum = concluded && user?.tipo === 'CONTRATANTE_EVENTOS' && user.id === owner;
   return (
     <ScreenContainer>
       <ScreenHeader title="Evento" onBack={() => navigation.goBack()} />
@@ -164,13 +166,21 @@ function EventDetails({ eventId }: { eventId: string }) {
               </View> : null}
             </View>
           </View>
-          {concluded ? <EventPhotoGallery eventId={eventId} cover={cover} /> : null}
+          {concluded ? <View style={{ gap: spacing.md }}>
+            {canEditAlbum ? <Button variant="outline" onPress={() => navigation.navigate('EventAlbum', { eventId })}>Adicionar ou editar fotos</Button> : null}
+            <EventPhotoGallery eventId={eventId} cover={cover} />
+          </View> : null}
           {failed ? <FeedbackState kind="error" title="Não foi possível atualizar" description="Exibindo o último conteúdo carregado." onRetry={() => void load()} /> : null}
           <View style={{ borderBottomWidth: 1, borderColor: color.border, paddingBottom: spacing.lg, gap: spacing.md }}>
             <SectionHeader title="Quando e onde" />
             <AppText variant="title" weight="bold" style={{ textTransform: 'capitalize' }}>{date}</AppText>
             {evento.horario ? <AppText>{evento.horario}</AppText> : null}
             {place ? <AppText variant="bodySmall" color="textSecondary">{place}</AppText> : null}
+            {point ? <Button variant="outline" onPress={() => {
+              const destination = encodeURIComponent(`${point.latitude},${point.longitude}`);
+              void Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${destination}`)
+                .catch(() => Alert.alert('Não foi possível abrir as direções', 'Tente novamente ou busque pelo endereço informado.'));
+            }}>Como chegar</Button> : null}
           </View>
           <View style={{ gap: spacing.sm }}>
             <SectionHeader title="Sobre o evento" />

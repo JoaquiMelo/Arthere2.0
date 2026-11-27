@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { DefaultTheme, NavigationContainer, type NavigatorScreenParams } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer, type NavigatorScreenParams } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import { useMemo } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View } from 'react-native';
@@ -17,6 +18,7 @@ import EditEventScreen from '@/features/events/screens/edit-event-screen';
 import EventAlbumScreen from '@/features/events/screens/event-album-screen';
 import EventsScreen from '@/features/events/screens/events-screen';
 import { MapScreen } from '@/features/map/screens/map-screen';
+import AtelierScreen from '@/features/agents/screens/atelier-screen';
 import CreateOpportunityScreen from '@/features/opportunities/screens/create-opportunity-screen';
 import EditOpportunityScreen from '@/features/opportunities/screens/edit-opportunity-screen';
 import ManageOpportunitiesScreen from '@/features/opportunities/screens/manage-opportunities-screen';
@@ -33,20 +35,22 @@ import SettingsScreen from '@/features/profile/screens/settings-screen';
 import { FeedbackState, ScreenContainer } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { useUser } from '@/providers/user-provider';
+import { useTheme } from '@/providers/theme-provider';
 
 export type RootStackParamList={
- Map:undefined; Login:undefined; Register:undefined; CreatePortfolio:undefined; CustomizeProfile:undefined; Tabs:NavigatorScreenParams<TabParamList> | undefined;
+ Atelier:undefined; Map:undefined; Login:undefined; Register:undefined; CreatePortfolio:undefined; CustomizeProfile:undefined; Tabs:NavigatorScreenParams<TabParamList> | undefined;
  EditProfile?:{agente?:unknown; localSelecionado?:{latitude:number;longitude:number;endereco:string;cidade:string}}; SelectLocation:{latitude?:number|null;longitude?:number|null}; EditContractorProfile:undefined; EditOpportunityContractorProfile:{mode?:'presentation'}|undefined; CreateOpportunity:undefined; EditOpportunity:{opportunityId:string}; PortfolioCreation?:{portfolio?:unknown[];mode?:'manage'|'add'|'edit';itemId?:string};
  Settings:undefined; ChatConversation:{conversationId:string}; ManageOpportunities:undefined;
  OpportunityDetails:{opportunityId:string}; PublicProfile:{profileType:'AGENTE'|'CONTRATANTE';profileId:string}; EventDetails:{eventId:string}; CreateEvent:undefined; EditEvent:{eventId:string}; EventAlbum:{eventId:string};
 };
 
-export type TabParamList={Map:undefined;Profile:undefined;Opportunities:undefined;Events:undefined;Chat:undefined};
+export type TabParamList={Atelier:undefined;Map:undefined;Profile:undefined;Opportunities:undefined;Events:undefined;Chat:undefined};
 
 const Stack=createNativeStackNavigator<RootStackParamList>();
 const Tab=createBottomTabNavigator<TabParamList>();
 
 const icons:Record<keyof TabParamList, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
+ Atelier:{active:'color-palette',inactive:'color-palette-outline'},
  Map:{active:'map',inactive:'map-outline'},
  Profile:{active:'person',inactive:'person-outline'},
  Opportunities:{active:'briefcase',inactive:'briefcase-outline'},
@@ -56,7 +60,7 @@ const icons:Record<keyof TabParamList, { active: keyof typeof Ionicons.glyphMap;
 
 function AppTabs(){
  const {color,spacing,dimensions,radius,typography}=useThemeTokens();
- return <Tab.Navigator initialRouteName="Map" backBehavior="history" screenOptions={({route})=>({
+ return <Tab.Navigator initialRouteName="Atelier" backBehavior="history" screenOptions={({route})=>({
   headerShown:false,
   tabBarActiveTintColor:color.accentOnInverse,
   tabBarInactiveTintColor:color.textInverse,
@@ -64,11 +68,11 @@ function AppTabs(){
   tabBarLabelPosition:'below-icon',
   tabBarAllowFontScaling:true,
   // Sem altura fixa: React Navigation incorpora os insets do dispositivo.
-  tabBarStyle:{borderTopWidth:1,borderTopColor:color.border,backgroundColor:color.textPrimary,elevation:0},
+  tabBarStyle:{borderTopWidth:1,borderTopColor:color.border,backgroundColor:color.brandInk,elevation:0},
   tabBarHideOnKeyboard:true,
   tabBarIcon:({color:foreground,focused})=>(
    <View style={{
-    minWidth:dimensions.touchTarget, minHeight:dimensions.icon.extraLarge, paddingHorizontal:spacing.sm,
+    minWidth:dimensions.icon.extraLarge, minHeight:dimensions.icon.extraLarge, paddingHorizontal:spacing.xs,
     alignItems:'center',justifyContent:'center', borderRadius:radius.control,
     backgroundColor:focused?color.accentSoft:'transparent',
    }}>
@@ -76,6 +80,7 @@ function AppTabs(){
    </View>
   )
  })}>
+  <Tab.Screen name="Atelier" component={AtelierScreen} options={{title:'Ateliê'}}/>
   <Tab.Screen name="Map" component={MapScreen} options={{title:'Mapa'}}/>
   <Tab.Screen name="Opportunities" component={OpportunitiesScreen} options={{title:'Vagas',tabBarAccessibilityLabel:'Oportunidades'}}/>
   <Tab.Screen name="Events" component={EventsScreen} options={{title:'Agenda',tabBarAccessibilityLabel:'Agenda de eventos'}}/>
@@ -90,7 +95,9 @@ function RootStack(){
  return <Stack.Navigator screenOptions={{headerShown:false}}>
   {!user ? (
     <>
+      <Stack.Screen name="Atelier" component={AtelierScreen}/>
       <Stack.Screen name="Map" component={MapScreen}/>
+      <Stack.Screen name="Settings" component={SettingsScreen}/>
       <Stack.Screen name="Login" component={LoginScreen}/>
       <Stack.Screen name="Register" component={RegisterScreen}/>
       <Stack.Screen name="PublicProfile" component={PublicProfileScreen}/>
@@ -132,10 +139,10 @@ function RootStack(){
 }
 
 export function AppNavigator(){
- const {color}=useThemeTokens();
+ const {isDark,tokens:{color}}=useTheme();
  const navigationTheme=useMemo(()=>({
-  ...DefaultTheme,
+  ...(isDark?DarkTheme:DefaultTheme),
   colors:{...DefaultTheme.colors,primary:color.accentText,background:color.background,card:color.surface,text:color.textPrimary,border:color.border,notification:color.dangerText},
- }),[color]);
- return <NavigationContainer theme={navigationTheme}><RootStack/></NavigationContainer>;
+ }),[color,isDark]);
+ return <NavigationContainer theme={navigationTheme}><StatusBar style={isDark?'light':'dark'}/><RootStack/></NavigationContainer>;
 }

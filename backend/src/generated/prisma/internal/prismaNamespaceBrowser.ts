@@ -201,6 +201,8 @@ export const EventoScalarFieldEnum = {
   categoria: 'categoria',
   local: 'local',
   cidade: 'cidade',
+  latitude: 'latitude',
+  longitude: 'longitude',
   dataEvento: 'dataEvento',
   horario: 'horario',
   organizador: 'organizador',

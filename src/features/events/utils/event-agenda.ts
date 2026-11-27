@@ -25,6 +25,12 @@ const eventClockFormat = new Intl.DateTimeFormat('sv-SE', {
 export const eventDayKey = (date = new Date()) => eventDayFormat.format(date);
 export const isEventConcluded = (day: string, today = eventDayKey()) => Boolean(day) && day < today;
 
+export function eventPoint(event?: Pick<Evento, 'latitude' | 'longitude'> | null) {
+  const { latitude, longitude } = event ?? {};
+  return typeof latitude === 'number' && Math.abs(latitude) <= 90 &&
+    typeof longitude === 'number' && Math.abs(longitude) <= 180 ? { latitude, longitude } : null;
+}
+
 /** Converte a data e hora civil da agenda em um instante, independente do fuso do aparelho. */
 export function eventInstant(day: string, time: string): Date | null {
   const wanted = `${day}T${time}`;
@@ -41,6 +47,7 @@ export function mapEvento(item: ApiEvent): Evento {
   return {
     id: item.id, titulo: item.titulo, categoria: item.categoria, descricao: item.descricao,
     local: item.local, cidade: item.cidade,
+    latitude: item.latitude, longitude: item.longitude,
     data: Number.isFinite(date.getTime()) ? eventDayKey(date) : '',
     horario: item.horario ?? '', organizador: item.organizador ?? '',
     premium: Boolean(item.premium), destaque: Boolean(item.fixado),

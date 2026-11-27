@@ -4,7 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import MapView, { PROVIDER_GOOGLE, Region } from 'react-native-maps';
-import { colors } from '@/shared/theme/colors';
+import type { ThemeTokens } from '@/shared/theme/tokens';
+import { useTheme } from '@/providers/theme-provider';
+import { darkMapStyle } from '@/features/map/utils/map-region';
 
 type Ponto = { latitude: number; longitude: number };
 
@@ -22,6 +24,8 @@ function montarEndereco(p?: Location.LocationGeocodedAddress) {
 }
 
 export default function SelectLocationScreen() {
+  const { isDark, tokens: { color } } = useTheme();
+  const styles = useMemo(() => createStyles(color), [color]);
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const mapRef = useRef<MapView>(null);
@@ -126,20 +130,20 @@ export default function SelectLocationScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()} accessibilityLabel="Voltar">
-          <Ionicons name="chevron-back" size={25} color={colors.text} />
+          <Ionicons name="chevron-back" size={25} color={color.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>Onde você atende?</Text>
         <View style={styles.iconButton} />
       </View>
 
       <View style={styles.searchBox}>
-        <Ionicons name="search" size={18} color={colors.muted} />
+        <Ionicons name="search" size={18} color={color.textSecondary} />
         <TextInput
           style={styles.searchInput}
           value={busca}
           onChangeText={setBusca}
           placeholder="Buscar rua, bairro ou cidade"
-          placeholderTextColor={colors.muted}
+          placeholderTextColor={color.textSecondary}
           returnKeyType="search"
           onSubmitEditing={buscarEndereco}
         />
@@ -150,6 +154,8 @@ export default function SelectLocationScreen() {
           ref={mapRef}
           style={StyleSheet.absoluteFill}
           provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+          customMapStyle={Platform.OS === 'android' && isDark ? darkMapStyle : undefined}
+          userInterfaceStyle={isDark ? 'dark' : 'light'}
           initialRegion={inicial ? { ...inicial, latitudeDelta: DELTA_ZOOM, longitudeDelta: DELTA_ZOOM } : REGIAO_PADRAO}
           showsUserLocation
           showsMyLocationButton={false}
@@ -165,19 +171,19 @@ export default function SelectLocationScreen() {
         <View pointerEvents="none" style={styles.pinoArea}>
           <View style={styles.sombra} />
           <Animated.View style={[styles.pino, { transform: [{ translateY: elevacao }] }]}>
-            <Ionicons name="location-sharp" size={46} color={colors.primary} />
+            <Ionicons name="location-sharp" size={46} color={color.accentText} />
           </Animated.View>
         </View>
 
         <TouchableOpacity style={styles.gpsButton} onPress={() => usarMinhaLocalizacao()} accessibilityLabel="Usar minha localização atual">
-          {localizando ? <ActivityIndicator color={colors.primaryDark} /> : <Ionicons name="locate" size={22} color={colors.primaryDark} />}
+          {localizando ? <ActivityIndicator color={color.accentText} /> : <Ionicons name="locate" size={22} color={color.accentText} />}
         </TouchableOpacity>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardLabel}>Local escolhido</Text>
         {buscandoEndereco ? (
-          <ActivityIndicator style={styles.cardLoading} color={colors.primaryDark} />
+          <ActivityIndicator style={styles.cardLoading} color={color.accentText} />
         ) : (
           <Text style={styles.cardEndereco} numberOfLines={2}>
             {endereco || 'Endereço não identificado. O ponto no mapa será usado.'}
@@ -191,23 +197,23 @@ export default function SelectLocationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: color.background },
   header: { height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   iconButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
-  title: { color: colors.text, fontSize: 17, fontWeight: '800' },
-  searchBox: { marginHorizontal: 16, marginBottom: 10, minHeight: 46, borderWidth: 1, borderColor: colors.border, borderRadius: 10, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: colors.white },
-  searchInput: { flex: 1, paddingVertical: 11, color: colors.text, fontSize: 14 },
+  title: { color: color.textPrimary, fontSize: 17, fontWeight: '800' },
+  searchBox: { marginHorizontal: 16, marginBottom: 10, minHeight: 46, borderWidth: 1, borderColor: color.border, borderRadius: 10, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: color.surface },
+  searchInput: { flex: 1, paddingVertical: 11, color: color.textPrimary, fontSize: 14 },
   mapArea: { flex: 1, overflow: 'hidden' },
   pinoArea: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   pino: { position: 'absolute', bottom: '50%' },
   sombra: { position: 'absolute', width: 10, height: 4, borderRadius: 5, backgroundColor: 'rgba(41,36,43,0.35)' },
-  gpsButton: { position: 'absolute', right: 14, bottom: 14, width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
-  card: { padding: 18, gap: 8, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.border },
-  cardLabel: { color: colors.muted, fontSize: 12, fontWeight: '700' },
-  cardEndereco: { color: colors.text, fontSize: 15, fontWeight: '700', minHeight: 40 },
+  gpsButton: { position: 'absolute', right: 14, bottom: 14, width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: color.surface, borderWidth: 1, borderColor: color.border },
+  card: { padding: 18, gap: 8, backgroundColor: color.surface, borderTopWidth: 1, borderTopColor: color.border },
+  cardLabel: { color: color.textSecondary, fontSize: 12, fontWeight: '700' },
+  cardEndereco: { color: color.textPrimary, fontSize: 15, fontWeight: '700', minHeight: 40 },
   cardLoading: { alignSelf: 'flex-start', minHeight: 40 },
-  confirmButton: { height: 50, marginTop: 6, borderRadius: 9, backgroundColor: colors.primaryDark, alignItems: 'center', justifyContent: 'center' },
+  confirmButton: { height: 50, marginTop: 6, borderRadius: 9, backgroundColor: color.brandInk, alignItems: 'center', justifyContent: 'center' },
   confirmDisabled: { opacity: 0.6 },
-  confirmText: { color: colors.white, fontSize: 15, fontWeight: '800' },
+  confirmText: { color: color.textInverse, fontSize: 15, fontWeight: '800' },
 });

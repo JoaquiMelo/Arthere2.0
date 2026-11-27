@@ -42,7 +42,7 @@ export default function LoginScreen() {
     <ScreenContainer>
       <ScreenHeader kicker="ARTHERE" title="Entrar" onBack={() => {
         if (navigation.canGoBack()) navigation.goBack();
-        else navigation.navigate('Map');
+        else navigation.navigate('Atelier');
       }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{

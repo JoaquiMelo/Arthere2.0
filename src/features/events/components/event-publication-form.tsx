@@ -10,9 +10,10 @@ import { useUser } from '@/providers/user-provider';
 import { createEvent, deleteEvent, event as getEvent, updateEvent, uploadImage } from '@/services/api';
 import { AppText, Button, FeedbackState, FilterChip, MediaImage, ScreenContainer, ScreenHeader, SectionHeader, TextField } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
-import { dateKey, eventDate, eventDayKey, isEventConcluded } from '../utils/event-agenda';
+import { dateKey, eventDate, eventDayKey, eventPoint, isEventConcluded } from '../utils/event-agenda';
 import { useEventDay } from '../hooks/use-event-day';
 import { categories, formFromEvent, maskDate, maskTime, newEventForm, validateEvent, type EventData, type EventForm } from '../utils/event-form';
+import { EventLocationPicker } from './event-location-picker';
 
 export function EventPublicationForm({ eventId }: { eventId?: string }) {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -34,6 +35,7 @@ export function EventPublicationForm({ eventId }: { eventId?: string }) {
   const [busy, setBusy] = useState<'save' | 'delete' | 'image' | null>(null);
   const [finished, setFinished] = useState(false);
   const [picker, setPicker] = useState<'date' | 'time' | null>(null);
+  const [choosingLocation, setChoosingLocation] = useState(false);
   const pending = useRef(false);
   const uploaded = useRef<{ local: string; remote: string } | null>(null);
 
@@ -77,6 +79,7 @@ export function EventPublicationForm({ eventId }: { eventId?: string }) {
   };
   const { errors, payload } = validateEvent(form, eventId ? initial : undefined, today);
   const showAlbum = eventId && ownedEventId === eventId && isEventConcluded(initial.data.split('/').reverse().join('-'), today);
+  const point = eventPoint(form);
 
   const pickCover = async () => {
     if (pending.current || finished) return;
@@ -213,6 +216,21 @@ export function EventPublicationForm({ eventId }: { eventId?: string }) {
                     ) : null}
                     <TextField label="Local *" value={form.local} onChangeText={(value) => setField('local', value)} editable={!blocked} error={attempted ? errors.local : undefined} />
                     <TextField label="Cidade *" value={form.cidade} onChangeText={(value) => setField('cidade', value)} editable={!blocked} error={attempted ? errors.cidade : undefined} />
+                    <AppText variant="bodySmall" color="textSecondary">
+                      {point ? 'Pino confirmado. Confira se ele corresponde ao endereço acima.' : 'Adicione um pino para que as pessoas encontrem o evento no mapa.'}
+                    </AppText>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                      <Button variant="outline" disabled={blocked} onPress={() => setChoosingLocation(true)}>
+                        {point ? 'Alterar local no mapa' : 'Selecionar local no mapa'}
+                      </Button>
+                      {point ? <Button variant="ghost" disabled={blocked}
+                        onPress={() => setForm((current) => ({ ...current, latitude: null, longitude: null }))}>Remover pino</Button> : null}
+                    </View>
+                    {choosingLocation ? <EventLocationPicker initialPoint={point} onCancel={() => setChoosingLocation(false)}
+                      onConfirm={(coordinate) => {
+                        setForm((current) => ({ ...current, ...coordinate }));
+                        setChoosingLocation(false);
+                      }} /> : null}
                   </View>
                   <View style={{ gap: spacing.md, borderTopWidth: 1, borderColor: color.border, paddingTop: spacing.lg }}>
                     <SectionHeader title="Publicação na agenda" />

@@ -1,17 +1,20 @@
 import { realImageUri } from '@/shared/config/image-uri';
 import { Avatar, MediaImage } from '@/shared/components/media-image';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import type { AgentePerfil } from './profile-screen';
-import { colors } from '@/shared/theme/colors';
+import type { ThemeTokens } from '@/shared/theme/tokens';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { useUser } from '@/providers/user-provider';
 import { uploadImage } from '@/services/api';
 import { buscarCidades, CidadeBR, ESTADOS_BR, municipioCadastrado, nomeMunicipio } from '@/shared/config/brazil-location';
 
 export default function EditProfileScreen() {
+  const { color } = useThemeTokens();
+  const styles = useMemo(() => createStyles(color), [color]);
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { user, updateProfile } = useUser();
@@ -125,19 +128,19 @@ export default function EditProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Voltar"><Ionicons name="chevron-back" size={25} color={colors.text} /></TouchableOpacity>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} accessibilityLabel="Voltar"><Ionicons name="chevron-back" size={25} color={color.textPrimary} /></TouchableOpacity>
         <Text style={styles.headerTitle}>Editar perfil</Text>
         <View style={styles.headerSpacer} />
       </View>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="none">
-          <TouchableOpacity onPress={escolherBanner} style={{ height: 116, borderRadius: 14, overflow: 'hidden', marginBottom: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-            {bannerUri ? <MediaImage uri={bannerUri} style={{ width: '100%', height: '100%' }} /> : <><Ionicons name="image-outline" size={24} color={colors.primaryDark} /><Text style={styles.changePhoto}>Adicionar banner do perfil</Text></>}
+          <TouchableOpacity onPress={escolherBanner} style={{ height: 116, borderRadius: 14, overflow: 'hidden', marginBottom: 12, backgroundColor: color.surfaceSubtle, alignItems: 'center', justifyContent: 'center' }}>
+            {bannerUri ? <MediaImage uri={bannerUri} style={{ width: '100%', height: '100%' }} /> : <><Ionicons name="image-outline" size={24} color={color.accentText} /><Text style={styles.changePhoto}>Adicionar banner do perfil</Text></>}
           </TouchableOpacity>
           <View style={styles.photoSection}>
             <TouchableOpacity style={styles.avatarWrapper} onPress={escolherFoto} accessibilityLabel="Trocar foto de perfil">
               <Avatar uri={avatarUri} style={styles.avatar} iconSize={36} />
-              <View style={styles.cameraBadge}><Ionicons name="camera" size={15} color={colors.white} /></View>
+              <View style={styles.cameraBadge}><Ionicons name="camera" size={15} color={color.textInverse} /></View>
             </TouchableOpacity>
             <TouchableOpacity onPress={escolherFoto}><Text style={styles.changePhoto}>Alterar foto</Text></TouchableOpacity>
           </View>
@@ -146,40 +149,40 @@ export default function EditProfileScreen() {
             <Field label="Nome" value={nome} onChangeText={setNome} placeholder="Seu nome completo" />
             <Field label="Especialidade" value={especialidade} onChangeText={setEspecialidade} placeholder="Ex.: Fotógrafa e videomaker" />
             <Text style={styles.label}>Estado</Text>
-            <TouchableOpacity style={styles.locationSelect} onPress={() => setModalLocal('estado')}><Ionicons name="map-outline" size={18} color={colors.primaryDark} /><Text style={styles.locationSelectText}>{ESTADOS_BR.find((item) => item.sigla === estado)?.nome || 'Selecione seu estado'}</Text><Ionicons name="chevron-down" size={18} color={colors.muted} /></TouchableOpacity>
+            <TouchableOpacity style={styles.locationSelect} onPress={() => setModalLocal('estado')}><Ionicons name="map-outline" size={18} color={color.accentText} /><Text style={styles.locationSelectText}>{ESTADOS_BR.find((item) => item.sigla === estado)?.nome || 'Selecione seu estado'}</Text><Ionicons name="chevron-down" size={18} color={color.textSecondary} /></TouchableOpacity>
             <Text style={styles.label}>Cidade</Text>
-            <TouchableOpacity style={[styles.locationSelect, !estado && styles.locationDisabled]} disabled={!estado || carregandoCidades} onPress={() => void abrirCidades(estado)}><Ionicons name="location-outline" size={18} color={colors.primaryDark} /><Text style={styles.locationSelectText}>{carregandoCidades ? 'Carregando cidades...' : cidade || 'Selecione sua cidade'}</Text><Ionicons name="chevron-down" size={18} color={colors.muted} /></TouchableOpacity>
-            <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View style={styles.modalCard}><View style={styles.modalHeader}><Text style={styles.modalTitle}>{modalLocal === 'estado' ? 'Selecione seu estado' : 'Selecione sua cidade'}</Text><TouchableOpacity onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={colors.text} /></TouchableOpacity></View>{modalLocal === 'estado' ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color={colors.muted} /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." placeholderTextColor={colors.muted} autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => {setCidade(item.nome); setBuscaCidade(''); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>}</View></View></Modal>
-          <View style={styles.mapCard}>
+            <TouchableOpacity style={[styles.locationSelect, !estado && styles.locationDisabled]} disabled={!estado || carregandoCidades} onPress={() => void abrirCidades(estado)}><Ionicons name="location-outline" size={18} color={color.accentText} /><Text style={styles.locationSelectText}>{carregandoCidades ? 'Carregando cidades...' : cidade || 'Selecione sua cidade'}</Text><Ionicons name="chevron-down" size={18} color={color.textSecondary} /></TouchableOpacity>
+            <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View style={styles.modalCard}><View style={styles.modalHeader}><Text style={styles.modalTitle}>{modalLocal === 'estado' ? 'Selecione seu estado' : 'Selecione sua cidade'}</Text><TouchableOpacity onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={color.textPrimary} /></TouchableOpacity></View>{modalLocal === 'estado' ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color={color.textSecondary} /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." placeholderTextColor={color.textSecondary} autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => {setCidade(item.nome); setBuscaCidade(''); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>}</View></View></Modal>
+            <View style={styles.mapCard}>
               <View style={styles.mapCopy}>
-                <Text style={styles.label}>APARECER NO MAPA</Text>
-                <Text style={styles.mapHint}>Permite que contratantes encontrem seu perfil pela localização cadastrada.</Text>
+                <Text style={styles.label}>Aparecer no Ateliê e no mapa</Text>
+                <Text style={styles.mapHint}>Mostra seu perfil no Ateliê e publica no mapa o local onde você atende.</Text>
               </View>
-              <Switch value={visivelMapa} onValueChange={setVisivelMapa} />
+              <Switch value={visivelMapa} onValueChange={setVisivelMapa} accessibilityLabel="Aparecer no Ateliê e no mapa" />
             </View>
             {visivelMapa ? (
               <>
                 <TouchableOpacity style={styles.localCard} onPress={() => navigation.navigate('SelectLocation', { latitude: local.latitude, longitude: local.longitude })} accessibilityLabel="Escolher local no mapa">
-                  <Ionicons name="location" size={22} color={colors.primary} />
+                  <Ionicons name="location" size={22} color={color.accentText} />
                   <View style={styles.mapCopy}>
                     <Text style={styles.label}>Local no mapa</Text>
                     <Text style={styles.mapHint} numberOfLines={2}>
                       {local.latitude != null ? local.endereco || 'Local marcado no mapa' : 'Toque para indicar onde você atende'}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+                  <Ionicons name="chevron-forward" size={18} color={color.textSecondary} />
                 </TouchableOpacity>
               </>
             ) : null}
             <View style={styles.field}>
               <Text style={styles.label}>Sobre você</Text>
-              <TextInput style={[styles.input, styles.multiline]} value={bio} onChangeText={setBio} placeholder="Conte um pouco sobre seu trabalho" placeholderTextColor={colors.muted} multiline maxLength={280} textAlignVertical="top" />
+              <TextInput style={[styles.input, styles.multiline]} value={bio} onChangeText={setBio} placeholder="Conte um pouco sobre seu trabalho" placeholderTextColor={color.textSecondary} multiline maxLength={280} textAlignVertical="top" />
               <Text style={styles.counter}>{bio.length}/280</Text>
             </View>
           </View>
 
           <TouchableOpacity style={[styles.saveButton, salvando && styles.saveButtonDisabled]} onPress={salvar} disabled={salvando}>
-            {salvando ? <ActivityIndicator color={colors.white} /> : <><Text style={styles.saveText}>Salvar alterações</Text><Ionicons name="checkmark" size={19} color={colors.white} /></>}
+            {salvando ? <ActivityIndicator color={color.textInverse} /> : <><Text style={styles.saveText}>Salvar alterações</Text><Ionicons name="checkmark" size={19} color={color.textInverse} /></>}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -188,35 +191,37 @@ export default function EditProfileScreen() {
 }
 
 function Field({ label, icon, ...inputProps }: { label: string; icon?: keyof typeof Ionicons.glyphMap } & React.ComponentProps<typeof TextInput>) {
+  const { color } = useThemeTokens();
+  const styles = useMemo(() => createStyles(color), [color]);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.inputWithIcon}>
-        {icon && <Ionicons name={icon} size={18} color={colors.primaryDark} />}
-        <TextInput style={styles.input} placeholderTextColor={colors.muted} editable={true} autoComplete="off" importantForAutofill="no" {...inputProps} />
+        {icon && <Ionicons name={icon} size={18} color={color.accentText} />}
+        <TextInput style={styles.input} placeholderTextColor={color.textSecondary} editable={true} autoComplete="off" importantForAutofill="no" {...inputProps} />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 },
+const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: color.background }, flex: { flex: 1 },
   header: { height: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
-  backButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' }, headerTitle: { color: colors.text, fontSize: 17, fontWeight: '800' }, headerSpacer: { width: 38 },
-  content: { paddingHorizontal: 20, paddingBottom: 38 }, photoSection: { alignItems: 'center', paddingVertical: 18 }, avatarWrapper: { position: 'relative' }, avatar: { width: 104, height: 104, borderRadius: 52, borderWidth: 3, borderColor: colors.secondary }, cameraBadge: { position: 'absolute', right: 0, bottom: 1, width: 31, height: 31, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primaryDark, borderWidth: 2, borderColor: colors.white }, changePhoto: { marginTop: 10, color: colors.primaryDark, fontSize: 13, fontWeight: '800' },
+  backButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' }, headerTitle: { color: color.textPrimary, fontSize: 17, fontWeight: '800' }, headerSpacer: { width: 38 },
+  content: { paddingHorizontal: 20, paddingBottom: 38 }, photoSection: { alignItems: 'center', paddingVertical: 18 }, avatarWrapper: { position: 'relative' }, avatar: { width: 104, height: 104, borderRadius: 52, borderWidth: 3, borderColor: color.border }, cameraBadge: { position: 'absolute', right: 0, bottom: 1, width: 31, height: 31, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: color.brandInk, borderWidth: 2, borderColor: color.surface }, changePhoto: { marginTop: 10, color: color.accentText, fontSize: 13, fontWeight: '800' },
   form: { gap: 15 },
-  locationSelect: { minHeight: 49, borderWidth: 1, borderColor: colors.border, borderRadius: 9, backgroundColor: colors.white, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 9 },
-  locationSelectText: { flex: 1, color: colors.text, fontSize: 14 },
+  locationSelect: { minHeight: 49, borderWidth: 1, borderColor: color.border, borderRadius: 9, backgroundColor: color.surface, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 9 },
+  locationSelectText: { flex: 1, color: color.textPrimary, fontSize: 14 },
   locationDisabled: { opacity: 0.55 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(41,36,43,0.45)', justifyContent: 'flex-end' },
-  modalCard: { maxHeight: '78%', backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
+  modalCard: { maxHeight: '78%', backgroundColor: color.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  modalTitle: { color: colors.text, fontSize: 20, fontWeight: '900' },
-  option: { minHeight: 52, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  optionText: { color: colors.text, fontSize: 15, fontWeight: '700' },
-  citySearchWrap: { minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.white, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, marginBottom: 10 },
-  citySearchInput: { flex: 1, color: colors.text, fontSize: 15, marginLeft: 9, paddingVertical: 9 },
-  emptyText: { textAlign: 'center', color: colors.muted, paddingVertical: 30 },
-  optionUf: { color: colors.primary, fontSize: 12, fontWeight: '900' }, mapCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.white }, mapCopy: { flex: 1 }, mapHint: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: 3 }, localCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.white }, field: { gap: 7 }, label: { color: colors.text, fontSize: 13, fontWeight: '800' }, inputWithIcon: { minHeight: 49, borderWidth: 1, borderColor: colors.border, borderRadius: 9, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: colors.white }, input: { flex: 1, paddingVertical: 12, color: colors.text, fontSize: 14 }, multiline: { minHeight: 108, borderWidth: 1, borderColor: colors.border, borderRadius: 9, paddingHorizontal: 13, backgroundColor: colors.white }, counter: { alignSelf: 'flex-end', color: colors.muted, fontSize: 11 },
-  saveButton: { height: 50, marginTop: 27, borderRadius: 9, backgroundColor: colors.primaryDark, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 }, saveButtonDisabled: { opacity: 0.7 }, saveText: { color: colors.white, fontSize: 15, fontWeight: '800' },
+  modalTitle: { color: color.textPrimary, fontSize: 20, fontWeight: '900' },
+  option: { minHeight: 52, borderBottomWidth: 1, borderBottomColor: color.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  optionText: { color: color.textPrimary, fontSize: 15, fontWeight: '700' },
+  citySearchWrap: { minHeight: 48, borderWidth: 1, borderColor: color.border, borderRadius: 12, backgroundColor: color.surface, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, marginBottom: 10 },
+  citySearchInput: { flex: 1, color: color.textPrimary, fontSize: 15, marginLeft: 9, paddingVertical: 9 },
+  emptyText: { textAlign: 'center', color: color.textSecondary, paddingVertical: 30 },
+  optionUf: { color: color.accentText, fontSize: 12, fontWeight: '900' }, mapCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14, padding: 14, borderWidth: 1, borderColor: color.border, borderRadius: 10, backgroundColor: color.surface }, mapCopy: { flex: 1 }, mapHint: { color: color.textSecondary, fontSize: 11, lineHeight: 16, marginTop: 3 }, localCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1, borderColor: color.border, borderRadius: 10, backgroundColor: color.surface }, field: { gap: 7 }, label: { color: color.textPrimary, fontSize: 13, fontWeight: '800' }, inputWithIcon: { minHeight: 49, borderWidth: 1, borderColor: color.border, borderRadius: 9, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: color.surface }, input: { flex: 1, paddingVertical: 12, color: color.textPrimary, fontSize: 14 }, multiline: { minHeight: 108, borderWidth: 1, borderColor: color.border, borderRadius: 9, paddingHorizontal: 13, backgroundColor: color.surface }, counter: { alignSelf: 'flex-end', color: color.textSecondary, fontSize: 11 },
+  saveButton: { height: 50, marginTop: 27, borderRadius: 9, backgroundColor: color.brandInk, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 }, saveButtonDisabled: { opacity: 0.7 }, saveText: { color: color.textInverse, fontSize: 15, fontWeight: '800' },
 });

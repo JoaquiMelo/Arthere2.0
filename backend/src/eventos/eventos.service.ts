@@ -5,6 +5,16 @@ import { isEventoConcluido } from './evento-data';
 const MAX_FOTOS = 8;
 const fotoPath = /^\/uploads\/([a-f0-9-]{36}\.(?:jpg|png|webp|gif))$/i;
 
+function coordenadas(latitude: unknown, longitude: unknown) {
+  if (latitude === undefined && longitude === undefined) return {};
+  if (latitude === null && longitude === null) return { latitude: null, longitude: null };
+  if (typeof latitude !== 'number' || !Number.isFinite(latitude) || Math.abs(latitude) > 90 ||
+      typeof longitude !== 'number' || !Number.isFinite(longitude) || Math.abs(longitude) > 180) {
+    throw new BadRequestException('Informe latitude e longitude válidas juntas.');
+  }
+  return { latitude, longitude };
+}
+
 function fotosPersistidas(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && fotoPath.test(item)) : [];
 }
@@ -95,6 +105,7 @@ export class EventosService {
         categoria: String(dados.categoria).trim(),
         local: String(dados.local).trim(),
         cidade: String(dados.cidade).trim(),
+        ...coordenadas(dados.latitude, dados.longitude),
         dataEvento: new Date(dados.dataEvento),
         horario: dados.horario?.trim() || undefined,
         organizador: dados.organizador?.trim() || contratante.nome,
@@ -122,6 +133,7 @@ export class EventosService {
         ...(dados.categoria !== undefined ? { categoria: String(dados.categoria).trim() } : {}),
         ...(dados.local !== undefined ? { local: String(dados.local).trim() } : {}),
         ...(dados.cidade !== undefined ? { cidade: String(dados.cidade).trim() } : {}),
+        ...coordenadas(dados.latitude, dados.longitude),
         ...(dados.dataEvento !== undefined ? { dataEvento: new Date(dados.dataEvento) } : {}),
         ...(dados.horario !== undefined ? { horario: dados.horario?.trim() || null } : {}),
         ...(dados.organizador !== undefined ? { organizador: dados.organizador?.trim() || null } : {}),

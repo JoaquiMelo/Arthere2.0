@@ -25,7 +25,7 @@ module.exports = ({ config }) => ({
       'expo-location',
       {
         locationWhenInUsePermission:
-          'O Arthere usa sua localização para centralizar o mapa onde você atende.',
+          'O Arthere usa sua localização para marcar onde você atende ou onde acontece o seu evento.',
       },
     ],
 

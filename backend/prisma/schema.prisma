@@ -155,6 +155,8 @@ model Evento {
   categoria     String
   local         String
   cidade        String
+  latitude      Float?
+  longitude     Float?
   dataEvento    DateTime
   horario       String?
   organizador   String?

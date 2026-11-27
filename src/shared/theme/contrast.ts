@@ -24,9 +24,7 @@ function mix(first: string, second: string, amount: number): string {
   ).join('');
 }
 
-/** Preserva a cor preferida se legível; adapta apenas o primeiro plano.
- * As superfícies das paletas atuais são claras, ou recebem um único fundo escuro.
- */
+/** Preserva a cor preferida quando ela é legível em todas as superfícies informadas. */
 export function readableColor(preferred: string, backgrounds: readonly string[]): string {
   const minimum = (color: string) => Math.min(...backgrounds.map((bg) => contrastRatio(color, bg)));
   if (minimum(preferred) >= 4.5) return preferred;

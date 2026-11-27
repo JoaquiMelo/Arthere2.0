@@ -20,8 +20,20 @@ export type EventoModel = runtime.Types.Result.DefaultSelection<Prisma.$EventoPa
 
 export type AggregateEvento = {
   _count: EventoCountAggregateOutputType | null
+  _avg: EventoAvgAggregateOutputType | null
+  _sum: EventoSumAggregateOutputType | null
   _min: EventoMinAggregateOutputType | null
   _max: EventoMaxAggregateOutputType | null
+}
+
+export type EventoAvgAggregateOutputType = {
+  latitude: number | null
+  longitude: number | null
+}
+
+export type EventoSumAggregateOutputType = {
+  latitude: number | null
+  longitude: number | null
 }
 
 export type EventoMinAggregateOutputType = {
@@ -31,6 +43,8 @@ export type EventoMinAggregateOutputType = {
   categoria: string | null
   local: string | null
   cidade: string | null
+  latitude: number | null
+  longitude: number | null
   dataEvento: Date | null
   horario: string | null
   organizador: string | null
@@ -49,6 +63,8 @@ export type EventoMaxAggregateOutputType = {
   categoria: string | null
   local: string | null
   cidade: string | null
+  latitude: number | null
+  longitude: number | null
   dataEvento: Date | null
   horario: string | null
   organizador: string | null
@@ -67,6 +83,8 @@ export type EventoCountAggregateOutputType = {
   categoria: number
   local: number
   cidade: number
+  latitude: number
+  longitude: number
   dataEvento: number
   horario: number
   organizador: number
@@ -80,6 +98,16 @@ export type EventoCountAggregateOutputType = {
 }
 
 
+export type EventoAvgAggregateInputType = {
+  latitude?: true
+  longitude?: true
+}
+
+export type EventoSumAggregateInputType = {
+  latitude?: true
+  longitude?: true
+}
+
 export type EventoMinAggregateInputType = {
   id?: true
   titulo?: true
@@ -87,6 +115,8 @@ export type EventoMinAggregateInputType = {
   categoria?: true
   local?: true
   cidade?: true
+  latitude?: true
+  longitude?: true
   dataEvento?: true
   horario?: true
   organizador?: true
@@ -105,6 +135,8 @@ export type EventoMaxAggregateInputType = {
   categoria?: true
   local?: true
   cidade?: true
+  latitude?: true
+  longitude?: true
   dataEvento?: true
   horario?: true
   organizador?: true
@@ -123,6 +155,8 @@ export type EventoCountAggregateInputType = {
   categoria?: true
   local?: true
   cidade?: true
+  latitude?: true
+  longitude?: true
   dataEvento?: true
   horario?: true
   organizador?: true
@@ -173,6 +207,18 @@ export type EventoAggregateArgs<ExtArgs extends runtime.Types.Extensions.Interna
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: EventoAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   *
+   * Select which fields to sum
+  **/
+  _sum?: EventoSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   *
    * Select which fields to find the minimum value
   **/
   _min?: EventoMinAggregateInputType
@@ -203,6 +249,8 @@ export type EventoGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   _count?: EventoCountAggregateInputType | true
+  _avg?: EventoAvgAggregateInputType
+  _sum?: EventoSumAggregateInputType
   _min?: EventoMinAggregateInputType
   _max?: EventoMaxAggregateInputType
 }
@@ -214,6 +262,8 @@ export type EventoGroupByOutputType = {
   categoria: string
   local: string
   cidade: string
+  latitude: number | null
+  longitude: number | null
   dataEvento: Date
   horario: string | null
   organizador: string | null
@@ -224,6 +274,8 @@ export type EventoGroupByOutputType = {
   criadoEm: Date
   atualizadoEm: Date
   _count: EventoCountAggregateOutputType | null
+  _avg: EventoAvgAggregateOutputType | null
+  _sum: EventoSumAggregateOutputType | null
   _min: EventoMinAggregateOutputType | null
   _max: EventoMaxAggregateOutputType | null
 }
@@ -253,6 +305,8 @@ export type EventoWhereInput = {
   categoria?: Prisma.StringFilter<"Evento"> | string
   local?: Prisma.StringFilter<"Evento"> | string
   cidade?: Prisma.StringFilter<"Evento"> | string
+  latitude?: Prisma.FloatNullableFilter<"Evento"> | number | null
+  longitude?: Prisma.FloatNullableFilter<"Evento"> | number | null
   dataEvento?: Prisma.DateTimeFilter<"Evento"> | Date | string
   horario?: Prisma.StringNullableFilter<"Evento"> | string | null
   organizador?: Prisma.StringNullableFilter<"Evento"> | string | null
@@ -274,6 +328,8 @@ export type EventoOrderByWithRelationInput = {
   categoria?: Prisma.SortOrder
   local?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
+  latitude?: Prisma.SortOrderInput | Prisma.SortOrder
+  longitude?: Prisma.SortOrderInput | Prisma.SortOrder
   dataEvento?: Prisma.SortOrder
   horario?: Prisma.SortOrderInput | Prisma.SortOrder
   organizador?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -299,6 +355,8 @@ export type EventoWhereUniqueInput = Prisma.AtLeast<{
   categoria?: Prisma.StringFilter<"Evento"> | string
   local?: Prisma.StringFilter<"Evento"> | string
   cidade?: Prisma.StringFilter<"Evento"> | string
+  latitude?: Prisma.FloatNullableFilter<"Evento"> | number | null
+  longitude?: Prisma.FloatNullableFilter<"Evento"> | number | null
   dataEvento?: Prisma.DateTimeFilter<"Evento"> | Date | string
   horario?: Prisma.StringNullableFilter<"Evento"> | string | null
   organizador?: Prisma.StringNullableFilter<"Evento"> | string | null
@@ -320,6 +378,8 @@ export type EventoOrderByWithAggregationInput = {
   categoria?: Prisma.SortOrder
   local?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
+  latitude?: Prisma.SortOrderInput | Prisma.SortOrder
+  longitude?: Prisma.SortOrderInput | Prisma.SortOrder
   dataEvento?: Prisma.SortOrder
   horario?: Prisma.SortOrderInput | Prisma.SortOrder
   organizador?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -330,8 +390,10 @@ export type EventoOrderByWithAggregationInput = {
   criadoEm?: Prisma.SortOrder
   atualizadoEm?: Prisma.SortOrder
   _count?: Prisma.EventoCountOrderByAggregateInput
+  _avg?: Prisma.EventoAvgOrderByAggregateInput
   _max?: Prisma.EventoMaxOrderByAggregateInput
   _min?: Prisma.EventoMinOrderByAggregateInput
+  _sum?: Prisma.EventoSumOrderByAggregateInput
 }
 
 export type EventoScalarWhereWithAggregatesInput = {
@@ -344,6 +406,8 @@ export type EventoScalarWhereWithAggregatesInput = {
   categoria?: Prisma.StringWithAggregatesFilter<"Evento"> | string
   local?: Prisma.StringWithAggregatesFilter<"Evento"> | string
   cidade?: Prisma.StringWithAggregatesFilter<"Evento"> | string
+  latitude?: Prisma.FloatNullableWithAggregatesFilter<"Evento"> | number | null
+  longitude?: Prisma.FloatNullableWithAggregatesFilter<"Evento"> | number | null
   dataEvento?: Prisma.DateTimeWithAggregatesFilter<"Evento"> | Date | string
   horario?: Prisma.StringNullableWithAggregatesFilter<"Evento"> | string | null
   organizador?: Prisma.StringNullableWithAggregatesFilter<"Evento"> | string | null
@@ -362,6 +426,8 @@ export type EventoCreateInput = {
   categoria: string
   local: string
   cidade: string
+  latitude?: number | null
+  longitude?: number | null
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
@@ -382,6 +448,8 @@ export type EventoUncheckedCreateInput = {
   categoria: string
   local: string
   cidade: string
+  latitude?: number | null
+  longitude?: number | null
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
@@ -402,6 +470,8 @@ export type EventoUpdateInput = {
   categoria?: Prisma.StringFieldUpdateOperationsInput | string
   local?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -422,6 +492,8 @@ export type EventoUncheckedUpdateInput = {
   categoria?: Prisma.StringFieldUpdateOperationsInput | string
   local?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -442,6 +514,8 @@ export type EventoCreateManyInput = {
   categoria: string
   local: string
   cidade: string
+  latitude?: number | null
+  longitude?: number | null
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
@@ -460,6 +534,8 @@ export type EventoUpdateManyMutationInput = {
   categoria?: Prisma.StringFieldUpdateOperationsInput | string
   local?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -477,6 +553,8 @@ export type EventoUncheckedUpdateManyInput = {
   categoria?: Prisma.StringFieldUpdateOperationsInput | string
   local?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -511,6 +589,8 @@ export type EventoCountOrderByAggregateInput = {
   categoria?: Prisma.SortOrder
   local?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
+  latitude?: Prisma.SortOrder
+  longitude?: Prisma.SortOrder
   dataEvento?: Prisma.SortOrder
   horario?: Prisma.SortOrder
   organizador?: Prisma.SortOrder
@@ -522,6 +602,11 @@ export type EventoCountOrderByAggregateInput = {
   atualizadoEm?: Prisma.SortOrder
 }
 
+export type EventoAvgOrderByAggregateInput = {
+  latitude?: Prisma.SortOrder
+  longitude?: Prisma.SortOrder
+}
+
 export type EventoMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   titulo?: Prisma.SortOrder
@@ -529,6 +614,8 @@ export type EventoMaxOrderByAggregateInput = {
   categoria?: Prisma.SortOrder
   local?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
+  latitude?: Prisma.SortOrder
+  longitude?: Prisma.SortOrder
   dataEvento?: Prisma.SortOrder
   horario?: Prisma.SortOrder
   organizador?: Prisma.SortOrder
@@ -547,6 +634,8 @@ export type EventoMinOrderByAggregateInput = {
   categoria?: Prisma.SortOrder
   local?: Prisma.SortOrder
   cidade?: Prisma.SortOrder
+  latitude?: Prisma.SortOrder
+  longitude?: Prisma.SortOrder
   dataEvento?: Prisma.SortOrder
   horario?: Prisma.SortOrder
   organizador?: Prisma.SortOrder
@@ -556,6 +645,11 @@ export type EventoMinOrderByAggregateInput = {
   contratanteId?: Prisma.SortOrder
   criadoEm?: Prisma.SortOrder
   atualizadoEm?: Prisma.SortOrder
+}
+
+export type EventoSumOrderByAggregateInput = {
+  latitude?: Prisma.SortOrder
+  longitude?: Prisma.SortOrder
 }
 
 export type EventoScalarRelationFilter = {
@@ -640,6 +734,8 @@ export type EventoCreateWithoutContratanteInput = {
   categoria: string
   local: string
   cidade: string
+  latitude?: number | null
+  longitude?: number | null
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
@@ -659,6 +755,8 @@ export type EventoUncheckedCreateWithoutContratanteInput = {
   categoria: string
   local: string
   cidade: string
+  latitude?: number | null
+  longitude?: number | null
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
@@ -707,6 +805,8 @@ export type EventoScalarWhereInput = {
   categoria?: Prisma.StringFilter<"Evento"> | string
   local?: Prisma.StringFilter<"Evento"> | string
   cidade?: Prisma.StringFilter<"Evento"> | string
+  latitude?: Prisma.FloatNullableFilter<"Evento"> | number | null
+  longitude?: Prisma.FloatNullableFilter<"Evento"> | number | null
   dataEvento?: Prisma.DateTimeFilter<"Evento"> | Date | string
   horario?: Prisma.StringNullableFilter<"Evento"> | string | null
   organizador?: Prisma.StringNullableFilter<"Evento"> | string | null
@@ -725,6 +825,8 @@ export type EventoCreateWithoutAlbumInput = {
   categoria: string
   local: string
   cidade: string
+  latitude?: number | null
+  longitude?: number | null
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
@@ -744,6 +846,8 @@ export type EventoUncheckedCreateWithoutAlbumInput = {
   categoria: string
   local: string
   cidade: string
+  latitude?: number | null
+  longitude?: number | null
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
@@ -779,6 +883,8 @@ export type EventoUpdateWithoutAlbumInput = {
   categoria?: Prisma.StringFieldUpdateOperationsInput | string
   local?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -798,6 +904,8 @@ export type EventoUncheckedUpdateWithoutAlbumInput = {
   categoria?: Prisma.StringFieldUpdateOperationsInput | string
   local?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -817,6 +925,8 @@ export type EventoCreateWithoutSolicitacoesInput = {
   categoria: string
   local: string
   cidade: string
+  latitude?: number | null
+  longitude?: number | null
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
@@ -836,6 +946,8 @@ export type EventoUncheckedCreateWithoutSolicitacoesInput = {
   categoria: string
   local: string
   cidade: string
+  latitude?: number | null
+  longitude?: number | null
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
@@ -871,6 +983,8 @@ export type EventoUpdateWithoutSolicitacoesInput = {
   categoria?: Prisma.StringFieldUpdateOperationsInput | string
   local?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -890,6 +1004,8 @@ export type EventoUncheckedUpdateWithoutSolicitacoesInput = {
   categoria?: Prisma.StringFieldUpdateOperationsInput | string
   local?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -909,6 +1025,8 @@ export type EventoCreateManyContratanteInput = {
   categoria: string
   local: string
   cidade: string
+  latitude?: number | null
+  longitude?: number | null
   dataEvento: Date | string
   horario?: string | null
   organizador?: string | null
@@ -926,6 +1044,8 @@ export type EventoUpdateWithoutContratanteInput = {
   categoria?: Prisma.StringFieldUpdateOperationsInput | string
   local?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -945,6 +1065,8 @@ export type EventoUncheckedUpdateWithoutContratanteInput = {
   categoria?: Prisma.StringFieldUpdateOperationsInput | string
   local?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -964,6 +1086,8 @@ export type EventoUncheckedUpdateManyWithoutContratanteInput = {
   categoria?: Prisma.StringFieldUpdateOperationsInput | string
   local?: Prisma.StringFieldUpdateOperationsInput | string
   cidade?: Prisma.StringFieldUpdateOperationsInput | string
+  latitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  longitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   dataEvento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   horario?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   organizador?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1012,6 +1136,8 @@ export type EventoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   categoria?: boolean
   local?: boolean
   cidade?: boolean
+  latitude?: boolean
+  longitude?: boolean
   dataEvento?: boolean
   horario?: boolean
   organizador?: boolean
@@ -1036,6 +1162,8 @@ export type EventoSelectScalar = {
   categoria?: boolean
   local?: boolean
   cidade?: boolean
+  latitude?: boolean
+  longitude?: boolean
   dataEvento?: boolean
   horario?: boolean
   organizador?: boolean
@@ -1047,7 +1175,7 @@ export type EventoSelectScalar = {
   atualizadoEm?: boolean
 }
 
-export type EventoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "titulo" | "descricao" | "categoria" | "local" | "cidade" | "dataEvento" | "horario" | "organizador" | "imagemUrl" | "premium" | "fixado" | "contratanteId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["evento"]>
+export type EventoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "titulo" | "descricao" | "categoria" | "local" | "cidade" | "latitude" | "longitude" | "dataEvento" | "horario" | "organizador" | "imagemUrl" | "premium" | "fixado" | "contratanteId" | "criadoEm" | "atualizadoEm", ExtArgs["result"]["evento"]>
 export type EventoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   contratante?: boolean | Prisma.Evento$contratanteArgs<ExtArgs>
   solicitacoes?: boolean | Prisma.Evento$solicitacoesArgs<ExtArgs>
@@ -1069,6 +1197,8 @@ export type $EventoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     categoria: string
     local: string
     cidade: string
+    latitude: number | null
+    longitude: number | null
     dataEvento: Date
     horario: string | null
     organizador: string | null
@@ -1456,6 +1586,8 @@ export interface EventoFieldRefs {
   readonly categoria: Prisma.FieldRef<"Evento", 'String'>
   readonly local: Prisma.FieldRef<"Evento", 'String'>
   readonly cidade: Prisma.FieldRef<"Evento", 'String'>
+  readonly latitude: Prisma.FieldRef<"Evento", 'Float'>
+  readonly longitude: Prisma.FieldRef<"Evento", 'Float'>
   readonly dataEvento: Prisma.FieldRef<"Evento", 'DateTime'>
   readonly horario: Prisma.FieldRef<"Evento", 'String'>
   readonly organizador: Prisma.FieldRef<"Evento", 'String'>

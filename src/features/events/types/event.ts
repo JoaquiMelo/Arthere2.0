@@ -5,6 +5,8 @@ export type Evento = {
   descricao: string;
   local: string;
   cidade: string;
+  latitude?: number | null;
+  longitude?: number | null;
   data: string;
   horario: string;
   organizador: string;

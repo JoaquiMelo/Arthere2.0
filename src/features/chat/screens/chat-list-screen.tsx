@@ -2,11 +2,12 @@ import { ScreenContainer, ScreenHeader, FeedbackState } from '@/shared/component
 import { Avatar } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useChat, type Conversation } from '@/providers/chat-provider';
-import { colors } from '@/shared/theme/colors';
+import type { ThemeTokens } from '@/shared/theme/tokens';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 
 function preview(conversation: Conversation) {
   const last = conversation.messages.at(-1);
@@ -14,6 +15,8 @@ function preview(conversation: Conversation) {
 }
 
 export default function ChatListScreen() {
+  const { color } = useThemeTokens();
+  const styles = useMemo(() => createStyles(color), [color]);
   const navigation = useNavigation<any>();
   const { conversations, refresh, loading } = useChat();
   const [erro, setErro] = useState('');
@@ -56,6 +59,8 @@ function ConversationRow({
   conversation: Conversation;
   onPress: () => void;
 }) {
+  const { color } = useThemeTokens();
+  const styles = useMemo(() => createStyles(color), [color]);
   const last = conversation.messages.at(-1);
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}>
@@ -76,15 +81,15 @@ function ConversationRow({
         <Text style={styles.preview} numberOfLines={1}>{preview(conversation)}</Text>
       </View>
 
-      <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+      <Ionicons name="chevron-forward" size={16} color={color.textSecondary} />
     </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.brandPaper,
+    backgroundColor: color.background,
   },
   header: {
     paddingHorizontal: 20,
@@ -92,26 +97,26 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   kicker: {
-    color: colors.brandCoral,
+    color: color.accentText,
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 1.6,
     marginBottom: 6,
   },
   title: {
-    color: colors.brandInk,
+    color: color.textPrimary,
     fontSize: 27,
     fontWeight: '900',
     letterSpacing: -0.7,
   },
   subtitle: {
-    color: colors.muted,
+    color: color.textSecondary,
     fontSize: 12,
     marginTop: 3,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: color.border,
     marginHorizontal: 20,
   },
   list: {
@@ -124,15 +129,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: color.border,
     gap: 11,
   },
   avatarFrame: {
     width: 50,
     height: 50,
     borderWidth: 1,
-    borderColor: colors.brandInk,
-    backgroundColor: colors.white,
+    borderColor: color.textPrimary,
+    backgroundColor: color.surface,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -142,7 +147,7 @@ const styles = StyleSheet.create({
     height: 46,
   },
   avatarInitials: {
-    color: colors.brandInk,
+    color: color.textPrimary,
     fontSize: 15,
     fontWeight: '900',
     letterSpacing: 0.5,
@@ -154,9 +159,9 @@ const styles = StyleSheet.create({
     width: 13,
     height: 13,
     borderRadius: 7,
-    backgroundColor: colors.brandGreen,
+    backgroundColor: color.success,
     borderWidth: 2,
-    borderColor: colors.brandPaper,
+    borderColor: color.background,
   },
   rowContent: {
     flex: 1,
@@ -168,18 +173,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   name: {
-    color: colors.brandInk,
+    color: color.textPrimary,
     fontSize: 14,
     fontWeight: '900',
     flex: 1,
   },
   time: {
-    color: colors.muted,
+    color: color.textSecondary,
     fontSize: 9,
     fontWeight: '700',
   },
   preview: {
-    color: colors.muted,
+    color: color.textSecondary,
     fontSize: 12,
     marginTop: 5,
   },
@@ -194,7 +199,7 @@ const styles = StyleSheet.create({
   emptyGraphic: {
     width: 72,
     height: 72,
-    backgroundColor: colors.brandInk,
+    backgroundColor: color.brandInk,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -207,17 +212,17 @@ const styles = StyleSheet.create({
     right: -11,
     bottom: -11,
     borderRadius: 10,
-    backgroundColor: colors.brandCoral,
+    backgroundColor: color.accent,
     transform: [{ rotate: '20deg' }],
   },
   emptyTitle: {
-    color: colors.brandInk,
+    color: color.textPrimary,
     fontSize: 17,
     fontWeight: '900',
     marginTop: 16,
   },
   emptyText: {
-    color: colors.muted,
+    color: color.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
     marginTop: 8,

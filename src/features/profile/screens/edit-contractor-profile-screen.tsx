@@ -3,7 +3,7 @@ import { Avatar, MediaImage } from '@/shared/components/media-image';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -22,11 +22,14 @@ import {
 
 import { useUser } from "@/providers/user-provider";
 import { uploadImage } from "@/services/api";
-import { colors } from "@/shared/theme/colors";
+import type { ThemeTokens } from '@/shared/theme/tokens';
+import { useThemeTokens } from "@/shared/theme/use-theme-tokens";
 import { buscarCidades, CidadeBR, ESTADOS_BR, municipioCadastrado, nomeMunicipio } from "@/shared/config/brazil-location";
 
 
 export default function EditContractorProfileScreen() {
+  const { color } = useThemeTokens();
+  const styles = useMemo(() => createStyles(color), [color]);
   const navigation = useNavigation<any>();
   const { user, updateProfile } = useUser();
 
@@ -160,7 +163,7 @@ export default function EditContractorProfileScreen() {
           onPress={() => navigation.goBack()}
           accessibilityLabel="Voltar"
         >
-          <Ionicons name="chevron-back" size={25} color={colors.text} />
+          <Ionicons name="chevron-back" size={25} color={color.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Editar perfil do contratante</Text>
         <View style={styles.headerSpacer} />
@@ -174,8 +177,8 @@ export default function EditContractorProfileScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
         >
-          <TouchableOpacity onPress={escolherBanner} style={{ height: 116, borderRadius: 14, overflow: 'hidden', marginBottom: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-            {bannerUri ? <MediaImage uri={bannerUri} style={{ width: '100%', height: '100%' }} /> : <><Ionicons name="image-outline" size={24} color={colors.primaryDark} /><Text style={styles.changePhoto}>Adicionar banner do perfil</Text></>}
+          <TouchableOpacity onPress={escolherBanner} style={{ height: 116, borderRadius: 14, overflow: 'hidden', marginBottom: 12, backgroundColor: color.surfaceSubtle, alignItems: 'center', justifyContent: 'center' }}>
+            {bannerUri ? <MediaImage uri={bannerUri} style={{ width: '100%', height: '100%' }} /> : <><Ionicons name="image-outline" size={24} color={color.accentText} /><Text style={styles.changePhoto}>Adicionar banner do perfil</Text></>}
           </TouchableOpacity>
           {/* Foto de Perfil */}
           <View style={styles.photoSection}>
@@ -187,7 +190,7 @@ export default function EditContractorProfileScreen() {
             >
               <Avatar uri={avatarUri} style={styles.avatar} iconSize={36} />
               <View style={styles.cameraBadge}>
-                <Ionicons name="camera" size={15} color={colors.white} />
+                <Ionicons name="camera" size={15} color={color.textInverse} />
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={escolherFoto}>
@@ -201,7 +204,7 @@ export default function EditContractorProfileScreen() {
           </Text>
 
           {/* Formulário */}
-          <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View style={styles.modalCard}><View style={styles.modalHeader}><Text style={styles.modalTitle}>{modalLocal === "estado" ? "Selecione seu estado" : "Selecione sua cidade"}</Text><TouchableOpacity onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={colors.text} /></TouchableOpacity></View>{modalLocal === "estado" ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color={colors.muted} /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." placeholderTextColor={colors.muted} autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => {setCidade(item.nome); setBuscaCidade(''); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>}</View></View></Modal>
+          <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View style={styles.modalCard}><View style={styles.modalHeader}><Text style={styles.modalTitle}>{modalLocal === "estado" ? "Selecione seu estado" : "Selecione sua cidade"}</Text><TouchableOpacity onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={color.textPrimary} /></TouchableOpacity></View>{modalLocal === "estado" ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color={color.textSecondary} /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." placeholderTextColor={color.textSecondary} autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity style={styles.option} onPress={() => {setCidade(item.nome); setBuscaCidade(''); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>}</View></View></Modal>
           <View style={styles.form}>
             <Field
               label="CPF ou CNPJ"
@@ -250,9 +253,9 @@ export default function EditContractorProfileScreen() {
               icon="call-outline"
             />
             <Text style={styles.label}>Estado</Text>
-            <TouchableOpacity style={styles.locationSelect} onPress={() => setModalLocal("estado")}><Ionicons name="map-outline" size={18} color={colors.primaryDark} /><Text style={styles.locationSelectText}>{ESTADOS_BR.find((item) => item.sigla === estado)?.nome || "Selecione seu estado"}</Text><Ionicons name="chevron-down" size={18} color={colors.muted} /></TouchableOpacity>
+            <TouchableOpacity style={styles.locationSelect} onPress={() => setModalLocal("estado")}><Ionicons name="map-outline" size={18} color={color.accentText} /><Text style={styles.locationSelectText}>{ESTADOS_BR.find((item) => item.sigla === estado)?.nome || "Selecione seu estado"}</Text><Ionicons name="chevron-down" size={18} color={color.textSecondary} /></TouchableOpacity>
             <Text style={styles.label}>Cidade</Text>
-            <TouchableOpacity style={[styles.locationSelect, !estado && styles.locationDisabled]} disabled={!estado || carregandoCidades} onPress={() => void abrirCidades(estado)}><Ionicons name="location-outline" size={18} color={colors.primaryDark} /><Text style={styles.locationSelectText}>{carregandoCidades ? "Carregando cidades..." : cidade || "Selecione sua cidade"}</Text><Ionicons name="chevron-down" size={18} color={colors.muted} /></TouchableOpacity>
+            <TouchableOpacity style={[styles.locationSelect, !estado && styles.locationDisabled]} disabled={!estado || carregandoCidades} onPress={() => void abrirCidades(estado)}><Ionicons name="location-outline" size={18} color={color.accentText} /><Text style={styles.locationSelectText}>{carregandoCidades ? "Carregando cidades..." : cidade || "Selecione sua cidade"}</Text><Ionicons name="chevron-down" size={18} color={color.textSecondary} /></TouchableOpacity>
             <Field
               label="Endereço"
               value={endereco}
@@ -275,7 +278,7 @@ export default function EditContractorProfileScreen() {
                 value={descricao}
                 onChangeText={setDescricao}
                 placeholder="Conte sobre a empresa, tipos de eventos e serviços..."
-                placeholderTextColor={colors.muted}
+                placeholderTextColor={color.textSecondary}
                 multiline
                 maxLength={500}
                 textAlignVertical="top"
@@ -292,11 +295,11 @@ export default function EditContractorProfileScreen() {
             activeOpacity={0.85}
           >
             {salvando ? (
-              <ActivityIndicator color={colors.white} />
+              <ActivityIndicator color={color.textInverse} />
             ) : (
               <>
                 <Text style={styles.buttonText}>Salvar alterações</Text>
-                <Ionicons name="checkmark" size={19} color={colors.white} />
+                <Ionicons name="checkmark" size={19} color={color.textInverse} />
               </>
             )}
           </TouchableOpacity>
@@ -314,14 +317,16 @@ function Field({
   label: string;
   icon?: keyof typeof Ionicons.glyphMap;
 } & React.ComponentProps<typeof TextInput>) {
+  const { color } = useThemeTokens();
+  const styles = useMemo(() => createStyles(color), [color]);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <View style={icon ? styles.inputWithIcon : styles.singleInputWrapper}>
-        {icon && <Ionicons name={icon} size={18} color={colors.primaryDark} />}
+        {icon && <Ionicons name={icon} size={18} color={color.accentText} />}
         <TextInput
           style={styles.input}
-          placeholderTextColor={colors.muted}
+          placeholderTextColor={color.textSecondary}
           {...props}
         />
       </View>
@@ -329,8 +334,8 @@ function Field({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: color.background },
   flex: { flex: 1 },
   header: {
     height: 58,
@@ -345,7 +350,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitle: { fontSize: 17, fontWeight: "900", color: colors.text },
+  headerTitle: { fontSize: 17, fontWeight: "900", color: color.textPrimary },
   headerSpacer: { width: 38 },
   content: { paddingHorizontal: 20, paddingBottom: 45 },
   photoSection: { alignItems: "center", paddingVertical: 16 },
@@ -355,7 +360,7 @@ const styles = StyleSheet.create({
     height: 104,
     borderRadius: 52,
     borderWidth: 3,
-    borderColor: colors.secondary,
+    borderColor: color.border,
   },
   cameraBadge: {
     position: "absolute",
@@ -366,80 +371,80 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primaryDark,
+    backgroundColor: color.brandInk,
     borderWidth: 2,
-    borderColor: colors.white,
+    borderColor: color.surface,
   },
   changePhoto: {
     marginTop: 10,
-    color: colors.primaryDark,
+    color: color.accentText,
     fontSize: 13,
     fontWeight: "800",
   },
   intro: {
     fontSize: 13,
     lineHeight: 19,
-    color: colors.muted,
+    color: color.textSecondary,
     marginBottom: 20,
     textAlign: "center",
   },
   form: { gap: 15 },
-  locationSelect: { minHeight: 49, borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.white, flexDirection: "row", alignItems: "center", paddingHorizontal: 13, gap: 9 },
-  locationSelectText: { flex: 1, color: colors.text, fontSize: 14 },
+  locationSelect: { minHeight: 49, borderWidth: 1, borderColor: color.border, borderRadius: 10, backgroundColor: color.surface, flexDirection: "row", alignItems: "center", paddingHorizontal: 13, gap: 9 },
+  locationSelectText: { flex: 1, color: color.textPrimary, fontSize: 14 },
   locationDisabled: { opacity: 0.55 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(41,36,43,0.45)", justifyContent: "flex-end" },
-  modalCard: { maxHeight: "78%", backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
+  modalCard: { maxHeight: "78%", backgroundColor: color.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  modalTitle: { color: colors.text, fontSize: 20, fontWeight: "900" },
-  option: { minHeight: 52, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  optionText: { color: colors.text, fontSize: 15, fontWeight: "700" },
-  citySearchWrap: { minHeight: 48, borderWidth: 1, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.white, flexDirection: "row", alignItems: "center", paddingHorizontal: 13, marginBottom: 10 },
-  citySearchInput: { flex: 1, color: colors.text, fontSize: 15, marginLeft: 9, paddingVertical: 9 },
-  emptyText: { textAlign: "center", color: colors.muted, paddingVertical: 30 },
-  optionUf: { color: colors.primary, fontSize: 12, fontWeight: "900" },
+  modalTitle: { color: color.textPrimary, fontSize: 20, fontWeight: "900" },
+  option: { minHeight: 52, borderBottomWidth: 1, borderBottomColor: color.border, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  optionText: { color: color.textPrimary, fontSize: 15, fontWeight: "700" },
+  citySearchWrap: { minHeight: 48, borderWidth: 1, borderColor: color.border, borderRadius: 12, backgroundColor: color.surface, flexDirection: "row", alignItems: "center", paddingHorizontal: 13, marginBottom: 10 },
+  citySearchInput: { flex: 1, color: color.textPrimary, fontSize: 15, marginLeft: 9, paddingVertical: 9 },
+  emptyText: { textAlign: "center", color: color.textSecondary, paddingVertical: 30 },
+  optionUf: { color: color.accentText, fontSize: 12, fontWeight: "900" },
   field: { gap: 6 },
-  label: { fontSize: 13, fontWeight: "800", color: colors.text },
+  label: { fontSize: 13, fontWeight: "800", color: color.textPrimary },
   singleInputWrapper: {
     minHeight: 49,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: color.border,
     borderRadius: 10,
-    backgroundColor: colors.white,
+    backgroundColor: color.surface,
     paddingHorizontal: 13,
     justifyContent: "center",
   },
   inputWithIcon: {
     minHeight: 49,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: color.border,
     borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 13,
     gap: 10,
-    backgroundColor: colors.white,
+    backgroundColor: color.surface,
   },
-  input: { flex: 1, color: colors.text, fontSize: 14, paddingVertical: 10 },
+  input: { flex: 1, color: color.textPrimary, fontSize: 14, paddingVertical: 10 },
   multiline: {
     minHeight: 110,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: color.border,
     borderRadius: 10,
-    backgroundColor: colors.white,
+    backgroundColor: color.surface,
     padding: 13,
-    color: colors.text,
+    color: color.textPrimary,
     fontSize: 14,
   },
   counter: {
     fontSize: 11,
-    color: colors.muted,
+    color: color.textSecondary,
     textAlign: "right",
     marginTop: 2,
   },
   button: {
     height: 50,
     borderRadius: 11,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: color.brandInk,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -447,5 +452,5 @@ const styles = StyleSheet.create({
     marginTop: 26,
   },
   buttonDisabled: { opacity: 0.7 },
-  buttonText: { color: colors.white, fontWeight: "900", fontSize: 15 },
+  buttonText: { color: color.textInverse, fontWeight: "900", fontSize: 15 },
 });

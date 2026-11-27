@@ -1,7 +1,7 @@
 import { Avatar } from '@/shared/components/media-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -16,9 +16,12 @@ import {
 } from 'react-native';
 
 import { useChat } from '@/providers/chat-provider';
-import { colors } from '@/shared/theme/colors';
+import type { ThemeTokens } from '@/shared/theme/tokens';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 
 export default function ChatConversationScreen() {
+  const { color } = useThemeTokens();
+  const styles = useMemo(() => createStyles(color), [color]);
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { conversations, sendMessage, carregarMensagens } = useChat();
@@ -51,7 +54,7 @@ export default function ChatConversationScreen() {
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back}>
-            <Ionicons name="arrow-back" size={20} color={colors.brandInk} />
+            <Ionicons name="arrow-back" size={20} color={color.textPrimary} />
           </TouchableOpacity>
           <View style={styles.avatarFrame}>
             <Avatar uri={conversation.participant.avatarUrl} style={styles.avatar} iconSize={24} />
@@ -98,7 +101,7 @@ export default function ChatConversationScreen() {
             value={draft}
             onChangeText={setDraft}
             placeholder="Escreva uma mensagem"
-            placeholderTextColor={colors.muted}
+            placeholderTextColor={color.textSecondary}
             multiline
           />
           <TouchableOpacity
@@ -107,7 +110,7 @@ export default function ChatConversationScreen() {
             disabled={!draft.trim()}
             accessibilityLabel="Enviar mensagem"
           >
-            <Ionicons name="arrow-up" size={19} color={colors.brandPaper} />
+            <Ionicons name="arrow-up" size={19} color={color.onAccent} />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -115,10 +118,10 @@ export default function ChatConversationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.brandPaper,
+    backgroundColor: color.background,
   },
   flex: {
     flex: 1,
@@ -129,9 +132,9 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.brandPaper,
+    backgroundColor: color.background,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: color.border,
   },
   back: {
     width: 36,
@@ -139,16 +142,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
+    borderColor: color.border,
+    backgroundColor: color.surface,
   },
   avatarFrame: {
     width: 42,
     height: 42,
     marginLeft: 9,
     borderWidth: 1,
-    borderColor: colors.brandInk,
-    backgroundColor: colors.white,
+    borderColor: color.textPrimary,
+    backgroundColor: color.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -157,7 +160,7 @@ const styles = StyleSheet.create({
     height: 38,
   },
   avatarInitials: {
-    color: colors.brandInk,
+    color: color.textPrimary,
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 0.5,
@@ -167,19 +170,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   kicker: {
-    color: colors.brandCoral,
+    color: color.accentText,
     fontSize: 8,
     fontWeight: '900',
     letterSpacing: 1.1,
   },
   name: {
-    color: colors.brandInk,
+    color: color.textPrimary,
     fontSize: 14,
     fontWeight: '900',
     marginTop: 1,
   },
   status: {
-    color: colors.brandGreen,
+    color: color.successText,
     fontSize: 9,
     fontWeight: '800',
     marginTop: 2,
@@ -196,7 +199,7 @@ const styles = StyleSheet.create({
     padding: 34,
   },
   emptyText: {
-    color: colors.muted,
+    color: color.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
     fontSize: 12,
@@ -209,28 +212,28 @@ const styles = StyleSheet.create({
   },
   sent: {
     alignSelf: 'flex-end',
-    backgroundColor: colors.brandInk,
-    borderColor: colors.brandInk,
+    backgroundColor: color.brandInk,
+    borderColor: color.border,
   },
   received: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.white,
-    borderColor: colors.border,
+    backgroundColor: color.surface,
+    borderColor: color.border,
   },
   receivedLabel: {
-    color: colors.brandCoral,
+    color: color.accentText,
     fontSize: 7,
     fontWeight: '900',
     letterSpacing: 0.9,
     marginBottom: 3,
   },
   message: {
-    color: colors.text,
+    color: color.textPrimary,
     fontSize: 13,
     lineHeight: 19,
   },
   sentText: {
-    color: colors.brandPaper,
+    color: color.textInverse,
   },
   composer: {
     flexDirection: 'row',
@@ -238,18 +241,18 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: colors.brandPaper,
+    backgroundColor: color.background,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: color.border,
   },
   input: {
     flex: 1,
     minHeight: 42,
     maxHeight: 110,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    color: colors.text,
+    borderColor: color.border,
+    backgroundColor: color.surface,
+    color: color.textPrimary,
     fontSize: 13,
     paddingHorizontal: 13,
     paddingVertical: 9,
@@ -257,7 +260,7 @@ const styles = StyleSheet.create({
   send: {
     width: 42,
     height: 42,
-    backgroundColor: colors.brandCoral,
+    backgroundColor: color.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },

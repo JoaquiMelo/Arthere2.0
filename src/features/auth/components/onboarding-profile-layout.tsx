@@ -67,7 +67,7 @@ export function OnboardingProfileLayout({
       <View style={{ gap: spacing.sm }}>
         {error ? <AppText variant="bodySmall" color="dangerText" accessibilityRole="alert" accessibilityLiveRegion="polite">{error}</AppText> : null}
         <Button fullWidth loading={busy} disabled={disabled} accessibilityLabel={busy ? 'Salvando perfil' : undefined} onPress={onSave}>
-          {changed ? 'Salvar e ir para o mapa' : 'Ir para o mapa'}
+          {changed ? 'Salvar e ir para o Ateliê' : 'Ir para o Ateliê'}
         </Button>
         {changed ? <Button variant="ghost" disabled={busy || disabled} onPress={onSkip}>Continuar sem salvar as alterações</Button> : null}
         <AppText variant="caption" color="textSecondary" style={{ textAlign: 'center' }}>Você pode editar esses dados mais tarde na aba Perfil.</AppText>

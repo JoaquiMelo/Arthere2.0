@@ -9,6 +9,8 @@ import { useManagement, type SolicitacaoEvento } from '@/providers/management-pr
 import { useUser } from '@/providers/user-provider';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { vagaStatusLabel } from '@/features/opportunities/utils/opportunity-management';
+import { useEventDay } from '@/features/events/hooks/use-event-day';
+import { isEventConcluded } from '@/features/events/utils/event-agenda';
 
 function formatDate(value: string) {
   const date = new Date(value.length === 10 ? value + 'T12:00:00' : value);
@@ -20,6 +22,7 @@ export default function ContratanteProfileScreen() {
   const { user, updateProfile, refresh: refreshUser } = useUser();
   const { vagas, eventos: todosEventos, refresh: refreshManagement, loading, solicitacoesEvento, aceitarSolicitacaoEvento, recusarSolicitacaoEvento } = useManagement();
   const { color, spacing, radius, dimensions } = useThemeTokens();
+  const today = useEventDay();
   const isEvents = user?.tipo === 'CONTRATANTE_EVENTOS';
   const eventos = todosEventos.filter((evento) => evento.contratanteId === user?.id);
   const [atualizando, setAtualizando] = useState(false);
@@ -179,13 +182,19 @@ export default function ContratanteProfileScreen() {
             <Button fullWidth onPress={() => navigation.navigate('CreateEvent')}>Criar evento</Button>
             <SectionHeader title="Meus eventos" description="Edite as informações dos eventos que você publicou." />
             {loading && eventos.length === 0 ? <FeedbackState kind="loading" title="Carregando eventos…" /> : eventos.length === 0 ? <FeedbackState kind="empty" title="Nenhum evento publicado" description="Seus eventos aparecerão aqui para edição." icon="calendar-outline" /> : eventos.map((evento) => (
-              <View key={evento.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border }}>
-                <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+              <View key={evento.id} style={{ gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border }}>
+                <View style={{ gap: spacing.xs }}>
                   <AppText variant="label" color="accentText">{formatDate(evento.data)}</AppText>
                   <AppText variant="title" weight="bold">{evento.titulo}</AppText>
                   <AppText variant="bodySmall" color="textSecondary">{evento.cidade}</AppText>
                 </View>
-                <Button variant="outline" size="small" accessibilityLabel={`Editar evento ${evento.titulo}`} onPress={() => navigation.navigate('EditEvent', { eventId: evento.id })}>Editar</Button>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                  <Button variant="outline" size="small" accessibilityLabel={`Editar evento ${evento.titulo}`} onPress={() => navigation.navigate('EditEvent', { eventId: evento.id })}>Editar</Button>
+                  {isEventConcluded(evento.data, today) ? (
+                    <Button variant="outline" size="small" accessibilityLabel={`Gerenciar fotos de ${evento.titulo}`}
+                      onPress={() => navigation.navigate('EventAlbum', { eventId: evento.id })}>Gerenciar fotos</Button>
+                  ) : null}
+                </View>
               </View>
             ))}
             <SectionHeader title="Solicitações de participação" description={`${pedidos.filter((item) => item.status === 'PENDENTE').length} aguardando resposta`} />

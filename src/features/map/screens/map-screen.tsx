@@ -2,44 +2,53 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Keyboard, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import MapView, { PROVIDER_GOOGLE, type Region } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { AppText, Avatar, Button, FeedbackState, FilterChip, IconButton, ScreenContainer } from '@/shared/components';
+import { useTheme } from '@/providers/theme-provider';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { useChat } from '@/providers/chat-provider';
 import { useUser } from '@/providers/user-provider';
-import { agents } from '@/services/api';
+import { agents, events } from '@/services/api';
 import { AgentProfileCard } from '@/features/agents/components/agent-profile-card';
 import { AgentMarker } from '@/features/agents/components/agent-marker';
 import type { AgenteCriativo } from '@/features/agents/types/agent';
+import type { Evento } from '@/features/events/types/event';
+import { useEventDay } from '@/features/events/hooks/use-event-day';
+import { eventDate, eventPoint, filterEvents, isEventConcluded, mapEvento, sortEvents } from '@/features/events/utils/event-agenda';
 import { mapAgent, matchesAgent, MAP_CATEGORIES, categoryLabel } from '../utils/map-agents';
+import { darkMapStyle, regionalMap as REGIAO_INICIAL } from '../utils/map-region';
 
-const REGIAO_INICIAL: Region = {
-  latitude: -23.96,
-  longitude: -46.34,
-  latitudeDelta: 0.45,
-  longitudeDelta: 0.45,
-};
+const dateFormat = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short' });
+type MapEntry =
+  | { kind: 'agent'; item: AgenteCriativo }
+  | { kind: 'event'; item: Evento };
 
 export function MapScreen() {
   const navigation = useNavigation<any>();
-  const { color, spacing, radius, dimensions, typography, elevation } = useThemeTokens();
+  const { isDark, tokens: { color, spacing, radius, dimensions, typography, elevation } } = useTheme();
   const { user } = useUser();
   const { startConversation } = useChat();
   const mapRef = useRef<MapView>(null);
   const lastRegion = useRef(REGIAO_INICIAL);
   const [initialRegion, setInitialRegion] = useState(REGIAO_INICIAL);
   const requestVersion = useRef(0);
+  const eventVersion = useRef(0);
   const [mapReady, setMapReady] = useState(false);
   const [mode, setMode] = useState<'map' | 'list'>('map');
+  const [layer, setLayer] = useState<'all' | 'agents' | 'events'>('all');
   const [busca, setBusca] = useState('');
   const [categoria, setCategoria] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [agentes, setAgentes] = useState<AgenteCriativo[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [eventos, setEventos] = useState<Evento[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [errorEvents, setErrorEvents] = useState<string | null>(null);
   const [conectando, setConectando] = useState(false);
   const chatPending = useRef(false);
+  const today = useEventDay();
 
   const carregarAgentes = useCallback(async () => {
     const version = ++requestVersion.current;
@@ -56,13 +65,51 @@ export function MapScreen() {
     }
   }, []);
 
+  const carregarEventos = useCallback(async () => {
+    const version = ++eventVersion.current;
+    setLoadingEvents(true);
+    setErrorEvents(null);
+    try {
+      const lista = await events();
+      if (version === eventVersion.current) setEventos(lista.map(mapEvento));
+    } catch {
+      if (version === eventVersion.current) setErrorEvents('Não foi possível atualizar os eventos.');
+    } finally {
+      if (version === eventVersion.current) setLoadingEvents(false);
+    }
+  }, []);
+
   useFocusEffect(useCallback(() => {
     void carregarAgentes();
-    return () => { requestVersion.current += 1; };
-  }, [carregarAgentes]));
+    void carregarEventos();
+    return () => { requestVersion.current += 1; eventVersion.current += 1; };
+  }, [carregarAgentes, carregarEventos]));
 
-  const filtrados = useMemo(() => agentes.filter((agente) => matchesAgent(agente, busca, categoria)), [agentes, busca, categoria]);
+  const showAgents = layer !== 'events';
+  const showEvents = layer !== 'agents';
+  const carregandoMapa = (showAgents && carregando) || (showEvents && loadingEvents);
+  const erroMapa = [showAgents && erro, showEvents && errorEvents].filter(Boolean).join(' ');
+  const atualizar = () => {
+    if (showAgents) void carregarAgentes();
+    if (showEvents) void carregarEventos();
+  };
+
+  const filtrados = useMemo(() => showAgents ? agentes.filter((agente) =>
+    matchesAgent(agente, busca, layer === 'agents' ? categoria : null)) : [], [agentes, busca, categoria, layer, showAgents]);
   const resultados = useMemo(() => [...filtrados].sort((a, b) => b.avaliacao - a.avaliacao || a.nome.localeCompare(b.nome, 'pt-BR')), [filtrados]);
+  const eventPins = useMemo(() => {
+    if (!showEvents) return [];
+    const filtered = filterEvents(eventos, busca, null, false);
+    return sortEvents(filtered, today).flatMap((event) => {
+      const point = eventPoint(event);
+      return point ? [{ event, point }] : [];
+    });
+  }, [busca, eventos, showEvents, today]);
+  const entries: MapEntry[] = [
+    ...eventPins.map(({ event }): MapEntry => ({ kind: 'event', item: event })),
+    ...resultados.map((item): MapEntry => ({ kind: 'agent', item })),
+  ];
+  const total = entries.length;
   const agenteSelecionado = agentes.find((agente) => agente.id === selecionado) ?? null;
   const categories = useMemo(() => Object.entries(MAP_CATEGORIES).filter(([id]) => id !== 'outros' || agentes.some((a) => a.categoria === id)), [agentes]);
 
@@ -77,7 +124,7 @@ export function MapScreen() {
 
   const enquadrar = () => {
     if (!mapRef.current || !mapReady) return;
-    const pontos = filtrados.map(({ latitude, longitude }) => ({ latitude, longitude }));
+    const pontos = [...filtrados.map(({ latitude, longitude }) => ({ latitude, longitude })), ...eventPins.map(({ point }) => point)];
     if (!pontos.length) {
       mapRef.current.animateToRegion(REGIAO_INICIAL, 250);
     } else if (pontos.every((p) => p.latitude === pontos[0].latitude && p.longitude === pontos[0].longitude)) {
@@ -111,6 +158,7 @@ export function MapScreen() {
 
   const limparFiltros = () => { setBusca(''); setCategoria(null); };
   const abrirAgente = (agente: AgenteCriativo) => { Keyboard.dismiss(); setSelecionado(agente.id); };
+  const abrirEvento = (eventId: string) => { Keyboard.dismiss(); navigation.navigate('EventDetails', { eventId }); };
 
   return (
     <ScreenContainer edges={user ? ['top', 'left', 'right'] : ['top', 'left', 'right', 'bottom']}>
@@ -119,13 +167,12 @@ export function MapScreen() {
           <View style={{ width: 3, alignSelf: 'stretch', borderRadius: radius.xs, backgroundColor: color.accent }} />
           <View style={styles.flex}>
             <AppText variant="label" color="accentText" weight="bold">ARTHERE / TERRITÓRIO CRIATIVO</AppText>
-            <AppText variant="h2" weight="heavy" accessibilityRole="header" style={{ letterSpacing: typography.tracking.tight }}>Explore a cena.</AppText>
+            <AppText variant="h2" weight="heavy" accessibilityRole="header" style={{ letterSpacing: typography.tracking.tight }}>Mapa cultural</AppText>
           </View>
         </View>
         {!user ? (
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <Button variant="outline" size="small" style={{ flex: 1, borderRadius: radius.control }} onPress={() => navigation.navigate('Login')}>Entrar</Button>
-            <Button size="small" style={{ flex: 1, borderRadius: radius.control }} onPress={() => navigation.navigate('Register')}>Criar perfil</Button>
+            <Button variant="outline" size="small" onPress={() => navigation.goBack()}>Voltar ao Ateliê</Button>
           </View>
         ) : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingLeft: spacing.md, minHeight: dimensions.control.medium, borderWidth: 1, borderColor: color.border, backgroundColor: color.surface, borderRadius: radius.control }}>
@@ -133,9 +180,9 @@ export function MapScreen() {
           <TextInput
             value={busca}
             onChangeText={setBusca}
-            placeholder="Nome, cidade ou área criativa"
+            placeholder="Nome, cidade ou categoria"
             placeholderTextColor={color.textSecondary}
-            accessibilityLabel="Buscar profissionais criativos"
+            accessibilityLabel="Buscar no mapa"
             returnKeyType="search"
             onSubmitEditing={Keyboard.dismiss}
             autoComplete="off"
@@ -146,16 +193,23 @@ export function MapScreen() {
         </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.categoryStrip} contentContainerStyle={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.xs }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, paddingHorizontal: spacing.md, paddingTop: spacing.sm }}>
+        <FilterChip variant="compact" label="Tudo" selected={layer === 'all'} onPress={() => setLayer('all')} />
+        <FilterChip variant="compact" label="Agentes" icon="person-outline" selected={layer === 'agents'} onPress={() => setLayer('agents')} />
+        <FilterChip variant="compact" label="Eventos" icon="calendar-outline" selected={layer === 'events'} onPress={() => setLayer('events')} />
+      </View>
+      {layer === 'agents' ? <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.categoryStrip} contentContainerStyle={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.xs }}>
         <FilterChip variant="compact" label="Todos" selected={!categoria} onPress={() => setCategoria(null)} />
         {categories.map(([id, item]) => (
           <FilterChip key={id} variant="compact" label={item.label} selected={categoria === id} onPress={() => setCategoria((current) => current === id ? null : id)} />
         ))}
-      </ScrollView>
+      </ScrollView> : null}
 
-      <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm }}>
+      <View style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm }}>
         <AppText variant="bodySmall" weight="semibold" style={{ flex: 1, minWidth: 92 }} accessibilityLiveRegion="polite">
-          {carregando && !agentes.length ? 'Buscando…' : erro && !agentes.length ? 'Não foi possível carregar' : `${filtrados.length} ${filtrados.length === 1 ? 'profissional' : 'profissionais'}`}
+          {carregandoMapa && !total ? 'Buscando…' :
+            [showAgents && `${filtrados.length} ${filtrados.length === 1 ? 'agente' : 'agentes'}`,
+              showEvents && `${eventPins.length} ${eventPins.length === 1 ? 'evento' : 'eventos'}`].filter(Boolean).join(' · ')}
         </AppText>
         <FilterChip variant="segment" label="Mapa" icon={mode === 'map' ? 'map' : 'map-outline'} selected={mode === 'map'} onPress={() => trocarModo('map')} />
         <FilterChip variant="segment" label="Lista" icon="list-outline" selected={mode === 'list'} onPress={() => trocarModo('list')} />
@@ -167,6 +221,8 @@ export function MapScreen() {
             ref={mapRef}
             style={StyleSheet.absoluteFill}
             provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+            customMapStyle={Platform.OS === 'android' && isDark ? darkMapStyle : undefined}
+            userInterfaceStyle={isDark ? 'dark' : 'light'}
             initialRegion={initialRegion}
             onMapReady={() => setMapReady(true)}
             onRegionChangeComplete={(region) => { lastRegion.current = region; }}
@@ -177,55 +233,62 @@ export function MapScreen() {
             {filtrados.map((agente) => (
               <AgentMarker key={agente.id} agente={agente} onPress={abrirAgente} />
             ))}
+            {eventPins.map(({ event, point }) => {
+              const concluded = isEventConcluded(event.data, today);
+              return <Marker key={`event:${event.id}`} coordinate={point} title={event.titulo}
+                pinColor={concluded ? color.accentSecondary : color.accent}
+                accessibilityLabel={`Evento${concluded ? ' concluído' : ''}: ${event.titulo}`} onPress={() => abrirEvento(event.id)} />;
+            })}
           </MapView>
           <View style={{ position: 'absolute', top: spacing.sm, right: spacing.sm, backgroundColor: color.surface, borderRadius: radius.control, borderWidth: 1, borderColor: color.border, ...elevation.low }}>
             <View>
-              <IconButton icon="scan-outline" accessibilityLabel={filtrados.length ? 'Enquadrar profissionais no mapa' : 'Voltar à região inicial'} variant="ghost" disabled={!mapReady} onPress={enquadrar} />
+              <IconButton icon="scan-outline" accessibilityLabel={total ? 'Enquadrar resultados no mapa' : 'Voltar à região inicial'} variant="ghost" disabled={!mapReady} onPress={enquadrar} />
             </View>
             <View style={{ borderTopWidth: 1, borderTopColor: color.border }}>
-              <IconButton icon="refresh-outline" accessibilityLabel="Atualizar profissionais" variant="ghost" loading={carregando} onPress={() => void carregarAgentes()} />
+              <IconButton icon="refresh-outline" accessibilityLabel="Atualizar mapa" variant="ghost" loading={carregandoMapa} onPress={atualizar} />
             </View>
           </View>
-          {carregando && !agentes.length ? (
+          {carregandoMapa && !total ? (
             <View pointerEvents="none" style={[styles.mapNotice, { backgroundColor: color.surface, padding: spacing.md, borderRadius: radius.control, borderWidth: 1, borderColor: color.border, gap: spacing.sm }]}>
               <ActivityIndicator color={color.accentText} />
-              <AppText variant="bodySmall">Buscando profissionais…</AppText>
+              <AppText variant="bodySmall">Buscando no mapa…</AppText>
             </View>
           ) : null}
-          {erro ? (
+          {erroMapa && !carregandoMapa ? (
             <View style={[styles.mapNotice, { backgroundColor: color.surface, padding: spacing.md, borderRadius: radius.control, borderWidth: 1, borderColor: color.border, gap: spacing.sm }]}>
-              <AppText color="dangerText" variant="bodySmall">{erro}</AppText>
-              <Button variant="outline" size="small" style={{ borderRadius: radius.control }} onPress={() => void carregarAgentes()}>Tentar novamente</Button>
+              <AppText color="dangerText" variant="bodySmall">{erroMapa}</AppText>
+              <Button variant="outline" size="small" style={{ borderRadius: radius.control }} onPress={atualizar}>Tentar novamente</Button>
             </View>
-          ) : !carregando && !filtrados.length ? (
+          ) : !carregandoMapa && !total ? (
             <View style={[styles.mapNotice, { backgroundColor: color.surface, padding: spacing.md, borderRadius: radius.control, borderWidth: 1, borderColor: color.border, gap: spacing.sm }]}>
-              <AppText weight="semibold">Nenhum profissional encontrado</AppText>
-              <AppText variant="bodySmall" color="textSecondary">{busca || categoria ? 'Experimente outros filtros.' : 'Ainda não há profissionais disponíveis no mapa.'}</AppText>
+              <AppText weight="semibold">Nenhum resultado no mapa</AppText>
+              <AppText variant="bodySmall" color="textSecondary">{busca || (layer === 'agents' && categoria) ? 'Experimente outros filtros.' : 'Confira outra camada do mapa ou a agenda.'}</AppText>
               {busca || categoria ? <Button variant="outline" size="small" style={{ borderRadius: radius.control }} onPress={limparFiltros}>Limpar filtros</Button> : null}
             </View>
           ) : null}
         </View>
       ) : (
         <FlatList
-          data={resultados}
-          keyExtractor={(item) => item.id}
-          refreshing={carregando}
-          onRefresh={() => void carregarAgentes()}
+          data={entries}
+          keyExtractor={({ kind, item }) => `${kind}:${item.id}`}
+          refreshing={carregandoMapa}
+          onRefresh={atualizar}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.xl, flexGrow: 1 }}
-          ListHeaderComponent={resultados.length ? (
+          ListHeaderComponent={total && erroMapa ? (
             <View style={{ paddingVertical: spacing.sm, gap: spacing.xs }}>
-              <AppText variant="label" color="textSecondary" weight="medium">Ordenados por avaliação</AppText>
-              {erro ? <AppText color="dangerText" variant="bodySmall">{erro}</AppText> : null}
+              <AppText color="dangerText" variant="bodySmall">{erroMapa}</AppText>
             </View>
           ) : undefined}
-          ListEmptyComponent={carregando ? <FeedbackState kind="loading" title="Buscando profissionais…" /> :
-            erro ? <FeedbackState kind="error" title="Profissionais indisponíveis" description={erro} onRetry={() => void carregarAgentes()} /> :
+          ListEmptyComponent={carregandoMapa ? <FeedbackState kind="loading" title="Buscando no mapa…" /> :
+            erroMapa ? <FeedbackState kind="error" title="Resultados indisponíveis" description={erroMapa} onRetry={atualizar} /> :
             <View style={{ gap: spacing.sm }}>
-              <FeedbackState kind="empty" icon="search-outline" title="Nenhum profissional encontrado" description="Experimente outra busca ou remova os filtros." />
+              <FeedbackState kind="empty" icon="search-outline" title="Nenhum resultado encontrado" description="Experimente outra busca ou selecione outra camada do mapa." />
               {busca || categoria ? <Button variant="outline" fullWidth style={{ borderRadius: radius.control }} onPress={limparFiltros}>Limpar filtros</Button> : null}
             </View>}
-          renderItem={({ item }) => <AgentResult agente={item} onPress={() => abrirAgente(item)} />}
+          renderItem={({ item: entry }) => entry.kind === 'agent'
+            ? <AgentResult agente={entry.item} onPress={() => abrirAgente(entry.item)} />
+            : <EventResult event={entry.item} concluded={isEventConcluded(entry.item.data, today)} onPress={() => abrirEvento(entry.item.id)} />}
         />
       )}
 
@@ -244,6 +307,26 @@ export function MapScreen() {
         }}
       />
     </ScreenContainer>
+  );
+}
+
+function EventResult({ event, concluded, onPress }: { event: Evento; concluded: boolean; onPress: () => void }) {
+  const { color, spacing, dimensions } = useThemeTokens();
+  const date = event.data ? dateFormat.format(eventDate(event.data)) : '';
+  const details = [date, event.local, event.cidade].filter(Boolean).join(' · ');
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={`Evento${concluded ? ' concluído' : ''}: ${event.titulo}. ${details}`} onPress={onPress}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md,
+        minHeight: dimensions.control.large, borderBottomWidth: 1, borderBottomColor: color.border,
+        backgroundColor: pressed ? color.surfaceSubtle : 'transparent' })}>
+      <Ionicons name="calendar-outline" size={dimensions.icon.large} color={color.accentText} />
+      <View style={{ flex: 1, gap: spacing.xs }}>
+        <AppText variant="label" color="accentText" weight="bold">{concluded ? 'Evento concluído' : 'Evento'} · {event.categoria}</AppText>
+        <AppText variant="title" weight="bold">{event.titulo}</AppText>
+        <AppText variant="bodySmall" color="textSecondary">{details}</AppText>
+      </View>
+      <Ionicons name="chevron-forward" size={dimensions.icon.medium} color={color.textSecondary} />
+    </Pressable>
   );
 }
 

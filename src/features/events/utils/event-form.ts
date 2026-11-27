@@ -6,6 +6,7 @@ export type EventData = Parameters<typeof mapEvento>[0] & {
 
 export type EventForm = {
   titulo: string; categoria: string; descricao: string; local: string; cidade: string;
+  latitude: number | null; longitude: number | null;
   data: string; horario: string; organizador: string; imagem: string; premium: boolean; fixado: boolean;
 };
 
@@ -14,7 +15,7 @@ export const categories = ['Cultura', 'Artes Visuais', 'Música', 'Fotografia', 
 export function newEventForm(organizador = ''): EventForm {
   return {
     titulo: '', categoria: 'Cultura', descricao: '', local: '', cidade: '', data: '', horario: '',
-    organizador, imagem: '', premium: false, fixado: false,
+    organizador, imagem: '', premium: false, fixado: false, latitude: null, longitude: null,
   };
 }
 
@@ -23,6 +24,7 @@ export function formFromEvent(item: EventData): EventForm {
   return {
     titulo: event.titulo, categoria: event.categoria, descricao: event.descricao, local: event.local,
     cidade: event.cidade, data: event.data.split('-').reverse().join('/'), horario: event.horario,
+    latitude: event.latitude ?? null, longitude: event.longitude ?? null,
     organizador: event.organizador, imagem: event.imagemUrl ?? '', premium: event.premium, fixado: Boolean(event.destaque),
   };
 }
@@ -66,6 +68,8 @@ export function validateEvent(form: EventForm, original?: EventForm, today = eve
       titulo: form.titulo.trim(), categoria: form.categoria.trim(), descricao: form.descricao.trim(),
       local: form.local.trim(), cidade: form.cidade.trim(), organizador: form.organizador.trim() || null,
       premium: form.premium, fixado: form.fixado,
+      ...(form.latitude !== (original?.latitude ?? null) || form.longitude !== (original?.longitude ?? null)
+        ? { latitude: form.latitude, longitude: form.longitude } : {}),
       ...(dateChanged && scheduled ? { dataEvento: scheduled.toISOString(), horario: horario || null } : {}),
     },
   };

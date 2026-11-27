@@ -5,16 +5,19 @@ import { useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
 
 import type { RootStackParamList } from '@/navigation/app-navigator';
-import { palettes, type PaletteName, useTheme } from '@/providers/theme-provider';
+import { palettes, type Appearance, type PaletteName, useTheme } from '@/providers/theme-provider';
 import { useUser } from '@/providers/user-provider';
-import { AppText, Button, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
+import { AppText, Button, FilterChip, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
 
 const paletteNames = Object.keys(palettes) as PaletteName[];
+const modes: { label: string; value: Appearance }[] = [
+  { label: 'Claro', value: 'light' }, { label: 'Escuro', value: 'dark' }, { label: 'Sistema', value: 'system' },
+];
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList, 'Settings'>>();
   const { user, logout } = useUser();
-  const { paletteName, tokens, setPalette, paletteSaveFailed } = useTheme();
+  const { appearance, setAppearance, appearanceSaveFailed, paletteName, tokens, setPalette, paletteSaveFailed } = useTheme();
   const { color, dimensions, radius, spacing } = tokens;
   const [leaving, setLeaving] = useState(false);
   const pending = useRef(false);
@@ -27,7 +30,7 @@ export default function SettingsScreen() {
 
   const signOut = () => {
     if (pending.current) return;
-    Alert.alert('Sair da conta?', 'Você poderá entrar novamente pelo mapa.', [
+    Alert.alert('Sair da conta?', 'Você poderá entrar novamente pelo Ateliê.', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Sair', style: 'destructive', onPress: async () => {
         if (pending.current) return;
@@ -54,24 +57,34 @@ export default function SettingsScreen() {
     <ScreenContainer>
       <ScreenHeader title="Configurações" onBack={() => {
         if (navigation.canGoBack()) navigation.goBack();
-        else navigation.navigate('Tabs', { screen: 'Profile' });
+        else if (user) navigation.navigate('Tabs', { screen: 'Profile' });
+        else navigation.navigate('Atelier');
       }} />
       <ScrollView contentContainerStyle={{
         width: '100%', maxWidth: dimensions.contentMaxWidth, alignSelf: 'center',
         padding: spacing.xl, paddingBottom: spacing['3xl'], gap: spacing['2xl'],
       }}>
-        <View style={{ gap: spacing.md }}>
+        {user ? <View style={{ gap: spacing.md }}>
           <SectionHeader title="Conta" />
-          {user ? (
-            <View style={{ backgroundColor: color.surfaceSubtle, borderRadius: radius.cardCompact, padding: spacing.lg, gap: spacing.sm }}>
-              <AppText variant="title" weight="bold">{user.nomeSocial || user.nome || user.email}</AppText>
-              <AppText variant="bodySmall" color="textSecondary">{role}</AppText>
-              <Button variant="outline" disabled={leaving} onPress={editProfile}>Editar perfil</Button>
+          <View style={{ backgroundColor: color.surfaceSubtle, borderRadius: radius.cardCompact, padding: spacing.lg, gap: spacing.sm }}>
+            <AppText variant="title" weight="bold">{user.nomeSocial || user.nome || user.email}</AppText>
+            <AppText variant="bodySmall" color="textSecondary">{role}</AppText>
+            <Button variant="outline" disabled={leaving} onPress={editProfile}>Editar perfil</Button>
+          </View>
+        </View> : null}
+        <View style={{ gap: spacing.md }}>
+          <SectionHeader title="Aparência" description="Escolha o modo do app. A preferência é salva neste dispositivo." />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            {modes.map(({ label, value }) => <FilterChip key={value} label={label} variant="segment"
+              selected={appearance === value} disabled={leaving} onPress={() => setAppearance(value)} />)}
+          </View>
+          {appearanceSaveFailed ? (
+            <View style={{ gap: spacing.sm }} accessibilityLiveRegion="polite">
+              <AppText color="dangerText" variant="bodySmall">Não foi possível salvar o modo neste dispositivo.</AppText>
+              <Button variant="outline" size="small" onPress={() => setAppearance(appearance)}>Tentar salvar novamente</Button>
             </View>
           ) : null}
-        </View>
-        <View style={{ gap: spacing.md }}>
-          <SectionHeader title="Aparência" description="Toque em uma paleta para aplicar. A escolha é salva neste dispositivo." />
+          <SectionHeader title="Paleta de cores" />
           {paletteNames.map((name) => {
             const selected = name === paletteName;
             const sample = palettes[name];
@@ -104,7 +117,7 @@ export default function SettingsScreen() {
           ) : null}
         </View>
         <View style={{ borderTopWidth: 1, borderColor: color.border, paddingTop: spacing.lg, gap: spacing.md }}>
-          <Button fullWidth variant="danger" loading={leaving} onPress={signOut}>Sair da conta</Button>
+          {user ? <Button fullWidth variant="danger" loading={leaving} onPress={signOut}>Sair da conta</Button> : null}
           {version ? <AppText variant="caption" color="textSecondary" style={{ textAlign: 'center' }}>Arthere · versão {version}</AppText> : null}
         </View>
       </ScrollView>

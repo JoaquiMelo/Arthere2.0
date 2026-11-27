@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
-import { colors } from '@/shared/theme/colors';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 
 interface Props {
   value: number;
@@ -10,12 +10,14 @@ interface Props {
 }
 
 export function StarRating({ value, size = 16, onChange }: Props) {
+  const { color } = useThemeTokens();
   const estrelas = [1, 2, 3, 4, 5];
   return (
     <View style={styles.row}>
       {estrelas.map((estrela) => {
         const preenchida = estrela <= Math.round(value);
-        const icone = <Ionicons key={estrela} name={preenchida ? 'star' : 'star-outline'} size={size} color={colors.accent} />;
+        const icone = <Ionicons key={estrela} name={preenchida ? 'star' : 'star-outline'} size={size}
+          color={preenchida ? color.warningText : color.textSecondary} />;
         return onChange ? (
           <TouchableOpacity key={estrela} onPress={() => onChange(estrela)} accessibilityLabel={`Dar nota ${estrela}`} hitSlop={6}>
             {icone}
