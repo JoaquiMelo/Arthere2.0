@@ -114,9 +114,13 @@ export default function EventsScreen() {
 
   const filtered = useMemo(() => filterEvents(events ?? [], search, category, premium), [events, search, category, premium]);
   const monthEvents = useMemo(() => filtered.filter((item) => item.data.slice(0, 7) === monthKey(month)), [filtered, month]);
-  const counts = useMemo(() => {
-    const result = new Map<string, number>();
-    for (const item of monthEvents) result.set(item.data, (result.get(item.data) ?? 0) + 1);
+  const eventsByDay = useMemo(() => {
+    const result = new Map<string, Evento[]>();
+    for (const item of monthEvents) {
+      const dayEvents = result.get(item.data);
+      if (dayEvents) dayEvents.push(item);
+      else result.set(item.data, [item]);
+    }
     return result;
   }, [monthEvents]);
   const sorted = useMemo(() => sortEvents(filtered, today), [filtered, today]);
@@ -191,12 +195,16 @@ export default function EventsScreen() {
                   <FilterChip label="Premium" icon="star-outline" variant="compact" selected={premium} onPress={() => setPremium((current) => !current)} />
                   {hasFilters ? <Button variant="ghost" size="small" onPress={resetFilters}>Limpar filtros</Button> : null}
                 </View>
-                {mode === 'calendar' ? (
-                  <AgendaCalendar month={month} today={today} selected={day} counts={counts}
+              </View>
+              {mode === 'calendar' ? (
+                <View style={{ marginHorizontal: spacing.xs }}>
+                  <AgendaCalendar month={month} today={today} selected={day} eventsByDay={eventsByDay}
                     onMove={(delta) => { setMonth((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1)); setDay(null); }}
                     onSelect={(key) => setDay((current) => current === key ? null : key)}
                     onToday={() => { const now = new Date(); setMonth(now); setDay(dateKey(now)); }} />
-                ) : null}
+                </View>
+              ) : null}
+              <View style={{ paddingHorizontal: spacing.xl, gap: spacing.md }}>
                 {events !== null ? (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
                     <AppText variant="bodySmall" color="textSecondary" accessibilityLiveRegion="polite">
