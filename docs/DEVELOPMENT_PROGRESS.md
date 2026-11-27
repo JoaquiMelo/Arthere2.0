@@ -24,6 +24,8 @@
 
 ## Funcionalidades e decisões
 
+- O [calendário regional](audits/calendario-regional.md) tem grade mensal editorial, agenda cronológica, visão anual e detalhes redesenhados. Os filtros usam a programação da API e a aba Concluídos exibe os álbuns publicados.
+
 - O app mantém Expo, React Navigation e os papéis AGENTE, CE e CO. A API mantém NestJS, Prisma e MySQL/MariaDB. A produção usa Render.
 - A tela inicial Arthere apresenta a marca manuscrita, busca e vitrines de agentes por área. O mapa é uma aba própria. A Agenda usa a tipografia anterior do calendário e distingue eventos futuros e concluídos. O organizador pode gerir o álbum de eventos concluídos.
 - Cadastro, pré-edição, avatar e capa, portfólio, candidaturas, chat, avaliações e opções de aparência têm implementação. A confirmação em aparelho está detalhada no relatório.

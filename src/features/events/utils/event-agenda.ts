@@ -81,15 +81,32 @@ export function sortEvents(events: Evento[], today: string) {
   });
 }
 
+const abbreviatedMonth = new Intl.DateTimeFormat('pt-BR', { month: 'short' });
+const writtenMonth = new Intl.DateTimeFormat('pt-BR', { month: 'long' });
+
+export const shortCalendarMonth = (date: Date) => abbreviatedMonth.format(date).replace('.', '');
+export const calendarMonthName = (date: Date) => writtenMonth.format(date);
+export const eventCountLabel = (count: number) => `${count} ${count === 1 ? 'evento' : 'eventos'}`;
+export const shiftCalendarMonth = (month: Date, delta: number) =>
+  new Date(month.getFullYear(), month.getMonth() + delta, 1, 12);
+
 export function calendarWeeks(month: Date) {
   const year = month.getFullYear();
   const index = month.getMonth();
-  const offset = new Date(year, index, 1).getDay();
-  const last = new Date(year, index + 1, 0).getDate();
-  return Array.from({ length: Math.ceil((offset + last) / 7) }, (_, week) =>
-    Array.from({ length: 7 }, (_, column) => {
-      const day = week * 7 + column - offset + 1;
-      return day > 0 && day <= last ? day : null;
-    }),
+  const offset = (shiftCalendarMonth(month, 0).getDay() + 6) % 7;
+  const monthLength = new Date(year, index + 1, 0, 12).getDate();
+  return Array.from({ length: Math.ceil((offset + monthLength) / 7) }, (_, week) =>
+    Array.from({ length: 7 }, (_, column) => dateKey(new Date(year, index, week * 7 + column - offset + 1, 12))),
   );
+}
+
+export function groupDatedEvents(events: Evento[], keyFor: (event: Evento) => string) {
+  const groups = new Map<string, Evento[]>();
+  for (const event of events) {
+    const key = keyFor(event);
+    const group = groups.get(key);
+    if (group) group.push(event);
+    else groups.set(key, [event]);
+  }
+  return groups;
 }

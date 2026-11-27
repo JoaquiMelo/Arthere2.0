@@ -72,3 +72,9 @@ A partir desta etapa, importar de `@/shared/components` para os novos módulos. 
 Adoção inicial: filtros e limpeza de busca na agenda, status de participações do agente, cabeçalho/container/feedback no chat e feedback de carregamento/erro do perfil público. O calendário mantém sua seleção e os handlers originais. A migração ampla das telas continua nas etapas 3.4–3.9. Não alterar os providers de sessão, mídia persistente nem os contratos da API apenas para aplicar componentes visuais.
 
 Para o mapa (3.4), usar ScreenContainer sem scroll implícito, ScreenHeader para hierarquia e ações, FilterChip para categorias reais e IconButton para controles com rótulos. Não sobrepor áreas seguras nem impedir gestos do mapa. Testar fonte ampliada, iOS/Android e as três paletas.
+
+## Calendário regional
+
+- A grade mensal começa na segunda-feira. Use as datas civis de São Paulo para agrupar eventos, calcular conclusões e alimentar a visão anual.
+- A hierarquia usa mês abreviado em tamanho de destaque, ano abaixo, grade com dias adjacentes e programação da seleção sob a grade. A agenda usa data lateral e agrupamento por mês.
+- Use os tokens do tema, aplique os mesmos filtros na grade e nas contagens anuais e identifique datas com marcadores e rótulos que complementem a cor.

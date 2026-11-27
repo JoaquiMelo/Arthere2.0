@@ -1,12 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation, useRoute, type NavigationProp, type RouteProp } from '@react-navigation/native';
 import { useCallback, useRef, useState } from 'react';
-import { Alert, Linking, RefreshControl, ScrollView, View } from 'react-native';
+import { Alert, Linking, Platform, RefreshControl, ScrollView, Share, View } from 'react-native';
 
 import type { RootStackParamList } from '@/navigation/app-navigator';
 import { useManagement } from '@/providers/management-provider';
 import { useUser } from '@/providers/user-provider';
 import { ApiRequestError, event as getEvent } from '@/services/api';
-import { AppText, Badge, Button, FeedbackState, MediaImage, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
+import { AppText, Badge, Button, FeedbackState, IconButton, ListLoading, MediaImage, ScreenContainer, ScreenHeader, SectionHeader } from '@/shared/components';
 import { realImageUri } from '@/shared/config/image-uri';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import type { Evento } from '../types/event';
@@ -21,6 +22,16 @@ const participation = {
   ACEITA: { label: 'Participação aceita', tone: 'success' },
   RECUSADA: { label: 'Solicitação recusada', tone: 'danger' },
 } as const;
+
+function EventFact({ icon, children }: { icon: keyof typeof Ionicons.glyphMap; children: string }) {
+  const { color, dimensions, spacing } = useThemeTokens();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+      <Ionicons name={icon} color={color.accentText} size={dimensions.icon.medium} />
+      <AppText style={{ flex: 1 }}>{children}</AppText>
+    </View>
+  );
+}
 
 export default function EventDetailsScreen() {
   const { params: { eventId } } = useRoute<RouteProp<RootStackParamList, 'EventDetails'>>();
@@ -140,61 +151,90 @@ function EventDetails({ eventId }: { eventId: string }) {
   const date = evento?.data ? dateFormat.format(eventDate(evento.data)) : 'Data a confirmar';
   const place = [evento?.local, evento?.cidade].filter(Boolean).join(' · ');
   const point = eventPoint(evento);
-  const canEditAlbum = concluded && user?.tipo === 'CONTRATANTE_EVENTOS' && user.id === owner;
+  const isOwner = user?.tipo === 'CONTRATANTE_EVENTOS' && user.id === owner;
+  const shareEvent = async () => {
+    if (!evento) return;
+    try {
+      await Share.share({
+        message: [evento.titulo, date, evento.horario, place].filter(Boolean).join(' · '),
+      });
+    } catch {
+      Alert.alert('Não foi possível compartilhar', 'Tente novamente em instantes.');
+    }
+  };
   return (
     <ScreenContainer>
-      <ScreenHeader title="Evento" onBack={() => navigation.goBack()} />
+      <ScreenHeader title="Evento" style={{ paddingVertical: spacing.sm }}
+        onBack={() => navigation.goBack()} action={evento && Platform.OS !== 'web' ? (
+          <IconButton icon="share-outline" variant="outline" accessibilityLabel="Compartilhar evento" onPress={() => void shareEvent()} />
+        ) : undefined} />
       {!evento ? (
-        <View style={{ flex: 1, justifyContent: 'center' }}>
+        <View style={{ flex: 1, justifyContent: 'center', padding: spacing.lg }}>
           {failed ? <FeedbackState kind="error" title={missing ? 'Evento indisponível' : 'Não foi possível carregar o evento'}
             description={missing ? 'A publicação pode ter sido removida.' : 'Verifique sua conexão e tente novamente.'}
             onRetry={missing ? undefined : () => void load()} />
-            : <FeedbackState kind="loading" title="Carregando evento…" />}
+            : <ListLoading label="Carregando evento…" avatar />}
         </View>
       ) : (
         <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { void load(); void loadParticipation(); }}
           tintColor={color.accentText} colors={[color.accentText]} />}
           contentContainerStyle={{ width: '100%', maxWidth: dimensions.contentMaxWidth, alignSelf: 'center', padding: spacing.xl, gap: spacing['2xl'] }}>
-          <View style={{ borderRadius: radius.card, overflow: 'hidden', backgroundColor: color.accentSoft, borderTopWidth: spacing.xs, borderColor: color.accent }}>
-            {cover ? <MediaImage uri={cover} icon="calendar-outline" style={{ width: '100%', aspectRatio: 16 / 9 }} /> : null}
-            <View style={{ padding: spacing.xl, gap: spacing.sm }}>
-              <AppText variant="label" weight="bold">{evento.categoria}</AppText>
-              <AppText variant="display" weight="black" accessibilityRole="header">{evento.titulo}</AppText>
-              {evento.premium || evento.destaque ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
-                {evento.premium ? <Badge label="Premium" icon="star-outline" tone="accent" /> : null}
-                {evento.destaque ? <Badge label="Destaque" icon="pin-outline" /> : null}
-              </View> : null}
+          <View style={{ borderRadius: radius.card, overflow: 'hidden' }}>
+            <MediaImage uri={cover} icon="calendar-outline" style={{ width: '100%', aspectRatio: 16 / 9 }} />
+            {evento.premium || evento.destaque ? (
+              <View style={{ position: 'absolute', top: spacing.md, left: spacing.md, right: spacing.md,
+                flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+                {evento.premium ? <Badge label="Premium" icon="star-outline" tone="warning" /> : null}
+                {evento.destaque ? <Badge label="Destaque" icon="pin-outline" tone="accent" /> : null}
+              </View>
+            ) : null}
+          </View>
+          <View style={{ gap: spacing.sm }}>
+            <AppText variant="h1" weight="heavy" accessibilityRole="header">{evento.titulo}</AppText>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+              {evento.categoria ? <Badge label={evento.categoria} tone="accent" /> : null}
+              <Badge label={concluded ? 'Concluído' : evento.data ? 'Programado' : 'Data a confirmar'}
+                icon={concluded ? 'checkmark-circle-outline' : 'calendar-outline'} />
             </View>
           </View>
-          {concluded ? <View style={{ gap: spacing.md }}>
-            {canEditAlbum ? <Button variant="outline" onPress={() => navigation.navigate('EventAlbum', { eventId })}>Adicionar ou editar fotos</Button> : null}
-            <EventPhotoGallery eventId={eventId} cover={cover} />
-          </View> : null}
           {failed ? <FeedbackState kind="error" title="Não foi possível atualizar" description="Exibindo o último conteúdo carregado." onRetry={() => void load()} /> : null}
-          <View style={{ borderBottomWidth: 1, borderColor: color.border, paddingBottom: spacing.lg, gap: spacing.md }}>
-            <SectionHeader title="Quando e onde" />
-            <AppText variant="title" weight="bold" style={{ textTransform: 'capitalize' }}>{date}</AppText>
-            {evento.horario ? <AppText>{evento.horario}</AppText> : null}
-            {place ? <AppText variant="bodySmall" color="textSecondary">{place}</AppText> : null}
+          <View style={{ borderBottomWidth: 1, borderColor: color.border, paddingBottom: spacing.lg, gap: spacing.sm }}>
+            <EventFact icon="calendar-outline">{date}</EventFact>
+            {evento.horario ? <EventFact icon="time-outline">{evento.horario}</EventFact> : null}
+            {place ? <EventFact icon="location-outline">{place}</EventFact> : null}
             {point ? <Button variant="outline" onPress={() => {
               const destination = encodeURIComponent(`${point.latitude},${point.longitude}`);
               void Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${destination}`)
                 .catch(() => Alert.alert('Não foi possível abrir as direções', 'Tente novamente ou busque pelo endereço informado.'));
             }}>Como chegar</Button> : null}
           </View>
-          <View style={{ gap: spacing.sm }}>
+          {evento.descricao ? <View style={{ gap: spacing.sm }}>
             <SectionHeader title="Sobre o evento" />
             <AppText>{evento.descricao}</AppText>
-          </View>
+          </View> : null}
           {owner || evento.organizador ? <View style={{ gap: spacing.sm }}>
             <SectionHeader title="Organização" />
             {evento.organizador ? <AppText weight="semibold">{evento.organizador}</AppText> : null}
             {owner ? <Button variant="outline"
               onPress={() => navigation.navigate('PublicProfile', { profileType: 'CONTRATANTE', profileId: owner })}>Ver perfil da organização</Button> : null}
           </View> : null}
+          {isOwner ? (
+            <View style={{ gap: spacing.sm }}>
+              <SectionHeader title="Gerenciar evento" />
+              <Button onPress={() => navigation.navigate('EditEvent', { eventId })}>Editar evento</Button>
+              <Button variant="outline" onPress={() => navigation.navigate('Tabs', { screen: 'Profile' })}>
+                Acessar gestão no perfil
+              </Button>
+            </View>
+          ) : null}
+          {concluded ? (
+            <View style={{ gap: spacing.md }}>
+              {isOwner ? <Button variant="outline" onPress={() => navigation.navigate('EventAlbum', { eventId })}>Adicionar ou editar fotos</Button> : null}
+              <EventPhotoGallery eventId={eventId} cover={cover} />
+            </View>
+          ) : null}
           {concluded ? (
             <View style={{ backgroundColor: color.surfaceSubtle, borderRadius: radius.cardCompact, padding: spacing.lg, gap: spacing.sm }}>
-              <Badge label="Evento concluído" tone="neutral" icon="checkmark-circle-outline" />
               <AppText variant="bodySmall" color="textSecondary">Solicitações de participação encerradas.</AppText>
               {isAgent && status ? <Badge {...participation[status]} /> : null}
               {isAgent && requestError && !status ? <Button variant="ghost" size="small" onPress={() => void loadParticipation()}>Consultar meu histórico</Button> : null}
