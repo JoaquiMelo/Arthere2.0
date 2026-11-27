@@ -11,8 +11,10 @@ import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import type { ThemeTokens } from '@/shared/theme/tokens';
 import type { RootStackParamList } from '@/navigation/app-navigator';
 import { PortfolioGallery, type GalleryWork } from '../components/portfolio-gallery';
+import { eventDate, eventDayKey } from '@/features/events/utils/event-agenda';
 
 type Route = RouteProp<RootStackParamList, 'PublicProfile'>;
+const eventDateFormat = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 
 export default function PublicProfileScreen() {
   const navigation = useNavigation<any>();
@@ -67,7 +69,8 @@ export default function PublicProfileScreen() {
     <ScreenContainer>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={() => { setAtualizando(true); void carregar(); }} />}
+        refreshControl={<RefreshControl refreshing={atualizando} tintColor={color.accentText} colors={[color.accentText]}
+          progressBackgroundColor={color.surface} onRefresh={() => { setAtualizando(true); void carregar(); }} />}
         contentContainerStyle={styles.content}
       >
         <View style={styles.hero}>
@@ -114,7 +117,7 @@ export default function PublicProfileScreen() {
                 const date = new Date(item.dataEvento);
                 return <TouchableOpacity key={item.id} accessibilityRole="button" accessibilityLabel={`Abrir evento ${item.titulo}`} style={{ gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: color.border }} onPress={() => navigation.navigate('EventDetails', { eventId: item.id })}>
                   <MediaImage uri={item.imagemUrl} icon="calendar-outline" style={{ width: '100%', aspectRatio: 16 / 10, borderRadius: tokens.radius.cardCompact }} />
-                  <AppText variant="label" color="accentText" weight="bold">{Number.isNaN(date.getTime()) ? 'Data não informada' : date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</AppText>
+                  <AppText variant="label" color="accentText" weight="bold">{Number.isNaN(date.getTime()) ? 'Data não informada' : eventDateFormat.format(eventDate(eventDayKey(date)))}</AppText>
                   <AppText variant="title" weight="bold">{item.titulo}</AppText>
                   <AppText variant="bodySmall" color="textSecondary">{[item.categoria, item.cidade].filter(Boolean).join(' · ')}</AppText>
                 </TouchableOpacity>;

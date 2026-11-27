@@ -29,7 +29,7 @@ export function FilterChip({ label, selected, icon, disabled = false, variant = 
           flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
           gap: spacing.xs, minHeight: dimensions.touchTarget, paddingHorizontal: spacing.md,
           paddingVertical: spacing.sm, borderRadius: variant === 'default' ? radius.pill : radius.sm, borderWidth: 1,
-          borderColor: selected ? (isSegment ? color.textPrimary : selectedBackground) : color.border,
+          borderColor: selected ? color[foreground] : color.controlBorder,
           backgroundColor: selected ? selectedBackground : color.surface,
           opacity: disabled ? 0.48 : pressed ? 0.8 : 1,
         },

@@ -15,7 +15,11 @@ export function createThemeTokens(palette: Palette, dark = false) {
   const accentSoft = dark ? '#372F38' : palette.brandSand;
   const secondary = dark ? '#C9BDC8' : palette.muted;
   const border = dark ? '#605662' : palette.border;
-  const readable = (color: string) => readableColor(color, [background, surface, subtle, accentSoft]);
+  const surfaces = [background, surface, subtle, accentSoft];
+  const readable = (color: string) => readableColor(color, surfaces);
+  const focus = readable(palette.brandCoral);
+  const surfaceInverse = dark ? surface : palette.brandInk;
+  const selectionInverse = palette.brandSand;
 
   return {
     color: {
@@ -25,16 +29,21 @@ export function createThemeTokens(palette: Palette, dark = false) {
       surfaceElevated: surface,
       surfaceSubtle: subtle,
       surfaceStrong: dark ? '#443947' : palette.surfaceStrong,
+      surfaceInverse,
+      selectionInverse,
+      onSelectionInverse: readableColor(palette.brandInk, [selectionInverse]),
       textPrimary: ink,
       textSecondary: readable(secondary),
       textInverse: palette.brandPaper,
+      textOnSurfaceInverse: readableColor(palette.brandPaper, [surfaceInverse]),
       textDisabled: secondary,
       border,
+      controlBorder: readableColor(border, surfaces, 3),
       accent: palette.brandCoral,
       accentText: readable(palette.brandCoral),
       onAccent: readableColor(palette.brandPaper, [palette.brandCoral]),
       onAccentSecondary: readableColor(palette.brandInk, [palette.brandBlue]),
-      accentOnInverse: readableColor(palette.brandCoral, [palette.brandInk]),
+      accentOnInverse: readableColor(palette.brandCoral, [surfaceInverse]),
       accentStrong: palette.primaryDark,
       accentSoft,
       accentSecondary: palette.brandBlue,
@@ -45,11 +54,13 @@ export function createThemeTokens(palette: Palette, dark = false) {
       onDanger: readableColor(palette.brandPaper, [palette.danger]),
       successText: readable(palette.brandGreen),
       warningText: readable(palette.brandTerracotta),
-      focus: readable(palette.brandCoral),
+      focus,
+      selection: `${focus}40`,
       disabled: border,
       overlay: dark ? 'rgba(0, 0, 0, 0.68)' : 'rgba(41, 36, 43, 0.56)',
     },
     typography,
+    keyboardAppearance: dark ? 'dark' as const : 'light' as const,
     spacing,
     radius,
     elevation,

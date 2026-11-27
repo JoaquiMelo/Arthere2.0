@@ -79,7 +79,7 @@ export function AgendaCalendar({ month, today, selected, eventsByDay, onMove, on
                   ...divider,
                   minHeight: cellHeight,
                   borderTopWidth: spacing.xxs,
-                  borderTopColor: active ? color.onAccent : feature ? color.onAccentSecondary : lead ? color.accent : 'transparent',
+                  borderTopColor: active ? color.onAccent : feature ? color.onAccentSecondary : lead ? color.accentText : 'transparent',
                   backgroundColor: active ? color.accent : feature ? color.accentSecondary : lead ? color.surfaceSubtle : color.surface,
                   opacity: pressed ? 0.72 : 1,
                   paddingHorizontal: spacing.xs,

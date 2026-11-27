@@ -16,7 +16,7 @@ import { Button, ScreenContainer, ScreenHeader } from '@/shared/components';
 import { useReducedMotion } from '@/shared/hooks/use-reduced-motion';
 
 export default function EditProfileScreen() {
-  const { color } = useThemeTokens();
+  const { color, keyboardAppearance } = useThemeTokens();
   const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(color), [color]);
   const navigation = useNavigation<any>();
@@ -158,13 +158,14 @@ export default function EditProfileScreen() {
             <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Estado: ${ESTADOS_BR.find((item) => item.sigla === estado)?.nome || 'Selecione seu estado'}`} style={styles.locationSelect} onPress={() => setModalLocal('estado')}><Ionicons name="map-outline" size={18} color={color.accentText} /><Text style={styles.locationSelectText}>{ESTADOS_BR.find((item) => item.sigla === estado)?.nome || 'Selecione seu estado'}</Text><Ionicons name="chevron-down" size={18} color={color.textSecondary} /></TouchableOpacity>
             <Text style={styles.label}>Cidade</Text>
             <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Cidade: ${cidade || 'Selecione sua cidade'}`} style={[styles.locationSelect, !estado && styles.locationDisabled]} disabled={!estado || carregandoCidades} onPress={() => void abrirCidades(estado)}><Ionicons name="location-outline" size={18} color={color.accentText} /><Text style={styles.locationSelectText}>{carregandoCidades ? 'Carregando cidades...' : cidade || 'Selecione sua cidade'}</Text><Ionicons name="chevron-down" size={18} color={color.textSecondary} /></TouchableOpacity>
-            <Modal visible={modalLocal !== null} transparent animationType={reducedMotion ? 'fade' : 'slide'} onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View accessibilityViewIsModal style={styles.modalCard}><View style={styles.modalHeader}><Text accessibilityRole="header" style={styles.modalTitle}>{modalLocal === 'estado' ? 'Selecione seu estado' : 'Selecione sua cidade'}</Text><TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar seleção" hitSlop={10} onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={color.textPrimary} /></TouchableOpacity></View>{modalLocal === 'estado' ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={item.nome} style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color={color.textSecondary} /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." accessibilityLabel="Pesquisar cidade" placeholderTextColor={color.textSecondary} autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={item.nome} style={styles.option} onPress={() => {setCidade(item.nome); setBuscaCidade(''); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>}</View></View></Modal>
+            <Modal visible={modalLocal !== null} transparent animationType={reducedMotion ? 'fade' : 'slide'} onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View accessibilityViewIsModal style={styles.modalCard}><View style={styles.modalHeader}><Text accessibilityRole="header" style={styles.modalTitle}>{modalLocal === 'estado' ? 'Selecione seu estado' : 'Selecione sua cidade'}</Text><TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar seleção" hitSlop={10} onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={color.textPrimary} /></TouchableOpacity></View>{modalLocal === 'estado' ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={item.nome} style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color={color.textSecondary} /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." accessibilityLabel="Pesquisar cidade" placeholderTextColor={color.textSecondary} keyboardAppearance={keyboardAppearance} selectionColor={color.selection} cursorColor={color.focus} autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={item.nome} style={styles.option} onPress={() => {setCidade(item.nome); setBuscaCidade(''); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>}</View></View></Modal>
             <View style={styles.mapCard}>
               <View style={styles.mapCopy}>
                 <Text style={styles.label}>Aparecer no Ateliê e no mapa</Text>
                 <Text style={styles.mapHint}>Mostra seu perfil no Ateliê e publica no mapa o local onde você atende.</Text>
               </View>
-              <Switch value={visivelMapa} onValueChange={setVisivelMapa} accessibilityLabel="Aparecer no Ateliê e no mapa" />
+              <Switch trackColor={{ false: color.controlBorder, true: color.accentText }}
+                ios_backgroundColor={color.controlBorder} value={visivelMapa} onValueChange={setVisivelMapa} accessibilityLabel="Aparecer no Ateliê e no mapa" />
             </View>
             {visivelMapa ? (
               <>
@@ -182,7 +183,7 @@ export default function EditProfileScreen() {
             ) : null}
             <View style={styles.field}>
               <Text style={styles.label}>Sobre você</Text>
-              <TextInput style={[styles.input, styles.multiline]} value={bio} onChangeText={setBio} placeholder="Conte um pouco sobre seu trabalho" accessibilityLabel="Sobre você" placeholderTextColor={color.textSecondary} multiline maxLength={280} textAlignVertical="top" />
+              <TextInput style={[styles.input, styles.multiline]} value={bio} onChangeText={setBio} placeholder="Conte um pouco sobre seu trabalho" accessibilityLabel="Sobre você" placeholderTextColor={color.textSecondary} keyboardAppearance={keyboardAppearance} selectionColor={color.selection} cursorColor={color.focus} multiline maxLength={280} textAlignVertical="top" />
               <Text style={styles.counter}>{bio.length}/280</Text>
             </View>
           </View>
@@ -196,14 +197,14 @@ export default function EditProfileScreen() {
 }
 
 function Field({ label, icon, ...inputProps }: { label: string; icon?: keyof typeof Ionicons.glyphMap } & React.ComponentProps<typeof TextInput>) {
-  const { color } = useThemeTokens();
+  const { color, keyboardAppearance } = useThemeTokens();
   const styles = useMemo(() => createStyles(color), [color]);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.inputWithIcon}>
         {icon && <Ionicons name={icon} size={18} color={color.accentText} />}
-        <TextInput style={styles.input} placeholderTextColor={color.textSecondary} accessibilityLabel={label} editable={true} autoComplete="off" importantForAutofill="no" {...inputProps} />
+        <TextInput style={styles.input} placeholderTextColor={color.textSecondary} keyboardAppearance={keyboardAppearance} selectionColor={color.selection} cursorColor={color.focus} accessibilityLabel={label} editable={true} autoComplete="off" importantForAutofill="no" {...inputProps} />
       </View>
     </View>
   );
@@ -213,17 +214,17 @@ const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingBottom: 38 }, photoSection: { alignItems: 'center', paddingVertical: 18 }, avatarWrapper: { position: 'relative' }, avatar: { width: 104, height: 104, borderRadius: 52, borderWidth: 3, borderColor: color.border }, cameraBadge: { position: 'absolute', right: 0, bottom: 1, width: 31, height: 31, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: color.brandInk, borderWidth: 2, borderColor: color.surface }, changePhoto: { marginTop: 10, color: color.accentText, fontSize: 13, fontWeight: '800' },
   form: { gap: 15 },
-  locationSelect: { minHeight: 49, borderWidth: 1, borderColor: color.border, borderRadius: 9, backgroundColor: color.surface, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 9 },
+  locationSelect: { minHeight: 49, borderWidth: 1, borderColor: color.controlBorder, borderRadius: 9, backgroundColor: color.surface, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 9 },
   locationSelectText: { flex: 1, color: color.textPrimary, fontSize: 14 },
   locationDisabled: { opacity: 0.55 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(41,36,43,0.45)', justifyContent: 'flex-end' },
+  modalOverlay: { flex: 1, backgroundColor: color.overlay, justifyContent: 'flex-end' },
   modalCard: { maxHeight: '78%', backgroundColor: color.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   modalTitle: { color: color.textPrimary, fontSize: 20, fontWeight: '900' },
   option: { minHeight: 52, borderBottomWidth: 1, borderBottomColor: color.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   optionText: { color: color.textPrimary, fontSize: 15, fontWeight: '700' },
-  citySearchWrap: { minHeight: 48, borderWidth: 1, borderColor: color.border, borderRadius: 12, backgroundColor: color.surface, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, marginBottom: 10 },
+  citySearchWrap: { minHeight: 48, borderWidth: 1, borderColor: color.controlBorder, borderRadius: 12, backgroundColor: color.surface, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, marginBottom: 10 },
   citySearchInput: { flex: 1, color: color.textPrimary, fontSize: 15, marginLeft: 9, paddingVertical: 9 },
   emptyText: { textAlign: 'center', color: color.textSecondary, paddingVertical: 30 },
-  optionUf: { color: color.accentText, fontSize: 12, fontWeight: '900' }, mapCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14, padding: 14, borderWidth: 1, borderColor: color.border, borderRadius: 10, backgroundColor: color.surface }, mapCopy: { flex: 1 }, mapHint: { color: color.textSecondary, fontSize: 11, lineHeight: 16, marginTop: 3 }, localCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1, borderColor: color.border, borderRadius: 10, backgroundColor: color.surface }, field: { gap: 7 }, label: { color: color.textPrimary, fontSize: 13, fontWeight: '800' }, inputWithIcon: { minHeight: 49, borderWidth: 1, borderColor: color.border, borderRadius: 9, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: color.surface }, input: { flex: 1, paddingVertical: 12, color: color.textPrimary, fontSize: 14 }, multiline: { minHeight: 108, borderWidth: 1, borderColor: color.border, borderRadius: 9, paddingHorizontal: 13, backgroundColor: color.surface }, counter: { alignSelf: 'flex-end', color: color.textSecondary, fontSize: 11 },
+  optionUf: { color: color.accentText, fontSize: 12, fontWeight: '900' }, mapCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14, padding: 14, borderWidth: 1, borderColor: color.controlBorder, borderRadius: 10, backgroundColor: color.surface }, mapCopy: { flex: 1 }, mapHint: { color: color.textSecondary, fontSize: 11, lineHeight: 16, marginTop: 3 }, localCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1, borderColor: color.controlBorder, borderRadius: 10, backgroundColor: color.surface }, field: { gap: 7 }, label: { color: color.textPrimary, fontSize: 13, fontWeight: '800' }, inputWithIcon: { minHeight: 49, borderWidth: 1, borderColor: color.controlBorder, borderRadius: 9, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: color.surface }, input: { flex: 1, paddingVertical: 12, color: color.textPrimary, fontSize: 14 }, multiline: { minHeight: 108, borderWidth: 1, borderColor: color.controlBorder, borderRadius: 9, paddingHorizontal: 13, backgroundColor: color.surface }, counter: { alignSelf: 'flex-end', color: color.textSecondary, fontSize: 11 },
 });

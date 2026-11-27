@@ -1,5 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, useColorScheme } from 'react-native';
+import React, { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Appearance as NativeAppearance, Platform, useColorScheme } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 import { palettes, type Palette, type PaletteName } from '@/shared/theme/palettes';
@@ -31,6 +31,7 @@ function isAppearance(value: string): value is Appearance {
 
 function useStoredPreference<T extends string>(key: string, initial: T, valid: (value: string) => value is T) {
   const [value, setValue] = useState(initial);
+  const [ready, setReady] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const revision = useRef(0);
   const writes = useRef<Promise<void>>(Promise.resolve());
@@ -40,7 +41,9 @@ function useStoredPreference<T extends string>(key: string, initial: T, valid: (
     void (async () => {
       const stored = Platform.OS === 'web' ? localStorage.getItem(key) : await SecureStore.getItemAsync(key);
       if (active && revision.current === 0 && stored !== null && valid(stored)) setValue(stored);
-    })().catch(() => undefined);
+    })().catch(() => undefined).finally(() => {
+      if (active) setReady(true);
+    });
     return () => { active = false; };
   }, [key, valid]);
 
@@ -56,14 +59,14 @@ function useStoredPreference<T extends string>(key: string, initial: T, valid: (
     });
   }, [key]);
 
-  return [value, change, saveFailed] as const;
+  return [value, change, saveFailed, ready] as const;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [paletteName, setPalette, paletteSaveFailed] = useStoredPreference<PaletteName>('arthere.palette', 'Arthere', isPalette);
-  const [appearance, setAppearance, appearanceSaveFailed] = useStoredPreference<Appearance>('arthere.appearance', 'light', isAppearance);
+  const [paletteName, setPalette, paletteSaveFailed, paletteReady] = useStoredPreference<PaletteName>('arthere.palette', 'Arthere', isPalette);
+  const [appearance, setAppearance, appearanceSaveFailed, appearanceReady] = useStoredPreference<Appearance>('arthere.appearance', 'light', isAppearance);
   const system = useColorScheme();
   const isDark = appearance === 'dark' || (appearance === 'system' && system === 'dark');
   const palette = palettes[paletteName];
@@ -71,7 +74,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(() => ({
     paletteName, palette, tokens, setPalette, paletteSaveFailed, appearance, setAppearance, isDark, appearanceSaveFailed,
   }), [paletteName, palette, tokens, setPalette, paletteSaveFailed, appearance, setAppearance, isDark, appearanceSaveFailed]);
+  useLayoutEffect(() => {
+    if (appearanceReady && (Platform.OS === 'ios' || Platform.OS === 'android')) {
+      NativeAppearance.setColorScheme(appearance === 'system' ? 'auto' : appearance);
+    }
+  }, [appearance, appearanceReady]);
 
+  if (!paletteReady || !appearanceReady) return null;
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 

@@ -29,7 +29,7 @@ import { Button, ScreenContainer, ScreenHeader } from '@/shared/components';
 import { useReducedMotion } from '@/shared/hooks/use-reduced-motion';
 
 export default function EditContractorProfileScreen() {
-  const { color } = useThemeTokens();
+  const { color, keyboardAppearance } = useThemeTokens();
   const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(color), [color]);
   const navigation = useNavigation<any>();
@@ -200,7 +200,7 @@ export default function EditContractorProfileScreen() {
           </Text>
 
           {/* Formulário */}
-          <Modal visible={modalLocal !== null} transparent animationType={reducedMotion ? 'fade' : 'slide'} onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View accessibilityViewIsModal style={styles.modalCard}><View style={styles.modalHeader}><Text accessibilityRole="header" style={styles.modalTitle}>{modalLocal === "estado" ? "Selecione seu estado" : "Selecione sua cidade"}</Text><TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar seleção" hitSlop={10} onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={color.textPrimary} /></TouchableOpacity></View>{modalLocal === "estado" ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={item.nome} style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color={color.textSecondary} /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." accessibilityLabel="Pesquisar cidade" placeholderTextColor={color.textSecondary} autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={item.nome} style={styles.option} onPress={() => {setCidade(item.nome); setBuscaCidade(''); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>}</View></View></Modal>
+          <Modal visible={modalLocal !== null} transparent animationType={reducedMotion ? 'fade' : 'slide'} onRequestClose={() => setModalLocal(null)}><View style={styles.modalOverlay}><View accessibilityViewIsModal style={styles.modalCard}><View style={styles.modalHeader}><Text accessibilityRole="header" style={styles.modalTitle}>{modalLocal === "estado" ? "Selecione seu estado" : "Selecione sua cidade"}</Text><TouchableOpacity accessibilityRole="button" accessibilityLabel="Fechar seleção" hitSlop={10} onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color={color.textPrimary} /></TouchableOpacity></View>{modalLocal === "estado" ? <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({item}) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={item.nome} style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} /> : <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color={color.textSecondary} /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." accessibilityLabel="Pesquisar cidade" placeholderTextColor={color.textSecondary} keyboardAppearance={keyboardAppearance} selectionColor={color.selection} cursorColor={color.focus} autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({item}) => <TouchableOpacity accessibilityRole="button" accessibilityLabel={item.nome} style={styles.option} onPress={() => {setCidade(item.nome); setBuscaCidade(''); setModalLocal(null);}}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>}</View></View></Modal>
           <View style={styles.form}>
             <Field
               label="CPF ou CNPJ"
@@ -274,7 +274,7 @@ export default function EditContractorProfileScreen() {
                 value={descricao}
                 onChangeText={setDescricao}
                 placeholder="Conte sobre a empresa, tipos de eventos e serviços..."
-                placeholderTextColor={color.textSecondary}
+                placeholderTextColor={color.textSecondary} keyboardAppearance={keyboardAppearance} selectionColor={color.selection} cursorColor={color.focus}
                 accessibilityLabel="Sobre a empresa"
                 multiline
                 maxLength={500}
@@ -301,7 +301,7 @@ function Field({
   label: string;
   icon?: keyof typeof Ionicons.glyphMap;
 } & React.ComponentProps<typeof TextInput>) {
-  const { color } = useThemeTokens();
+  const { color, keyboardAppearance } = useThemeTokens();
   const styles = useMemo(() => createStyles(color), [color]);
   return (
     <View style={styles.field}>
@@ -310,7 +310,7 @@ function Field({
         {icon && <Ionicons name={icon} size={18} color={color.accentText} />}
         <TextInput
           style={styles.input}
-          placeholderTextColor={color.textSecondary}
+          placeholderTextColor={color.textSecondary} keyboardAppearance={keyboardAppearance} selectionColor={color.selection} cursorColor={color.focus}
           accessibilityLabel={label}
           {...props}
         />
@@ -358,16 +358,16 @@ const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
     textAlign: "center",
   },
   form: { gap: 15 },
-  locationSelect: { minHeight: 49, borderWidth: 1, borderColor: color.border, borderRadius: 10, backgroundColor: color.surface, flexDirection: "row", alignItems: "center", paddingHorizontal: 13, gap: 9 },
+  locationSelect: { minHeight: 49, borderWidth: 1, borderColor: color.controlBorder, borderRadius: 10, backgroundColor: color.surface, flexDirection: "row", alignItems: "center", paddingHorizontal: 13, gap: 9 },
   locationSelectText: { flex: 1, color: color.textPrimary, fontSize: 14 },
   locationDisabled: { opacity: 0.55 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(41,36,43,0.45)", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, backgroundColor: color.overlay, justifyContent: "flex-end" },
   modalCard: { maxHeight: "78%", backgroundColor: color.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
   modalTitle: { color: color.textPrimary, fontSize: 20, fontWeight: "900" },
   option: { minHeight: 52, borderBottomWidth: 1, borderBottomColor: color.border, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   optionText: { color: color.textPrimary, fontSize: 15, fontWeight: "700" },
-  citySearchWrap: { minHeight: 48, borderWidth: 1, borderColor: color.border, borderRadius: 12, backgroundColor: color.surface, flexDirection: "row", alignItems: "center", paddingHorizontal: 13, marginBottom: 10 },
+  citySearchWrap: { minHeight: 48, borderWidth: 1, borderColor: color.controlBorder, borderRadius: 12, backgroundColor: color.surface, flexDirection: "row", alignItems: "center", paddingHorizontal: 13, marginBottom: 10 },
   citySearchInput: { flex: 1, color: color.textPrimary, fontSize: 15, marginLeft: 9, paddingVertical: 9 },
   emptyText: { textAlign: "center", color: color.textSecondary, paddingVertical: 30 },
   optionUf: { color: color.accentText, fontSize: 12, fontWeight: "900" },
@@ -376,7 +376,7 @@ const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
   singleInputWrapper: {
     minHeight: 49,
     borderWidth: 1,
-    borderColor: color.border,
+    borderColor: color.controlBorder,
     borderRadius: 10,
     backgroundColor: color.surface,
     paddingHorizontal: 13,
@@ -385,7 +385,7 @@ const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
   inputWithIcon: {
     minHeight: 49,
     borderWidth: 1,
-    borderColor: color.border,
+    borderColor: color.controlBorder,
     borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
@@ -397,7 +397,7 @@ const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
   multiline: {
     minHeight: 110,
     borderWidth: 1,
-    borderColor: color.border,
+    borderColor: color.controlBorder,
     borderRadius: 10,
     backgroundColor: color.surface,
     padding: 13,

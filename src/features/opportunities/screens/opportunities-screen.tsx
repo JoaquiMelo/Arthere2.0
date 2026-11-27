@@ -138,7 +138,7 @@ export default function OpportunitiesScreen() {
     <View>
       <ScreenHeader kicker="TRABALHO E COLABORAÇÃO" title="Oportunidades" description="Descubra projetos da economia criativa e encontre sua próxima colaboração." action={headerAction} style={{ borderBottomWidth: 0 }} />
       <View style={[styles.discovery, { paddingHorizontal: tokens.spacing.xl }]}>
-        <View style={[styles.search, { minHeight: tokens.dimensions.control.large, borderColor: tokens.color.border, borderRadius: tokens.radius.control, backgroundColor: tokens.color.surface, paddingLeft: tokens.spacing.lg }]}>
+        <View style={[styles.search, { minHeight: tokens.dimensions.control.large, borderColor: tokens.color.controlBorder, borderRadius: tokens.radius.control, backgroundColor: tokens.color.surface, paddingLeft: tokens.spacing.lg }]}>
           <Ionicons name="search-outline" size={tokens.dimensions.icon.medium} color={tokens.color.textSecondary} />
           <TextInput
             accessibilityLabel="Buscar oportunidades"
@@ -146,6 +146,9 @@ export default function OpportunitiesScreen() {
             onChangeText={setBusca}
             placeholder="Título, categoria, contratante ou cidade"
             placeholderTextColor={tokens.color.textSecondary}
+            keyboardAppearance={tokens.keyboardAppearance}
+            cursorColor={tokens.color.focus}
+            selectionColor={tokens.color.selection}
             returnKeyType="search"
             autoCorrect={false}
             style={[styles.searchInput, { color: tokens.color.textPrimary, fontSize: tokens.typography.size.body, paddingVertical: tokens.spacing.sm }]}

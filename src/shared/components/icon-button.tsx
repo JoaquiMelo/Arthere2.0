@@ -36,11 +36,11 @@ export function IconButton({ icon, accessibilityLabel, variant = 'subtle', size 
           justifyContent: 'center',
           backgroundColor: background,
           borderWidth: 1,
-          borderColor: variant === 'outline' ? color.border : 'transparent',
+          borderColor: variant === 'outline' ? color.controlBorder : 'transparent',
           opacity: disabled && !loading ? 0.48 : pressed ? 0.76 : 1,
         },
         style,
-        focused && !blocked ? { borderColor: color.focus } : undefined,
+        focused && !blocked ? { borderColor: variant === 'primary' ? foreground : color.focus } : undefined,
       ]}
     >
       {loading ? <ActivityIndicator color={foreground} /> :

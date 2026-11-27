@@ -64,20 +64,20 @@ function AppTabs(){
  return <Tab.Navigator initialRouteName="Atelier" backBehavior="history" screenOptions={({route})=>({
   headerShown:false,
   tabBarActiveTintColor:color.accentOnInverse,
-  tabBarInactiveTintColor:color.textInverse,
-  tabBarLabelStyle:{fontSize:typography.size.caption,fontWeight:'700'},
+  tabBarInactiveTintColor:color.textOnSurfaceInverse,
+  tabBarLabelStyle:{fontSize:typography.size.caption,fontWeight:typography.weight.bold},
   tabBarLabelPosition:'below-icon',
   tabBarAllowFontScaling:true,
   // Sem altura fixa: React Navigation incorpora os insets do dispositivo.
-  tabBarStyle:{borderTopWidth:1,borderTopColor:color.border,backgroundColor:color.brandInk,elevation:0},
+  tabBarStyle:{borderTopWidth:1,borderTopColor:color.border,backgroundColor:color.surfaceInverse,elevation:0},
   tabBarHideOnKeyboard:true,
   tabBarIcon:({color:foreground,focused})=>(
    <View style={{
     minWidth:dimensions.icon.extraLarge, minHeight:dimensions.icon.extraLarge, paddingHorizontal:spacing.xs,
     alignItems:'center',justifyContent:'center', borderRadius:radius.control,
-    backgroundColor:focused?color.accentSoft:'transparent',
+    backgroundColor:focused?color.selectionInverse:'transparent',
    }}>
-    <Ionicons name={focused?icons[route.name].active:icons[route.name].inactive} size={dimensions.icon.medium} color={focused?color.textPrimary:foreground}/>
+    <Ionicons name={focused?icons[route.name].active:icons[route.name].inactive} size={dimensions.icon.medium} color={focused?color.onSelectionInverse:foreground}/>
    </View>
   )
  })}>

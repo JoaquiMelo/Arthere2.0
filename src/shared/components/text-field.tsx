@@ -37,6 +37,9 @@ export function TextField({
     <View style={[{ gap: tokens.spacing.sm }, containerStyle]}>
       <AppText variant="label" weight="semibold">{label}</AppText>
       <TextInput
+        keyboardAppearance={tokens.keyboardAppearance}
+        selectionColor={tokens.color.selection}
+        cursorColor={tokens.color.focus}
         {...inputProps}
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityHint={error ?? accessibilityHint ?? helperText}
@@ -55,7 +58,7 @@ export function TextField({
           {
             color: tokens.color.textPrimary,
             backgroundColor: tokens.color.surface,
-            borderColor: error ? tokens.color.dangerText : focused ? tokens.color.focus : tokens.color.border,
+            borderColor: error ? tokens.color.dangerText : focused ? tokens.color.focus : tokens.color.controlBorder,
             borderRadius: tokens.radius.control,
             minHeight: tokens.dimensions.control.medium,
             paddingHorizontal: tokens.spacing.lg,

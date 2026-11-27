@@ -5,8 +5,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import MapView, { PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import type { ThemeTokens } from '@/shared/theme/tokens';
-import { useTheme } from '@/providers/theme-provider';
-import { darkMapStyle } from '@/features/map/utils/map-region';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { useMapAppearance } from '@/features/map/hooks/use-map-appearance';
 import { AppText, Button, IconButton, ScreenContainer, ScreenHeader } from '@/shared/components';
 import { useReducedMotion } from '@/shared/hooks/use-reduced-motion';
 
@@ -26,7 +26,9 @@ function montarEndereco(p?: Location.LocationGeocodedAddress) {
 }
 
 export default function SelectLocationScreen() {
-  const { isDark, tokens: { color } } = useTheme();
+  const tokens = useThemeTokens();
+  const { color, keyboardAppearance } = tokens;
+  const mapAppearance = useMapAppearance();
   const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(color), [color]);
   const navigation = useNavigation<any>();
@@ -146,6 +148,7 @@ export default function SelectLocationScreen() {
           placeholder="Buscar rua, bairro ou cidade"
           accessibilityLabel="Buscar rua, bairro ou cidade"
           placeholderTextColor={color.textSecondary}
+            keyboardAppearance={keyboardAppearance} selectionColor={color.selection} cursorColor={color.focus}
           returnKeyType="search"
           onSubmitEditing={buscarEndereco}
         />
@@ -156,8 +159,7 @@ export default function SelectLocationScreen() {
           ref={mapRef}
           style={StyleSheet.absoluteFill}
           provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-          customMapStyle={Platform.OS === 'android' && isDark ? darkMapStyle : undefined}
-          userInterfaceStyle={isDark ? 'dark' : 'light'}
+          {...mapAppearance}
           initialRegion={inicial ? { ...inicial, latitudeDelta: DELTA_ZOOM, longitudeDelta: DELTA_ZOOM } : REGIAO_PADRAO}
           showsUserLocation
           showsMyLocationButton={false}
@@ -191,12 +193,12 @@ export default function SelectLocationScreen() {
 }
 
 const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
-  searchBox: { marginHorizontal: 16, marginVertical: 10, minHeight: 48, borderWidth: 1, borderColor: color.border, borderRadius: 10, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: color.surface },
+  searchBox: { marginHorizontal: 16, marginVertical: 10, minHeight: 48, borderWidth: 1, borderColor: color.controlBorder, borderRadius: 10, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 8, backgroundColor: color.surface },
   searchInput: { flex: 1, paddingVertical: 11, color: color.textPrimary, fontSize: 14 },
   mapArea: { flex: 1, overflow: 'hidden' },
   pinoArea: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   pino: { position: 'absolute', bottom: '50%' },
-  sombra: { position: 'absolute', width: 10, height: 4, borderRadius: 5, backgroundColor: 'rgba(41,36,43,0.35)' },
+  sombra: { position: 'absolute', width: 10, height: 4, borderRadius: 5, backgroundColor: color.overlay },
   gpsButton: { position: 'absolute', right: 14, bottom: 14, backgroundColor: color.surface },
   card: { padding: 18, gap: 8, backgroundColor: color.surface, borderTopWidth: 1, borderTopColor: color.border },
 });

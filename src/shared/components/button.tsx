@@ -45,7 +45,7 @@ export function Button({
   const borders: Record<ButtonVariant, string> = {
     primary: 'transparent',
     secondary: 'transparent',
-    outline: tokens.color.border,
+    outline: tokens.color.controlBorder,
     ghost: 'transparent',
     danger: 'transparent',
   };
@@ -57,6 +57,7 @@ export function Button({
     danger: 'onDanger',
   };
   const foreground = foregrounds[variant];
+  const focusColor = variant === 'outline' || variant === 'ghost' ? tokens.color.focus : tokens.color[foreground];
 
   return (
     <Pressable
@@ -75,7 +76,7 @@ export function Button({
           paddingVertical: tokens.spacing.sm,
           borderRadius: tokens.radius.button,
           backgroundColor: backgrounds[variant],
-          borderColor: focused && !isDisabled ? tokens.color.focus : borders[variant],
+          borderColor: focused && !isDisabled ? focusColor : borders[variant],
           opacity: disabled && !loading ? 0.48 : pressed ? 0.82 : 1,
           alignSelf: fullWidth ? 'stretch' : 'auto',
         },

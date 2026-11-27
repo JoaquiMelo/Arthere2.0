@@ -9,7 +9,7 @@ import type { RootStackParamList } from '@/navigation/app-navigator';
 import { useUser } from '@/providers/user-provider';
 import { createEvent, deleteEvent, event as getEvent, updateEvent, uploadImage } from '@/services/api';
 import { AppText, Button, FeedbackState, FilterChip, MediaImage, ScreenContainer, ScreenHeader, SectionHeader, TextField } from '@/shared/components';
-import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { useTheme } from '@/providers/theme-provider';
 import { confirmWithHaptic } from '@/shared/feedback';
 import { dateKey, eventDate, eventDayKey, eventPoint, isEventConcluded } from '../utils/event-agenda';
 import { useEventDay } from '../hooks/use-event-day';
@@ -20,7 +20,7 @@ export function EventPublicationForm({ eventId }: { eventId?: string }) {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { user } = useUser();
   const { refresh } = useManagement();
-  const { color, dimensions, radius, spacing } = useThemeTokens();
+  const { isDark, tokens: { color, dimensions, radius, spacing } } = useTheme();
   const allowed = user?.tipo === 'CONTRATANTE_EVENTOS';
   const ownerId = user?.id;
   const today = useEventDay();
@@ -206,6 +206,7 @@ export function EventPublicationForm({ eventId }: { eventId?: string }) {
                     {picker ? (
                       <View>
                         <DateTimePicker key={picker} mode={picker} value={pickerValue} is24Hour
+                          themeVariant={Platform.OS === 'ios' ? (isDark ? 'dark' : 'light') : undefined}
                           minimumDate={picker === 'date' && !eventId ? eventDate(eventDayKey()) : undefined}
                           onChange={(event, value) => {
                             if (Platform.OS === 'android') setPicker(null);

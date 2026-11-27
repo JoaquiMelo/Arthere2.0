@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { View, type StyleProp, type ViewStyle } from 'react-native';
+import { useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { AppText } from './app-text';
 import { IconButton } from './icon-button';
@@ -15,7 +15,9 @@ type Props = {
 
 /** Cabeçalho de página; não conhece rotas ou regras de navegação. */
 export function ScreenHeader({ title, kicker, description, onBack, action, style }: Props) {
-  const { color, spacing } = useThemeTokens();
+  const { color, dimensions, spacing } = useThemeTokens();
+  const { width, fontScale } = useWindowDimensions();
+  const wrapsAction = width / fontScale < 6 * dimensions.control.large;
   return (
     <View style={[{ paddingHorizontal: spacing.xl, paddingVertical: spacing.lg, gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: color.border }, style]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
@@ -24,9 +26,10 @@ export function ScreenHeader({ title, kicker, description, onBack, action, style
           {kicker ? <AppText variant="overline" color="accentText" weight="bold">{kicker}</AppText> : null}
           <AppText variant="h2" weight="heavy" accessibilityRole="header">{title}</AppText>
         </View>
-        {action}
+        {wrapsAction ? null : action}
       </View>
       {description ? <AppText variant="bodySmall" color="textSecondary">{description}</AppText> : null}
+      {wrapsAction && action ? <View style={{ alignItems: 'flex-end' }}>{action}</View> : null}
     </View>
   );
 }

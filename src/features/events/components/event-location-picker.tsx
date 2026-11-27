@@ -2,8 +2,9 @@ import * as Location from 'expo-location';
 import { useEffect, useRef, useState } from 'react';
 import { Modal, Platform, StyleSheet, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, type LatLng } from 'react-native-maps';
-import { darkMapStyle, regionalMap } from '@/features/map/utils/map-region';
-import { useTheme } from '@/providers/theme-provider';
+import { regionalMap } from '@/features/map/utils/map-region';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { useMapAppearance } from '@/features/map/hooks/use-map-appearance';
 import { AppText, Button, ScreenContainer, ScreenHeader } from '@/shared/components';
 import { useReducedMotion } from '@/shared/hooks/use-reduced-motion';
 
@@ -14,7 +15,8 @@ export function EventLocationPicker({ initialPoint, onCancel, onConfirm }: {
   onCancel: () => void;
   onConfirm: (point: LatLng) => void;
 }) {
-  const { isDark, tokens: { color, spacing } } = useTheme();
+  const { color, spacing } = useThemeTokens();
+  const mapAppearance = useMapAppearance();
   const reducedMotion = useReducedMotion();
   const map = useRef<MapView>(null);
   const active = useRef(true);
@@ -60,8 +62,7 @@ export function EventLocationPicker({ initialPoint, onCancel, onConfirm }: {
         <View style={{ flex: 1, backgroundColor: color.surfaceSubtle }}>
           <MapView ref={map} style={StyleSheet.absoluteFill} provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
             initialRegion={initialPoint ? { ...initialPoint, ...zoom } : regionalMap}
-            customMapStyle={Platform.OS === 'android' && isDark ? darkMapStyle : undefined}
-            userInterfaceStyle={isDark ? 'dark' : 'light'} pitchEnabled={false} onPress={({ nativeEvent }) => {
+            {...mapAppearance} pitchEnabled={false} onPress={({ nativeEvent }) => {
               if (!pending.current) {
                 setPoint(nativeEvent.coordinate);
                 setError('');

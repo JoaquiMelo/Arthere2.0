@@ -25,13 +25,13 @@ function mix(first: string, second: string, amount: number): string {
 }
 
 /** Preserva a cor preferida quando ela é legível em todas as superfícies informadas. */
-export function readableColor(preferred: string, backgrounds: readonly string[]): string {
+export function readableColor(preferred: string, backgrounds: readonly string[], minimumContrast = 4.5): string {
   const minimum = (color: string) => Math.min(...backgrounds.map((bg) => contrastRatio(color, bg)));
-  if (minimum(preferred) >= 4.5) return preferred;
+  if (minimum(preferred) >= minimumContrast) return preferred;
   const target = minimum('#000000') >= minimum('#FFFFFF') ? '#000000' : '#FFFFFF';
   for (let step = 1; step <= 20; step += 1) {
     const candidate = mix(preferred, target, step / 20);
-    if (minimum(candidate) >= 4.5) return candidate;
+    if (minimum(candidate) >= minimumContrast) return candidate;
   }
   return target;
 }

@@ -5,7 +5,7 @@ import { ActivityIndicator, Alert, FlatList, Keyboard, Platform, Pressable, Scro
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { AppText, Avatar, Button, FeedbackState, FilterChip, IconButton, ScreenContainer } from '@/shared/components';
-import { useTheme } from '@/providers/theme-provider';
+import { useMapAppearance } from '@/features/map/hooks/use-map-appearance';
 import { useReducedMotion } from '@/shared/hooks/use-reduced-motion';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { useChat } from '@/providers/chat-provider';
@@ -18,7 +18,7 @@ import type { Evento } from '@/features/events/types/event';
 import { useEventDay } from '@/features/events/hooks/use-event-day';
 import { eventDate, eventPoint, filterEvents, isEventConcluded, mapEvento, sortEvents } from '@/features/events/utils/event-agenda';
 import { mapAgent, matchesAgent, MAP_CATEGORIES, categoryLabel } from '../utils/map-agents';
-import { darkMapStyle, regionalMap as REGIAO_INICIAL } from '../utils/map-region';
+import { regionalMap as REGIAO_INICIAL } from '../utils/map-region';
 
 const dateFormat = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short' });
 type MapEntry =
@@ -27,7 +27,8 @@ type MapEntry =
 
 export function MapScreen() {
   const navigation = useNavigation<any>();
-  const { isDark, tokens: { color, spacing, radius, dimensions, typography, elevation } } = useTheme();
+  const { color, spacing, radius, dimensions, typography, elevation, keyboardAppearance } = useThemeTokens();
+  const mapAppearance = useMapAppearance();
   const reducedMotion = useReducedMotion();
   const { user } = useUser();
   const { startConversation } = useChat();
@@ -177,13 +178,14 @@ export function MapScreen() {
             <Button variant="outline" size="small" onPress={() => navigation.goBack()}>Voltar ao Ateliê</Button>
           </View>
         ) : null}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingLeft: spacing.md, minHeight: dimensions.control.medium, borderWidth: 1, borderColor: color.border, backgroundColor: color.surface, borderRadius: radius.control }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingLeft: spacing.md, minHeight: dimensions.control.medium, borderWidth: 1, borderColor: color.controlBorder, backgroundColor: color.surface, borderRadius: radius.control }}>
           <Ionicons name="search-outline" size={dimensions.icon.medium} color={color.accentText} />
           <TextInput
             value={busca}
             onChangeText={setBusca}
             placeholder="Nome, cidade ou categoria"
             placeholderTextColor={color.textSecondary}
+            keyboardAppearance={keyboardAppearance} selectionColor={color.selection} cursorColor={color.focus}
             accessibilityLabel="Buscar no mapa"
             returnKeyType="search"
             onSubmitEditing={Keyboard.dismiss}
@@ -223,8 +225,7 @@ export function MapScreen() {
             ref={mapRef}
             style={StyleSheet.absoluteFill}
             provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-            customMapStyle={Platform.OS === 'android' && isDark ? darkMapStyle : undefined}
-            userInterfaceStyle={isDark ? 'dark' : 'light'}
+            {...mapAppearance}
             initialRegion={initialRegion}
             onMapReady={() => setMapReady(true)}
             onRegionChangeComplete={(region) => { lastRegion.current = region; }}

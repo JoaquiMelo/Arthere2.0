@@ -24,8 +24,9 @@ export default function ChatConversationScreen() {
 }
 
 function ChatConversation({ id }: { id: string }) {
-  const { color } = useThemeTokens();
-  const styles = useMemo(() => createStyles(color), [color]);
+  const tokens = useThemeTokens();
+  const { color, keyboardAppearance } = tokens;
+  const styles = useMemo(() => createStyles(tokens), [tokens]);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { conversations, sendMessage, carregarMensagens } = useChat();
   const [draft, setDraft] = useState('');
@@ -119,10 +120,9 @@ function ChatConversation({ id }: { id: string }) {
                 item.sentByMe ? styles.sent : styles.received,
               ]}
             >
-              {!item.sentByMe ? <Text style={styles.receivedLabel}>ARTHERE</Text> : null}
-              <Text style={[styles.message, item.sentByMe && styles.sentText]}>
+              <AppText style={styles.message}>
                 {item.text}
-              </Text>
+              </AppText>
             </View>
           )}
         />
@@ -136,6 +136,9 @@ function ChatConversation({ id }: { id: string }) {
             placeholder="Escreva uma mensagem"
             accessibilityLabel="Mensagem"
             placeholderTextColor={color.textSecondary}
+            keyboardAppearance={keyboardAppearance}
+            selectionColor={color.selection}
+            cursorColor={color.focus}
             multiline
           />
           <IconButton icon="arrow-up" variant="primary" loading={sending} onPress={() => void submit()}
@@ -147,7 +150,7 @@ function ChatConversation({ id }: { id: string }) {
   );
 }
 
-const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
+const createStyles = ({ color, dimensions, radius, spacing, typography }: ThemeTokens) => StyleSheet.create({
   flex: {
     flex: 1,
   },
@@ -222,13 +225,14 @@ const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
   },
   bubble: {
     maxWidth: '82%',
-    paddingHorizontal: 13,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.control,
     borderWidth: 1,
   },
   sent: {
     alignSelf: 'flex-end',
-    backgroundColor: color.brandInk,
+    backgroundColor: color.accentSoft,
     borderColor: color.border,
   },
   received: {
@@ -236,20 +240,8 @@ const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
     backgroundColor: color.surface,
     borderColor: color.border,
   },
-  receivedLabel: {
-    color: color.accentText,
-    fontSize: 7,
-    fontWeight: '900',
-    letterSpacing: 0.9,
-    marginBottom: 3,
-  },
   message: {
-    color: color.textPrimary,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  sentText: {
-    color: color.textInverse,
+    flexShrink: 1,
   },
   composer: {
     flexDirection: 'row',
@@ -263,15 +255,16 @@ const createStyles = (color: ThemeTokens['color']) => StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 42,
+    minHeight: dimensions.control.small,
     maxHeight: 110,
     borderWidth: 1,
-    borderColor: color.border,
+    borderColor: color.controlBorder,
+    borderRadius: radius.control,
     backgroundColor: color.surface,
     color: color.textPrimary,
-    fontSize: 13,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
+    fontSize: typography.size.body,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   sendError: { paddingHorizontal: 14, paddingVertical: 8 },
 });
