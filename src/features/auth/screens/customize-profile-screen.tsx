@@ -5,16 +5,20 @@ import { useUser } from '@/providers/user-provider';
 import { SectionHeader, TextField } from '@/shared/components';
 import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
 import { OnboardingProfileLayout } from '../components/onboarding-profile-layout';
+import { OnboardingPhotoActions } from '../components/onboarding-photo-actions';
+import { useOnboardingPhoto } from '../hooks/use-onboarding-photo';
 
 export default function CustomizeProfileScreen() {
   const { user, updateProfile, finishOnboarding } = useUser();
   const { spacing } = useThemeTokens();
+  const photo = useOnboardingPhoto();
   const isEventOrganizer = user?.tipo === 'CONTRATANTE_EVENTOS';
   const [publicName, setPublicName] = useState(user?.nomeSocial ?? '');
   const [organization, setOrganization] = useState(user?.empresa ?? '');
   const [phone, setPhone] = useState(user?.telefone ?? '');
   const [category, setCategory] = useState(user?.categoria ?? '');
   const [description, setDescription] = useState(user?.descricao ?? '');
+  const [site, setSite] = useState(user?.site ?? '');
   const [busy, setBusy] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [error, setError] = useState('');
@@ -27,6 +31,7 @@ export default function CustomizeProfileScreen() {
   const newPhone = phone.trim();
   const newCategory = category.trim();
   const newDescription = description.trim();
+  const newSite = site.trim();
   const missingOrganization = isEventOrganizer && Boolean(user.empresa?.trim()) && !newOrganization;
   const changes = {
     ...(newName !== (user.nomeSocial?.trim() ?? '') ? { nomeSocial: newName } : {}),
@@ -34,18 +39,23 @@ export default function CustomizeProfileScreen() {
     ...(newPhone !== (user.telefone?.trim() ?? '') ? { telefone: newPhone || null } : {}),
     ...(newCategory !== (user.categoria?.trim() ?? '') ? { categoria: newCategory || null } : {}),
     ...(newDescription !== (user.descricao?.trim() ?? '') ? { descricao: newDescription || null } : {}),
+    ...(isEventOrganizer && newSite !== (user.site?.trim() ?? '') ? { site: newSite || null } : {}),
   };
-  const changed = Object.keys(changes).length > 0;
+  const changed = Boolean(photo.uri) || Object.keys(changes).length > 0;
+  const disabled = busy || photo.picking;
 
   const save = async () => {
-    if (pending.current) return;
+    if (pending.current || photo.active.current) return;
     setAttempted(true);
     setError('');
     if (missingOrganization) return;
     pending.current = true;
     setBusy(true);
     try {
-      if (changed) await updateProfile(changes);
+      if (changed) {
+        const avatarUrl = await photo.upload();
+        await updateProfile({ ...changes, ...(avatarUrl ? { avatarUrl } : {}) });
+      }
       finishOnboarding();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível salvar. Tente novamente.');
@@ -57,24 +67,34 @@ export default function CustomizeProfileScreen() {
 
   return (
     <OnboardingProfileLayout user={user} role={isEventOrganizer ? 'Contratante de eventos' : 'Contratante de oportunidades'}
-      description={isEventOrganizer ? 'Apresente quem organiza os eventos na Arthere.' : 'Apresente seu trabalho e as áreas em que você contrata.'}
-      busy={busy} changed={changed} error={error} onSave={() => void save()}
-      onSkip={() => { if (!pending.current) finishOnboarding(); }}>
+      title={isEventOrganizer ? 'Apresente sua organização' : 'Prepare seu perfil de contratante'}
+      description={isEventOrganizer ? 'Mostre quem está por trás dos seus eventos.' : 'Mostre aos agentes criativos em quais áreas você contrata.'}
+      previewName={newName} previewDetail={[isEventOrganizer ? newOrganization : '', newCategory].filter(Boolean).join(' · ')}
+      photo={photo.uri || user.avatarUrl}
+      photoActions={<OnboardingPhotoActions photo={photo} disabled={busy}
+        onPick={() => { if (!pending.current) void photo.pick(); }} />}
+      busy={busy} changed={changed} disabled={photo.picking} error={error} onSave={() => void save()}
+      onSkip={() => { if (!pending.current && !photo.active.current) finishOnboarding(); }}>
       <View style={{ gap: spacing.md }}>
         <SectionHeader title={isEventOrganizer ? 'Sobre a organização' : 'Sua apresentação'} />
-        <TextField label="Nome social (opcional)" value={publicName} onChangeText={setPublicName} editable={!busy}
+        <TextField label="Nome social (opcional)" value={publicName} onChangeText={setPublicName} editable={!disabled}
           helperText="Se ficar em branco, será usado o nome do cadastro." />
         {isEventOrganizer ? (
-          <TextField label="Nome da organização" value={organization} onChangeText={setOrganization} editable={!busy}
+          <TextField label="Nome da organização" value={organization} onChangeText={setOrganization} editable={!disabled}
             error={attempted && missingOrganization ? 'Informe o nome da organização.' : undefined} />
         ) : null}
-        <TextField label={isEventOrganizer ? 'Segmento da organização' : 'Área das oportunidades'}
-          value={category} onChangeText={setCategory} editable={!busy}
+        <TextField label={isEventOrganizer ? 'Segmento da organização' : 'Área das oportunidades (opcional)'}
+          value={category} onChangeText={setCategory} editable={!disabled}
           placeholder={isEventOrganizer ? 'Ex.: Cultura e eventos' : 'Ex.: Design e produção cultural'} />
         <TextField label="Apresentação (opcional)" value={description} onChangeText={setDescription}
-          editable={!busy} multiline numberOfLines={4} textAlignVertical="top" />
+          editable={!disabled} multiline numberOfLines={4} textAlignVertical="top" />
+      </View>
+      <View style={{ gap: spacing.md }}>
+        <SectionHeader title="Contato" />
         <TextField label="Telefone de contato (opcional)" value={phone} onChangeText={setPhone}
-          editable={!busy} keyboardType="phone-pad" autoComplete="tel" />
+          editable={!disabled} keyboardType="phone-pad" autoComplete="tel" />
+        {isEventOrganizer ? <TextField label="Site da organização (opcional)" value={site} onChangeText={setSite}
+          editable={!disabled} keyboardType="url" autoCapitalize="none" autoCorrect={false} /> : null}
       </View>
     </OnboardingProfileLayout>
   );

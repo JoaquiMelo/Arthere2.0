@@ -1,309 +1,234 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useUser } from '@/providers/user-provider';
-import { ARTHERE_LOGO } from '@/shared/assets/artHere-logo';
-import { buscarCidades, CidadeBR, ESTADOS_BR } from '@/shared/config/brazil-location';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useCallback, useEffect, useRef, useState, type ComponentProps } from 'react';
+import { BackHandler, Keyboard, Pressable, View } from 'react-native';
+import type { RootStackParamList } from '@/navigation/app-navigator';
+import { useUser, type TipoUsuario } from '@/providers/user-provider';
+import { AppText, Button, SectionHeader, TextField } from '@/shared/components';
+import { useThemeTokens } from '@/shared/theme/use-theme-tokens';
+import { ProfileFormLayout } from '../components/profile-form-layout';
+import { RegistrationLocation } from '../components/registration-location';
 
-type TipoUsuario = 'AGENTE' | 'CONTRATANTE_EVENTOS' | 'CONTRATANTE_OPORTUNIDADES';
+type Role = Exclude<TipoUsuario, 'ADMIN'>;
+const roles: { value: Role; title: string; description: string; icon: ComponentProps<typeof Ionicons>['name'] }[] = [
+  { value: 'AGENTE', title: 'Agente criativo', description: 'Mostre seu trabalho e encontre oportunidades.', icon: 'color-palette-outline' },
+  { value: 'CONTRATANTE_EVENTOS', title: 'Contratante de eventos', description: 'Publique eventos e gerencie solicitações de participação.', icon: 'calendar-outline' },
+  { value: 'CONTRATANTE_OPORTUNIDADES', title: 'Contratante de oportunidades', description: 'Publique vagas e acompanhe candidaturas.', icon: 'briefcase-outline' },
+];
+const steps = [
+  { title: 'Crie sua conta', description: 'Escolha como você quer participar da rede criativa da Baixada Santista.' },
+  { title: 'Dados do perfil', description: 'Preencha as informações iniciais do seu tipo de conta.' },
+  { title: 'Dados de acesso', description: 'Use um e-mail ao qual você tem acesso.' },
+] as const;
+type Step = 0 | 1 | 2;
+
+const initial = {
+  nome: '', nomeSocial: '', pronomes: '', cpfCnpj: '', email: '', senha: '', confirmarSenha: '',
+  especialidade: '', bio: '', empresa: '', categoria: '', areaOportunidades: '', telefone: '', site: '', estado: '', cidade: '', endereco: '',
+};
+type Field = keyof typeof initial;
+type Errors = Partial<Record<Field | 'termos', string>>;
 
 export default function RegisterScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Register'>>();
   const { register } = useUser();
-  const [tipoUsuario, setTipoUsuario] = useState<TipoUsuario>('AGENTE');
-  const [nome, setNome] = useState('');
-  const [nomeSocial, setNomeSocial] = useState('');
-  const [pronomes, setPronomes] = useState('');
-  const [cpfCnpj, setCpfCnpj] = useState('');
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [especialidade, setEspecialidade] = useState('');
-  const [bio, setBio] = useState('');
-  const [empresa, setEmpresa] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [site, setSite] = useState('');
-  const [estado, setEstado] = useState('');
-  const [cidade, setCidade] = useState('');
-  const [cidades, setCidades] = useState<CidadeBR[]>([]);
-  const [modalLocal, setModalLocal] = useState<'estado' | 'cidade' | null>(null);
-  const [carregandoCidades, setCarregandoCidades] = useState(false);
-  const [buscaCidade, setBuscaCidade] = useState('');
-  const [endereco, setEndereco] = useState('');
-  const [aceitouTermos, setAceitouTermos] = useState(false);
-  const [carregando, setCarregando] = useState(false);
+  const { color, dimensions, radius, spacing } = useThemeTokens();
+  const [role, setRole] = useState<Role>('AGENTE');
+  const [step, setStep] = useState<Step>(0);
+  const [draft, setDraft] = useState(initial);
+  const [accepted, setAccepted] = useState(false);
+  const [moreDetails, setMoreDetails] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
+  const [failure, setFailure] = useState('');
+  const [busy, setBusy] = useState(false);
+  const pending = useRef(false);
+  const organizer = role === 'CONTRATANTE_EVENTOS';
+  const agent = role === 'AGENTE';
 
-  const emailValido = (valor: string) => /^[^\s@]+@[^\s@]+$/i.test(valor.trim());
+  const move = useCallback((next: Step) => {
+    Keyboard.dismiss();
+    setStep(next);
+    setErrors({});
+    setFailure('');
+  }, []);
+  const back = useCallback(() => {
+    if (pending.current) return;
+    if (step === 2) move(1);
+    else if (step === 1) move(0);
+    else navigation.goBack();
+  }, [move, navigation, step]);
+  useEffect(() => {
+    navigation.setOptions({ gestureEnabled: step === 0 && !busy });
+  }, [busy, navigation, step]);
+  useFocusEffect(useCallback(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (pending.current) return true;
+      if (step === 0) return false;
+      back();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [back, step]));
 
-  const selecionarEstado = async (uf: string) => {
-    setEstado(uf);
-    setCidade('');
-    setBuscaCidade('');
-    setModalLocal(null);
-    setCarregandoCidades(true);
-    try { setCidades(await buscarCidades(uf)); setModalLocal('cidade'); }
-    catch { Alert.alert('Cidades indisponíveis', 'Não foi possível carregar as cidades deste estado. Tente novamente.'); }
-    finally { setCarregandoCidades(false); }
+  const clearErrors = (...keys: (Field | 'termos')[]) => {
+    setErrors((current) => {
+      const next = { ...current };
+      keys.forEach((key) => delete next[key]);
+      return next;
+    });
+    setFailure('');
   };
+  const edit = (field: Field, value: string) => {
+    setDraft((current) => ({ ...current, [field]: value }));
+    if (field === 'senha') clearErrors('senha', 'confirmarSenha');
+    else clearErrors(field);
+  };
+  const field = (key: Field, label: string, props: Partial<ComponentProps<typeof TextField>> = {}) => (
+    <TextField {...props} label={label} value={draft[key]} error={errors[key]} editable={!busy}
+      onChangeText={(value) => edit(key, key === 'email' ? value.replace(/\s/g, '') : value)} />
+  );
+  const profileErrors = () => {
+    const next: Errors = {};
+    if (!draft.nome.trim()) next.nome = 'Informe seu nome completo.';
+    if (!draft.estado) next.estado = 'Escolha um estado.';
+    if (!draft.cidade) next.cidade = 'Escolha uma cidade.';
+    if (agent && !draft.especialidade.trim()) next.especialidade = 'Informe sua área de atuação.';
+    if (organizer) {
+      if (!draft.cpfCnpj.trim()) next.cpfCnpj = 'Informe o CPF ou CNPJ da organização responsável.';
+      if (!draft.empresa.trim()) next.empresa = 'Informe o nome da organização.';
+      if (!draft.categoria.trim()) next.categoria = 'Informe o segmento da organização.';
+    }
+    return next;
+  };
+  const next = async () => {
+    if (pending.current) return;
+    if (step === 0) { move(1); return; }
+    const profile = profileErrors();
+    if (Object.keys(profile).length) {
+      if (step === 2) move(1);
+      setErrors(profile);
+      return;
+    }
+    if (step === 1) { move(2); return; }
 
-  const handleRegister = async () => {
-    const emailNormalizado = email.trim().toLowerCase();
-    if (!nome.trim() || !emailNormalizado || !senha || !confirmarSenha || !estado.trim() || !cidade.trim()) {
-      Alert.alert('Atenção', 'Preencha nome, estado, cidade, e-mail, senha e todos os campos obrigatórios.');
-      return;
-    }
-    if (!emailValido(emailNormalizado)) {
-      Alert.alert('E-mail inválido', 'Digite um e-mail válido, como seu@email.com.');
-      return;
-    }
-    if (senha.length < 8) {
-      Alert.alert('Senha fraca', 'Use uma senha com pelo menos 8 caracteres.');
-      return;
-    }
-    if (senha !== confirmarSenha) {
-      Alert.alert('Senhas diferentes', 'A confirmação de senha não confere.');
-      return;
-    }
-    if (!aceitouTermos) {
-      Alert.alert('Termos de uso', 'Aceite os termos de uso e a política de privacidade para continuar.');
-      return;
-    }
-    if (tipoUsuario === 'AGENTE' && !especialidade.trim()) {
-      Alert.alert('Atenção', 'Informe sua área de atuação.');
-      return;
-    }
-    if (tipoUsuario === 'CONTRATANTE_EVENTOS' && !cpfCnpj.trim()) {
-      Alert.alert('CPF/CNPJ obrigatório', 'Informe o CPF ou CNPJ da organização responsável pelos eventos.');
-      return;
-    }
-    if (tipoUsuario === 'CONTRATANTE_EVENTOS' && (!empresa.trim() || !categoria.trim())) {
-      Alert.alert('Atenção', 'Informe a empresa/organização e a categoria.');
-      return;
-    }
-
-    setCarregando(true);
+    const email = draft.email.trim().toLowerCase();
+    const access: Errors = {};
+    if (!/^[^\s@]+@[^\s@]+$/.test(email)) access.email = 'Informe um e-mail válido.';
+    if (draft.senha.length < 8) access.senha = 'Use pelo menos 8 caracteres.';
+    if (!draft.confirmarSenha || draft.senha !== draft.confirmarSenha) access.confirmarSenha = 'Repita a mesma senha.';
+    if (!accepted) access.termos = 'Confirme a leitura e aceitação para continuar.';
+    setErrors(access);
+    if (Object.keys(access).length) return;
+    Keyboard.dismiss();
+    pending.current = true;
+    setBusy(true);
+    setFailure('');
+    const optional = (key: Field) => draft[key].trim() || undefined;
     try {
       await register({
-        nome: nome.trim(),
-        nomeSocial: nomeSocial.trim() || undefined,
-        pronomes: pronomes.trim() || undefined,
-        cpfCnpj: cpfCnpj.trim() || undefined,
-        email: emailNormalizado,
-        senha,
-        tipo: tipoUsuario,
-        especialidade: especialidade.trim() || undefined,
-        empresa: tipoUsuario === 'CONTRATANTE_EVENTOS' ? empresa.trim() || undefined : undefined,
-        telefone: telefone.trim() || undefined,
-        descricao: bio.trim() || undefined,
-        site: tipoUsuario === 'CONTRATANTE_EVENTOS' ? site.trim() || undefined : undefined,
-        estado: estado.trim(),
-        cidade: cidade.trim(),
-        endereco: endereco.trim() || undefined,
-        categoria: categoria.trim() || undefined,
+        tipo: role, nome: draft.nome.trim(),
+        nomeSocial: agent ? undefined : optional('nomeSocial'), pronomes: agent ? undefined : optional('pronomes'),
+        email, senha: draft.senha, especialidade: agent ? optional('especialidade') : undefined,
+        cpfCnpj: organizer ? optional('cpfCnpj') : undefined, empresa: organizer ? optional('empresa') : undefined,
+        categoria: agent ? undefined : optional(organizer ? 'categoria' : 'areaOportunidades'), telefone: agent ? undefined : optional('telefone'),
+        descricao: agent ? optional('bio') : undefined, site: organizer ? optional('site') : undefined,
+        estado: draft.estado, cidade: draft.cidade, endereco: optional('endereco'),
       });
     } catch (error) {
-      Alert.alert('Não foi possível criar a conta', error instanceof Error ? error.message : 'Tente novamente.');
+      setFailure(error instanceof Error ? error.message : 'Não foi possível criar a conta. Tente novamente.');
     } finally {
-      setCarregando(false);
+      pending.current = false;
+      setBusy(false);
     }
   };
 
-  const renderInput = (
-    label: string,
-    value: string,
-    onChangeText: (value: string) => void,
-    placeholder: string,
-    icon: React.ComponentProps<typeof Ionicons>['name'],
-    options: Partial<React.ComponentProps<typeof TextInput>> = {},
-  ) => (
-    <>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.inputWrap}>
-        <Ionicons name={icon} size={21} color="#77716d" />
-        <TextInput
-          style={styles.input}
-          placeholder={placeholder}
-          placeholderTextColor="#77716d"
-          value={value}
-          onChangeText={(value) => onChangeText(options.keyboardType === 'email-address' ? value.replace(/\s/g, '').toLowerCase() : value)}
-          editable={true}
-          autoComplete="off"
-          importantForAutofill="no"
-          {...options}
-        />
-      </View>
-    </>
-  );
-
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="none">
-        <View style={styles.visualHeader}>
-          <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()} accessibilityLabel="Voltar">
-            <Ionicons name="arrow-back" size={21} color="#28232b" />
-          </TouchableOpacity>
-          <View style={styles.headerText}>
-            <Text style={styles.eyebrow}>ENCONTRO · TERRITÓRIO</Text>
-            <Text style={styles.brand}>Arthere</Text>
-            <View style={styles.brandLine} />
-            <Text style={styles.headerDescription}>Crie seu espaço na rede criativa{''}da Baixada Santista.</Text>
+    <ProfileFormLayout {...steps[step]} kicker={`Etapa ${step + 1} de 3`} step={step} onBack={busy ? undefined : back}>
+      {step === 0 ? (
+        <>
+          <SectionHeader title="Tipo de perfil" />
+          <View accessibilityRole="radiogroup" style={{ gap: spacing.sm }}>
+            {roles.map(({ value, title, description, icon }) => {
+              const selected = value === role;
+              return (
+                <Pressable key={value} accessibilityRole="radio" accessibilityLabel={`${title}. ${description}`}
+                  accessibilityState={{ checked: selected }} onPress={() => setRole(value)}
+                  style={({ pressed }) => ({
+                    flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: dimensions.control.large,
+                    borderWidth: 1, borderColor: selected ? color.accentText : color.border, borderRadius: radius.cardCompact,
+                    backgroundColor: selected ? color.accentSoft : color.surface, padding: spacing.lg, opacity: pressed ? 0.78 : 1,
+                  })}>
+                  <Ionicons name={icon} size={dimensions.icon.medium} color={color.accentText} />
+                  <View style={{ flex: 1, gap: spacing.xs }}>
+                    <AppText variant="title" weight="bold">{title}</AppText>
+                    <AppText variant="bodySmall" color="textSecondary">{description}</AppText>
+                  </View>
+                  <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={dimensions.icon.small} color={selected ? color.accentText : color.textSecondary} />
+                </Pressable>
+              );
+            })}
           </View>
-          <View style={styles.shapeCoral} />
-          <View style={styles.shapeYellow} />
-          <View style={styles.shapeBlue} />
-          <View style={styles.logoArt}>
-            <Image source={{ uri: ARTHERE_LOGO }} style={styles.logo} resizeMode="contain" />
+        </>
+      ) : step === 1 ? (
+        <>
+          <SectionHeader title={roles.find((item) => item.value === role)!.title} />
+          {field('nome', 'Nome completo', { autoComplete: 'name', autoCapitalize: 'words' })}
+          {agent ? field('especialidade', 'Área de atuação', { placeholder: 'Ex.: Fotografia, design ou música' }) : null}
+          {organizer ? (
+            <>
+              {field('empresa', 'Nome da organização', { autoCapitalize: 'words' })}
+              {field('cpfCnpj', 'CPF ou CNPJ da organização', { keyboardType: 'number-pad' })}
+              {field('categoria', 'Segmento da organização', { placeholder: 'Ex.: Produção cultural' })}
+            </>
+          ) : null}
+          <RegistrationLocation state={draft.estado} city={draft.cidade} stateError={errors.estado} cityError={errors.cidade}
+            onState={(estado) => {
+              setDraft((current) => current.estado === estado ? current : { ...current, estado, cidade: '' });
+              clearErrors('estado', 'cidade');
+            }} onCity={(city) => edit('cidade', city)} />
+          <Button variant="outline" accessibilityState={{ expanded: moreDetails }} onPress={() => setMoreDetails((open) => !open)}>
+            {moreDetails ? 'Ocultar dados opcionais' : 'Adicionar dados opcionais'}
+          </Button>
+          {moreDetails ? (
+            <>
+              {!agent ? field('nomeSocial', 'Nome social', { autoCapitalize: 'words' }) : null}
+              {!agent ? field('pronomes', 'Pronomes', { placeholder: 'Ex.: ela/dela' }) : null}
+              {!agent && !organizer ? field('areaOportunidades', 'Área das oportunidades', { placeholder: 'Ex.: Design e produção cultural' }) : null}
+              {field('endereco', 'Endereço', { placeholder: 'Rua, número e bairro' })}
+              {!agent ? field('telefone', 'Telefone de contato', { keyboardType: 'phone-pad', autoComplete: 'tel' }) : null}
+              {organizer ? field('site', 'Site da organização', { keyboardType: 'url', autoCapitalize: 'none', autoCorrect: false }) : null}
+              {agent ? field('bio', 'Sobre você', { multiline: true, numberOfLines: 4, textAlignVertical: 'top', placeholder: 'Conte o que você faz.' }) : null}
+            </>
+          ) : null}
+        </>
+      ) : (
+        <>
+          {field('email', 'E-mail', { keyboardType: 'email-address', autoComplete: 'email', autoCapitalize: 'none', autoCorrect: false })}
+          {field('senha', 'Senha', { secureTextEntry: !passwordVisible, autoComplete: 'new-password', autoCapitalize: 'none', autoCorrect: false, helperText: 'Pelo menos 8 caracteres.' })}
+          {field('confirmarSenha', 'Confirmar senha', { secureTextEntry: !passwordVisible, autoComplete: 'new-password', autoCapitalize: 'none', autoCorrect: false })}
+          <Button variant="ghost" size="small" disabled={busy} accessibilityState={{ selected: passwordVisible }}
+            onPress={() => setPasswordVisible((visible) => !visible)}>{passwordVisible ? 'Ocultar senhas' : 'Mostrar senhas'}</Button>
+          <View style={{ gap: spacing.xs }}>
+            <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: accepted, disabled: busy }}
+              accessibilityLabel="Li e aceito os termos de uso e a política de privacidade da Arthere."
+              disabled={busy} onPress={() => { setAccepted((value) => !value); clearErrors('termos'); }}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: dimensions.control.medium }}>
+              <Ionicons name={accepted ? 'checkbox-outline' : 'square-outline'} color={color.accentText} size={dimensions.icon.medium} />
+              <AppText variant="bodySmall" style={{ flex: 1 }}>Li e aceito os termos de uso e a política de privacidade da Arthere.</AppText>
+            </Pressable>
+            {errors.termos ? <AppText variant="caption" color="dangerText" accessibilityRole="alert">{errors.termos}</AppText> : null}
           </View>
-        </View>
-
-        <View style={styles.form}>
-          <Text style={styles.title}>Criar conta</Text>
-          <Text style={styles.subtitle}>Conte o essencial para encontrarmos as conexões certas.</Text>
-
-          <Text style={styles.sectionTitle}>COMO VOCÊ VAI USAR A ARTHERE?</Text>
-          <View style={styles.roles}>
-            <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: tipoUsuario === 'AGENTE' }} style={[styles.role, tipoUsuario === 'AGENTE' && styles.roleAgentActive]} onPress={() => setTipoUsuario('AGENTE')}>
-              <Ionicons name="color-palette-outline" size={25} color={tipoUsuario === 'AGENTE' ? '#647FA8' : '#77716d'} />
-              <Text style={styles.roleTitle}>AGENTE CRIATIVO</Text>
-              <Text style={styles.roleSub}>Artista ou profissional</Text>
-            </TouchableOpacity>
-            <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: tipoUsuario === 'CONTRATANTE_EVENTOS' }} style={[styles.role, tipoUsuario === 'CONTRATANTE_EVENTOS' && styles.roleEventsActive]} onPress={() => setTipoUsuario('CONTRATANTE_EVENTOS')}>
-              <Ionicons name="calendar-outline" size={25} color={tipoUsuario === 'CONTRATANTE_EVENTOS' ? '#648A78' : '#77716d'} />
-              <Text style={styles.roleTitle}>CONTRATANTE DE EVENTOS</Text>
-              <Text style={styles.roleSub}>Organize e divulgue eventos</Text>
-            </TouchableOpacity>
-            <TouchableOpacity accessibilityRole="button" accessibilityState={{ selected: tipoUsuario === 'CONTRATANTE_OPORTUNIDADES' }} style={[styles.role, tipoUsuario === 'CONTRATANTE_OPORTUNIDADES' && styles.roleOpportunitiesActive]} onPress={() => setTipoUsuario('CONTRATANTE_OPORTUNIDADES')}>
-              <Ionicons name="briefcase-outline" size={25} color={tipoUsuario === 'CONTRATANTE_OPORTUNIDADES' ? '#9275AA' : '#77716d'} />
-              <Text style={styles.roleTitle}>CONTRATANTE DE OPORTUNIDADES</Text>
-              <Text style={styles.roleSub}>Pessoa física: publique oportunidades e acompanhe candidaturas</Text>
-            </TouchableOpacity>
-          </View>
-
-          {renderInput('NOME COMPLETO', nome, setNome, 'Seu nome completo', 'person-outline', { autoCapitalize: 'words' })}
-          {renderInput('NOME SOCIAL (OPCIONAL)', nomeSocial, setNomeSocial, 'Nome social', 'person-outline', { autoCapitalize: 'words' })}
-          {renderInput('PRONOMES (OPCIONAL)', pronomes, setPronomes, 'Ex.: ela/dela, ele/dele', 'people-outline')}
-          {tipoUsuario === 'CONTRATANTE_EVENTOS' && renderInput('CPF OU CNPJ DA ORGANIZAÇÃO', cpfCnpj, setCpfCnpj, 'Digite CPF ou CNPJ', 'card-outline', { keyboardType: 'numeric' })}
-          {tipoUsuario === 'CONTRATANTE_EVENTOS' && renderInput('EMPRESA / ORGANIZAÇÃO', empresa, setEmpresa, 'Nome da empresa ou organização', 'business-outline', { autoCapitalize: 'words' })}
-          {tipoUsuario !== 'AGENTE' && renderInput(tipoUsuario === 'CONTRATANTE_EVENTOS' ? 'SEGMENTO DA ORGANIZAÇÃO' : 'ÁREA DAS OPORTUNIDADES', categoria, setCategoria, tipoUsuario === 'CONTRATANTE_EVENTOS' ? 'Ex.: eventos, cultura' : 'Ex.: design, produção, comunicação', 'briefcase-outline', { autoCapitalize: 'sentences' })}
-          {tipoUsuario === 'AGENTE' && renderInput('ÁREA DE ATUAÇÃO', especialidade, setEspecialidade, 'Ex.: fotografia, design, música', 'sparkles-outline', { autoCapitalize: 'sentences' })}
-          {renderInput('E-MAIL', email, setEmail, 'seu@email.com', 'mail-outline', { keyboardType: 'email-address', autoCapitalize: 'none', autoCorrect: false })}
-          {renderInput('TELEFONE / WHATSAPP', telefone, setTelefone, '(13) 99999-9999', 'call-outline', { keyboardType: 'phone-pad' })}
-          <Text style={styles.label}>ESTADO</Text>
-          <TouchableOpacity style={styles.selectWrap} onPress={() => setModalLocal('estado')}>
-            <Ionicons name="map-outline" size={21} color="#77716d" />
-            <Text style={[styles.selectText, !estado && styles.selectPlaceholder]}>{estado ? ESTADOS_BR.find((item) => item.sigla === estado)?.nome : 'Selecione seu estado'}</Text>
-            <Ionicons name="chevron-down" size={19} color="#77716d" />
-          </TouchableOpacity>
-          <Text style={styles.label}>CIDADE</Text>
-          <TouchableOpacity style={[styles.selectWrap, !estado && styles.selectDisabled]} disabled={!estado} onPress={() => setModalLocal('cidade')}>
-            <Ionicons name="location-outline" size={21} color="#77716d" />
-            <Text style={[styles.selectText, !cidade && styles.selectPlaceholder]}>{carregandoCidades ? 'Carregando cidades...' : cidade || (estado ? 'Selecione sua cidade' : 'Selecione o estado primeiro')}</Text>
-            <Ionicons name="chevron-down" size={19} color="#77716d" />
-          </TouchableOpacity>
-          {renderInput('ENDEREÇO', endereco, setEndereco, 'Rua, número e bairro (opcional)', 'navigate-outline', { autoCapitalize: 'sentences' })}
-          {tipoUsuario === 'CONTRATANTE_EVENTOS' && renderInput('SITE DA ORGANIZAÇÃO (OPCIONAL)', site, setSite, 'https://suaorganizacao.com.br', 'globe-outline', { keyboardType: 'url', autoCapitalize: 'none', autoCorrect: false })}
-          <Modal visible={modalLocal !== null} transparent animationType="slide" onRequestClose={() => setModalLocal(null)}>
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalCard}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>{modalLocal === 'estado' ? 'Selecione seu estado' : 'Selecione sua cidade'}</Text>
-                  <TouchableOpacity onPress={() => setModalLocal(null)}><Ionicons name="close" size={24} color="#302a31" /></TouchableOpacity>
-                </View>
-                {modalLocal === 'estado' ? (
-                  <FlatList data={ESTADOS_BR} keyExtractor={(item) => item.sigla} renderItem={({ item }) => <TouchableOpacity style={styles.option} onPress={() => selecionarEstado(item.sigla)}><Text style={styles.optionText}>{item.nome}</Text><Text style={styles.optionUf}>{item.sigla}</Text></TouchableOpacity>} />
-                ) : (
-                  <><View style={styles.citySearchWrap}><Ionicons name="search-outline" size={19} color="#77716d" /><TextInput style={styles.citySearchInput} value={buscaCidade} onChangeText={setBuscaCidade} placeholder="Pesquisar cidade..." placeholderTextColor="#77716d" autoCapitalize="words" autoCorrect={false} /></View><FlatList data={cidades.filter((item) => item.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaCidade.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()))} keyExtractor={(item) => String(item.id)} renderItem={({ item }) => <TouchableOpacity style={styles.option} onPress={() => { setCidade(item.nome); setBuscaCidade(''); setModalLocal(null); }}><Text style={styles.optionText}>{item.nome}</Text></TouchableOpacity>} ListEmptyComponent={<Text style={styles.emptyText}>{carregandoCidades ? 'Carregando...' : 'Nenhuma cidade encontrada.'}</Text>} /></>
-                )}
-              </View>
-            </View>
-          </Modal>
-
-          {tipoUsuario === 'AGENTE' && renderInput('SOBRE VOCÊ', bio, setBio, 'Apresente seu trabalho em poucas palavras', 'document-text-outline', { multiline: true, numberOfLines: 3, textAlignVertical: 'top' })}
-
-          <Text style={styles.sectionTitle}>SEGURANÇA</Text>
-          {renderInput('SENHA', senha, setSenha, 'Mínimo de 8 caracteres', 'lock-closed-outline', { secureTextEntry: true, autoCapitalize: 'none' })}
-          {renderInput('CONFIRMAR SENHA', confirmarSenha, setConfirmarSenha, 'Digite a senha novamente', 'shield-checkmark-outline', { secureTextEntry: true, autoCapitalize: 'none' })}
-
-          <TouchableOpacity style={styles.termsRow} onPress={() => setAceitouTermos((value) => !value)}>
-            <View style={[styles.checkbox, aceitouTermos && styles.checkboxActive]}>
-              {aceitouTermos && <Ionicons name="checkmark" size={16} color="#f7f2e9" />}
-            </View>
-            <Text style={styles.termsText}>Li e aceito os termos de uso e a política de privacidade da Arthere.</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={carregando}>
-            {carregando ? (
-              <ActivityIndicator color="#f7f2e9" />
-            ) : (
-              <>
-                <Text style={styles.buttonText}>CRIAR MINHA CONTA</Text>
-                <Ionicons name="arrow-forward" size={22} color="#f7f2e9" />
-              </>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.registerRow}>
-            <Text style={styles.registerText}>Já possui uma conta?</Text>
-            <Text style={styles.registerLink}>FAÇA LOGIN</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </>
+      )}
+      <View style={{ gap: spacing.sm }}>
+        {Object.keys(errors).length ? <AppText variant="bodySmall" color="dangerText" accessibilityRole="alert">Revise os campos indicados acima.</AppText> : null}
+        {failure ? <AppText variant="bodySmall" color="dangerText" accessibilityRole="alert">{failure}</AppText> : null}
+        <Button fullWidth loading={busy} accessibilityLabel={busy ? 'Criando conta' : undefined}
+          onPress={() => void next()}>{step === 2 ? 'Criar conta' : 'Continuar'}</Button>
+        {step === 0 ? <Button variant="ghost" onPress={() => navigation.popTo('Login')}>Já tenho conta</Button> : null}
+      </View>
+    </ProfileFormLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f7f2e9' },
-  scroll: { flexGrow: 1, paddingBottom: 28 },
-  visualHeader: { height: 190, backgroundColor: '#28232b', overflow: 'hidden', position: 'relative' },
-  back: { position: 'absolute', left: 18, top: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: '#f7f2e9', borderWidth: 1, borderColor: '#d5cec4', alignItems: 'center', justifyContent: 'center', zIndex: 6 },
-  headerText: { marginLeft: 24, marginTop: 28, paddingRight: 118, zIndex: 4 },
-  eyebrow: { color: '#f2c75c', fontSize: 10, fontWeight: '900', letterSpacing: 1.7 },
-  brand: { color: '#f7f2e9', fontSize: 40, lineHeight: 44, fontWeight: '900', letterSpacing: -1.6, marginTop: 5 },
-  brandLine: { width: 72, height: 5, backgroundColor: '#f25b43', marginTop: 8, marginBottom: 14 },
-  headerDescription: { color: '#f7f2e9', fontSize: 13, lineHeight: 19, opacity: 0.92 },
-  logoArt: { position: 'absolute', right: 2, top: 34, width: 116, height: 158, zIndex: 3, shadowColor: '#f7f2e9', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.28, shadowRadius: 5, elevation: 4 },
-  logo: { width: '100%', height: '100%', opacity: 1 },
-  shapeCoral: { position: 'absolute', right: 82, top: 0, width: 52, height: 96, backgroundColor: '#f25b43', borderBottomLeftRadius: 7, borderBottomRightRadius: 7, transform: [{ rotate: '1deg' }] },
-  shapeYellow: { position: 'absolute', right: -4, top: 32, width: 94, height: 46, backgroundColor: '#f2d28b', borderRadius: 9, transform: [{ rotate: '-4deg' }] },
-  shapeBlue: { position: 'absolute', right: -12, bottom: -27, width: 84, height: 102, backgroundColor: '#8ac6d8', borderTopLeftRadius: 30, transform: [{ rotate: '20deg' }] },
-  form: { paddingHorizontal: 24, paddingTop: 28 },
-  title: { color: '#302a31', fontSize: 30, lineHeight: 36, fontWeight: '900', marginBottom: 4 },
-  subtitle: { color: '#77716d', fontSize: 15, lineHeight: 21, marginBottom: 26 },
-  sectionTitle: { color: '#514b4a', fontSize: 11, fontWeight: '900', letterSpacing: 1.5, marginTop: 5, marginBottom: 12 },
-  label: { color: '#514b4a', fontSize: 11, fontWeight: '900', letterSpacing: 1.2, marginBottom: 8, marginTop: 2 },
-  roles: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 22 },
-  role: { flexGrow: 1, flexBasis: '45%', minHeight: 110, backgroundColor: '#fbf8f2', borderWidth: 1, borderColor: '#d5cec4', padding: 14, justifyContent: 'center', borderRadius: 18 },
-  roleAgentActive: { borderColor: '#647FA8', backgroundColor: '#DCE7F7', borderWidth: 2, borderRadius: 18 },
-  roleEventsActive: { borderColor: '#648A78', backgroundColor: '#DCEBE3', borderWidth: 2, borderRadius: 18 },
-  roleOpportunitiesActive: { borderColor: '#9275AA', backgroundColor: '#EADFF2', borderWidth: 2, borderRadius: 18 },
-  roleTitle: { color: '#302a31', fontSize: 12, fontWeight: '900', letterSpacing: 0.7, marginTop: 8 },
-  roleSub: { color: '#77716d', fontSize: 12, marginTop: 4 },
-  inputWrap: { minHeight: 56, backgroundColor: '#fbf8f2', borderWidth: 1, borderColor: '#d5cec4', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, marginBottom: 18, borderRadius: 16 },
-  input: { flex: 1, color: '#302a31', fontSize: 16, marginLeft: 11, paddingVertical: 12, minHeight: 54 },
-  selectWrap: { minHeight: 56, backgroundColor: '#fbf8f2', borderWidth: 1, borderColor: '#d5cec4', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, marginBottom: 18, borderRadius: 16 },
-  selectText: { flex: 1, color: '#302a31', fontSize: 16, marginLeft: 11 },
-  selectPlaceholder: { color: '#77716d' },
-  selectDisabled: { opacity: 0.55 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(40,35,43,0.45)', justifyContent: 'flex-end' },
-  modalCard: { maxHeight: '78%', backgroundColor: '#f7f2e9', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  modalTitle: { color: '#302a31', fontSize: 20, fontWeight: '900' },
-  option: { minHeight: 52, borderBottomWidth: 1, borderBottomColor: '#e2dbd1', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  optionText: { color: '#302a31', fontSize: 15, fontWeight: '700' },
-  optionUf: { color: '#f25b43', fontSize: 12, fontWeight: '900' },
-  emptyText: { textAlign: 'center', color: '#77716d', paddingVertical: 30 },
-  citySearchWrap: { minHeight: 48, borderWidth: 1, borderColor: '#d5cec4', borderRadius: 14, backgroundColor: '#fbf8f2', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, marginBottom: 10 },
-  citySearchInput: { flex: 1, color: '#302a31', fontSize: 15, marginLeft: 9, paddingVertical: 9 },
-  termsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2, marginBottom: 22, gap: 11 },
-  checkbox: { width: 24, height: 24, borderWidth: 2, borderColor: '#aaa19a', alignItems: 'center', justifyContent: 'center', borderRadius: 16 },
-  checkboxActive: { backgroundColor: '#28232b', borderColor: '#28232b' },
-  termsText: { flex: 1, color: '#77716d', fontSize: 12, lineHeight: 18 },
-  button: { minHeight: 58, backgroundColor: '#28232b', paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 999 },
-  buttonText: { color: '#f7f2e9', fontSize: 13, fontWeight: '900', letterSpacing: 1.3 },
-  registerRow: { flexDirection: 'row', justifyContent: 'center', gap: 7, marginTop: 24 },
-  registerText: { color: '#77716d', fontSize: 13 },
-  registerLink: { color: '#f25b43', fontSize: 12, fontWeight: '900', letterSpacing: 0.8 },
-});
