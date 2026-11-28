@@ -1,14 +1,15 @@
-import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
-import { createReadStream, createWriteStream, readFileSync } from 'node:fs';
-import { mkdtemp, readFile, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { createReadStream, readFileSync } from 'node:fs';
+import { open, readFile, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
-import { createGunzip, createGzip } from 'node:zlib';
+import { createGzip } from 'node:zlib';
+import { Readable } from 'node:stream';
+import { createConnection, type Connection } from 'mariadb';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
-import { PrismaClient, type Prisma } from '../../../src/generated/prisma/client';
+import { PrismaClient } from '../../../src/generated/prisma/client';
 import { sha256 } from './images';
+import { archive, readArchive, restoreArchive, type ArchiveInfo } from './archive';
 
 export class SeedError extends Error {}
 
@@ -19,7 +20,7 @@ const applicationTables = [
 ];
 const stateTable = 'arthere_state';
 const expectedTables = new Set([...applicationTables, '_prisma_migrations', controlTable, stateTable]);
-type Queryable = Pick<Prisma.TransactionClient, '$queryRaw' | '$executeRaw'>;
+type Queryable = { $queryRaw<T>(parts: TemplateStringsArray, ...values: unknown[]): Promise<T> };
 
 export async function stateDigest(db: Queryable) {
   const exists = await db.$queryRaw<unknown[]>`
@@ -74,15 +75,24 @@ function parseTarget(value: string, strict = true) {
 
 export type Target = ReturnType<typeof databaseTarget>;
 
-export function connect(target: Target) {
+function connectionOptions(target: Target) {
   const { host, port, user, password, database, local } = target;
-  return new PrismaClient({ adapter: new PrismaMariaDb({
+  return {
     host, port, user, password, database,
     ...(local ? {} : { ssl: { rejectUnauthorized: true,
       ...(process.env.DEMO_SEED_TLS_CA ? { ca: readFileSync(process.env.DEMO_SEED_TLS_CA, 'utf8') } : {}),
     } }),
     connectionLimit: 4, connectTimeout: 5_000, acquireTimeout: 8_000,
-  }) });
+  };
+}
+
+export function connect(target: Target) {
+  return new PrismaClient({ adapter: new PrismaMariaDb(connectionOptions(target)) });
+}
+
+function reader(connection: Connection) {
+  return { $queryRaw: <T>(parts: TemplateStringsArray, ...values: unknown[]): Promise<T> =>
+    connection.query(parts.join('?'), values) };
 }
 
 export async function inspect(db: Queryable, target: Target) {
@@ -118,24 +128,28 @@ export async function inspect(db: Queryable, target: Target) {
     throw new SeedError('O destino possui triggers, rotinas, eventos SQL ou referências entre bancos. A operação foi interrompida.');
   }
 
+  await assertScopedGrants(db, target.database);
+
+  const hasState = names.has(stateTable);
+  const hasStateRows = hasState && (await db.$queryRaw<unknown[]>`SELECT 1 FROM arthere_state LIMIT 1`).length > 0;
+  return { target: target.label, identity: sha256(`${target.label}|${current.serverName}`),
+    hasControl: names.has(controlTable), hasState, tables: [...names].sort(), hasStateRows };
+}
+
+async function assertScopedGrants(db: Queryable, database: string) {
   const grants = await db.$queryRaw<Record<string, unknown>[]>`SHOW GRANTS FOR CURRENT_USER()`;
-  const schemaGrant = ` ON \`${target.database.replaceAll('_', '\\_')}\`.* TO `;
+  const schemaGrant = ` ON \`${database.replaceAll('_', '\\_')}\`.* TO `;
   if (!grants.length || grants.some((row) => {
     const grant = String(Object.values(row)[0]);
     return /WITH GRANT OPTION/i.test(grant) || (!/^GRANT USAGE ON \*\.\* TO /i.test(grant) && !grant.includes(schemaGrant));
   })) {
     throw new SeedError('O usuário do seed deve ter acesso apenas ao schema de destino (escape os underscores no GRANT) e não pode delegar permissões.');
   }
-
-  const hasState = names.has(stateTable);
-  const hasStateRows = hasState && (await db.$queryRaw<unknown[]>`SELECT 1 FROM arthere_state LIMIT 1`).length > 0;
-  return { target: target.label, identity: sha256(`${target.label}|${current.serverName}`),
-    hasControl: names.has(controlTable), hasState, hasStateRows };
 }
 
 export type DatabaseInfo = Awaited<ReturnType<typeof inspect>>;
 
-type Backup = { id: string; identity: string; target: string; createdAt: string; sha256: string; bytes: number };
+type Backup = ArchiveInfo & { id: string; identity: string; target: string; createdAt: string; sha256: string; bytes: number };
 
 async function artifactDirectory() {
   const configured = process.env.DEMO_SEED_ARTIFACT_DIR;
@@ -161,51 +175,39 @@ async function hashFile(path: string) {
   return hash.digest('hex');
 }
 
-async function checkDump(path: string, database: string, info: DatabaseInfo) {
-  let header = '';
-  let tail = '';
-  let stateDefinition = false;
-  let stateRows = false;
-  await pipeline(createReadStream(path), createGunzip(), async (stream) => {
-    for await (const block of stream) {
-      const text = block.toString('utf8');
-      if (header.length < 32_768) header = (header + text).slice(0, 32_768);
-      const window = tail + text;
-      stateDefinition ||= /(?:^|\n)CREATE TABLE `arthere_state`/.test(window);
-      stateRows ||= /(?:^|\n)INSERT INTO `arthere_state`/.test(window);
-      tail = window.slice(-2_048);
-    }
-  });
-  if (!header.includes(`-- Current Database: \`${database}\``) || !tail.includes('-- Dump completed on ')) {
-    throw new SeedError('O dump não contém o cabeçalho do destino ou a marca de conclusão.');
-  }
-  if ((info.hasState && !stateDefinition) || (info.hasStateRows && !stateRows)) {
-    throw new SeedError('O dump não contém a tabela arthere_state ou seus registros.');
-  }
-}
-
 const backupIdPattern = /^[0-9]{14}-[a-f0-9]{8}$/;
 
-export async function verifyBackup(target: Target, info: DatabaseInfo, id: string) {
+async function loadBackup(id: string) {
   if (!backupIdPattern.test(id)) throw new SeedError('Use o ID retornado por seed:demo:backup.');
   const directory = await artifactDirectory();
   const root = join(directory, id);
+  const file = root + '.jsonl.gz';
+  const receipt: Backup = JSON.parse(await readFile(root + '.json', 'utf8'));
+  const fileInfo = await stat(file);
+  if (receipt.id !== id || !Array.isArray(receipt.tables) || new Set(receipt.tables).size !== receipt.tables.length ||
+    !receipt.tables.every((name) => expectedTables.has(name)) ||
+    ![...applicationTables, '_prisma_migrations'].every((name) => receipt.tables.includes(name)) ||
+    typeof receipt.hasStateRows !== 'boolean' || (receipt.hasStateRows && !receipt.tables.includes(stateTable)) ||
+    !fileInfo.isFile() || fileInfo.size !== receipt.bytes || fileInfo.size === 0 ||
+    (process.platform !== 'win32' && Boolean(fileInfo.mode & 0o077)) ||
+    await hashFile(file) !== receipt.sha256) {
+    throw new SeedError('Recibo ou arquivo de backup inválido.');
+  }
+  return { file, receipt };
+}
+
+export async function verifyBackup(target: Target, info: DatabaseInfo, id: string) {
   try {
-    const receipt: Backup = JSON.parse(await readFile(root + '.json', 'utf8'));
-    const file = root + '.sql.gz';
+    const { file, receipt } = await loadBackup(id);
     const age = Date.now() - Date.parse(receipt.createdAt);
-    const snapshot = await stat(file);
-    if (receipt.id !== id || receipt.target !== info.target || receipt.identity !== info.identity
-      || !(age >= 0 && age <= 24 * 60 * 60 * 1000)
-      || !snapshot.isFile() || snapshot.size !== receipt.bytes || snapshot.size === 0
-      || (process.platform !== 'win32' && Boolean(snapshot.mode & 0o077))
-      || await hashFile(file) !== receipt.sha256) {
-      throw new Error();
+    if (receipt.target !== target.label || receipt.identity !== info.identity ||
+      JSON.stringify(receipt.tables) !== JSON.stringify(info.tables) || !(age >= 0 && age <= 24 * 60 * 60 * 1000)) {
+      throw new Error('Recibo de outro destino ou fora da janela.');
     }
-    await checkDump(file, target.database, info);
+    await readArchive(file, { ...info, hasStateRows: info.hasStateRows || receipt.hasStateRows });
     return receipt;
   } catch {
-    throw new SeedError('Backup ausente, vencido, íntegro apenas parcialmente ou de outro destino. Gere um novo backup verificado.');
+    throw new SeedError('Backup ausente, vencido, incompleto ou de outro destino. Gere um novo backup verificado.');
   }
 }
 
@@ -214,48 +216,52 @@ export async function backup(target: Target, info: DatabaseInfo) {
   const started = new Date();
   const id = `${started.toISOString().slice(0, 19).replace(/\D/g, '')}-${randomUUID().slice(0, 8)}`;
   const root = join(directory, id);
-  const options = await mkdtemp(join(tmpdir(), 'arthere-dump-'));
-  const optionFile = join(options, 'client.cnf');
-  const escaped = JSON.stringify(target.password);
+  const file = root + '.jsonl.gz';
+  const connection = await createConnection(connectionOptions(target));
+  let created = false;
+  let receiptWritten = false;
   try {
-    await writeFile(optionFile, `[client]\npassword=${escaped}\n`, { flag: 'wx', mode: 0o600 });
-    const dialect = process.env.DEMO_SEED_DUMP_CLIENT || (target.primary ? 'mysql' : 'mariadb');
-    if (dialect !== 'mysql' && dialect !== 'mariadb') throw new SeedError('Use mysql ou mariadb em DEMO_SEED_DUMP_CLIENT.');
-    const mysql = dialect === 'mysql';
-    const dumpOptions = mysql
-      ? ['--no-tablespaces', '--set-gtid-purged=OFF', ...(target.local ? [] : ['--ssl-mode=VERIFY_IDENTITY'])]
-      : target.local ? [] : ['--ssl', '--ssl-verify-server-cert'];
-    const args = [
-      `--defaults-file=${optionFile}`, '--protocol=TCP', `--host=${target.host}`,
-      `--port=${target.port}`, `--user=${target.user}`, '--single-transaction', '--skip-lock-tables',
-      '--quick', '--hex-blob', '--default-character-set=utf8mb4', '--skip-add-drop-table',
-      ...dumpOptions,
-      ...(!target.local && process.env.DEMO_SEED_TLS_CA ? [`--ssl-ca=${process.env.DEMO_SEED_TLS_CA}`] : []),
-      '--databases', target.database,
-    ];
-    const child = spawn(process.env.DEMO_SEED_DUMP_BIN || (mysql ? 'mysqldump' : 'mariadb-dump'), args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    child.stderr.resume();
-    const exit = new Promise<void>((done, fail) => {
-      child.once('error', fail);
-      child.once('close', (code) => code === 0 ? done() : fail(new Error('dump')));
+    const data = archive(connection, async () => {
+      const current = await inspect(reader(connection), target);
+      if (current.identity !== info.identity || JSON.stringify(current.tables) !== JSON.stringify(info.tables)) {
+        throw new SeedError('O destino mudou durante o backup.');
+      }
+      return current;
     });
-    const file = root + '.sql.gz';
-    try {
-      await Promise.all([exit, pipeline(child.stdout, createGzip(), createWriteStream(file, { flags: 'wx', mode: 0o600 }))]);
-      await checkDump(file, target.database, info);
-      const receipt: Backup = {
-        id, identity: info.identity, target: info.target, createdAt: started.toISOString(),
-        sha256: await hashFile(file), bytes: (await stat(file)).size,
-      };
-      await writeFile(root + '.json', JSON.stringify(receipt, null, 2), { flag: 'wx', mode: 0o600 });
-      return { ...await verifyBackup(target, info, id), file };
-    } catch {
-      child.kill();
-      await rm(file, { force: true });
-      await rm(root + '.json', { force: true });
-      throw new SeedError('Não foi possível gerar um dump consistente. Verifique o cliente de backup, o acesso e a integridade do destino.');
-    }
+    const output = await open(file, 'wx', 0o600);
+    created = true;
+    await pipeline(Readable.from(data), createGzip(), output.createWriteStream());
+    const receipt: Backup = {
+      id, identity: info.identity, target: info.target, tables: info.tables, hasStateRows: info.hasStateRows,
+      createdAt: started.toISOString(), sha256: await hashFile(file), bytes: (await stat(file)).size,
+    };
+    await writeFile(root + '.json', JSON.stringify(receipt, null, 2), { flag: 'wx', mode: 0o600 });
+    receiptWritten = true;
+    return { ...await verifyBackup(target, info, id), file };
+  } catch {
+    if (created) await rm(file, { force: true });
+    if (receiptWritten) await rm(root + '.json', { force: true });
+    throw new SeedError('Não foi possível gerar um backup completo e consistente. Verifique o destino, os tipos de coluna e o espaço disponível.');
   } finally {
-    await rm(options, { recursive: true, force: true });
+    // Closing the dedicated connection also rolls back an interrupted read-only snapshot.
+    await connection.end();
+  }
+}
+
+export async function restore(url: string, confirm: string, id: string) {
+  const parsed = parseTarget(url);
+  if (!parsed.local || !/^arthere_restore_[a-z0-9_]{1,40}$/.test(parsed.database) || confirm !== parsed.database) {
+    throw new SeedError('Restauração permitida apenas em schema local descartável arthere_restore_*, com confirmação explícita.');
+  }
+  const { file, receipt } = await loadBackup(id);
+  await readArchive(file, receipt);
+  const target = { ...parsed, primary: false, label: `${parsed.host}:${parsed.port}/${parsed.database}` };
+  const connection = await createConnection(connectionOptions(target));
+  try {
+    await assertScopedGrants(reader(connection), target.database);
+    const counts = await restoreArchive(connection, file, receipt);
+    return { status: 'restaurado e verificado', destino: target.label, backup: id, counts };
+  } finally {
+    await connection.end();
   }
 }

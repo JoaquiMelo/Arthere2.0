@@ -1,12 +1,14 @@
 import assert = require('node:assert/strict');
 import { randomBytes } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { gzipSync } from 'node:zlib';
+import { readArchive } from './archive';
 import { activeBatch, assertEmpty, cleanup, cleanupPlan, ensureLedger, listBatches, population, validation } from './batches';
-import { prepareImages, validPng } from './images';
+import { prepareImages, sha256, validPng } from './images';
 import { demo, makePlan } from './plan';
 import { connect, databaseTarget, inspect, stateDigest } from './safety';
 import { validatePlan } from './validate';
@@ -161,5 +163,31 @@ test('modo compartilhado preserva contas reais e arthere_state e bloqueia referÃ
     await assertEmpty(db);
   } finally {
     await db.$disconnect();
+  }
+});
+
+test('arquivo Node exige todas as linhas, a tabela de estado e o marcador final', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'arthere-archive-'));
+  try {
+    const path = join(dir, 'backup.jsonl.gz');
+    const expected = { identity: 'teste', tables: ['arthere_state'], hasStateRows: true };
+    const header = { format: 'arthere-mysql-v1', ...expected,
+      version: '8.4.8', charset: 'utf8mb4', collation: 'utf8mb4_unicode_ci', sqlMode: 'STRICT_TRANS_TABLES' };
+    const table = { table: 'arthere_state', ddl: 'CREATE TABLE `arthere_state` (id INT) ENGINE=InnoDB',
+      columns: [{ name: 'id', type: 'int', charset: null, generated: false }] };
+    const row = ['1'];
+    const footer = { count: 1, digest: sha256(JSON.stringify(row)) };
+    const end = { complete: true };
+    const save = (records: unknown[]) => writeFileSync(path, gzipSync(records.map((record) => JSON.stringify(record)).join('\n')));
+    save([header, table, row, footer, end]);
+    await readArchive(path, expected);
+    save([header, table, ['2'], footer, end]);
+    await assert.rejects(readArchive(path, expected), /Integridade/);
+    save([header, table, { count: 0, digest: '0'.repeat(64) }, end]);
+    await assert.rejects(readArchive(path, expected), /Integridade/);
+    save([header, table, row, footer]);
+    await assert.rejects(readArchive(path, expected), /incompleto/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });

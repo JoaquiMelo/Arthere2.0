@@ -4,9 +4,9 @@
 
 O modo compartilhado aceita somente o schema `db_arthere`. A URL do seed deve ter o mesmo host, porta e schema de `DATABASE_URL`. A credencial do seed deve ter acesso restrito ao schema. O seed usa `baixada` como identificador fixo no banco principal. Os registros continuarão visíveis e marcados como demonstrativos na API existente.
 
-Antes da janela de manutenção, confirme com o DBA que o banco usa as migrations da versão atual, apenas tabelas InnoDB previstas do Arthere, incluindo a tabela operacional opcional `arthere_state`, e nenhuma referência entre schemas, trigger, rotina ou evento do MySQL. No grant do usuário do seed, escape o underscore de `db_arthere` para evitar um padrão de nomes. O seed usa o `mysqldump` do MySQL para o banco principal e verifica o TLS de destinos remotos. Caso o servidor use uma CA própria, informe o caminho de seu PEM em `DEMO_SEED_TLS_CA`, tanto para o dump como para a conexão. Se `mysqldump.exe` estiver fora do PATH, informe seu caminho em `DEMO_SEED_DUMP_BIN`.
+Antes da janela de manutenção, confirme com o DBA que o banco usa as migrations da versão atual, apenas tabelas InnoDB previstas do Arthere, incluindo a tabela operacional opcional `arthere_state`, e nenhuma referência entre schemas, trigger, rotina ou evento do MySQL. No grant do usuário do seed, escape o underscore de `db_arthere` para evitar um padrão de nomes. O backup conecta diretamente ao MySQL remoto pelo driver do backend, com verificação TLS. Caso o servidor use uma CA própria, informe o caminho de seu PEM em `DEMO_SEED_TLS_CA`. O fluxo no Windows usa Node.js 24 e npm.
 
-No arquivo **local e não versionado** `backend/.env`, configure `DATABASE_URL` com a referência da API e `DEMO_SEED_DATABASE_URL` com a credencial de manutenção. Use a codificação percentual de caracteres especiais nas URLs. Defina `DEMO_SEED_PASSWORD` com a senha aleatória das três contas e `DEMO_SEED_ARTIFACT_DIR` com um diretório absoluto privado fora do Git, com ACL restrita. Deixe `DEMO_SEED_ALLOW_WRITE=false` e `DEMO_SEED_ALLOW_PRIMARY_DATABASE=false` no arquivo. `DEMO_SEED_BATCH_ID=baixada` e `DEMO_SEED_RANDOM_SEED=20261128` fixam a configuração inicial. As variáveis ficam na sessão do PowerShell durante a operação, sem alterações nas configurações do Render.
+No arquivo **local e não versionado** `backend/.env`, mantenha `DATABASE_URL` com a conexão da API. Deixe `DEMO_SEED_DATABASE_URL` vazia para usar essa mesma conexão, ou informe uma credencial de manutenção para o mesmo destino. Use a codificação percentual de caracteres especiais nas URLs. Defina `DEMO_SEED_PASSWORD` com a senha aleatória das três contas e `DEMO_SEED_ARTIFACT_DIR` com um diretório absoluto privado fora do Git, com ACL restrita. Deixe `DEMO_SEED_ALLOW_WRITE=false` e `DEMO_SEED_ALLOW_PRIMARY_DATABASE=false` no arquivo. `DEMO_SEED_BATCH_ID=baixada` e `DEMO_SEED_RANDOM_SEED=20261128` fixam a configuração inicial. As variáveis ficam na sessão do PowerShell durante a operação, sem alterações nas configurações do Render.
 
 ```powershell
 git pull --ff-only origin main
@@ -16,12 +16,11 @@ npm run prisma:generate
 $env:DEMO_SEED_ALLOW_PRIMARY_DATABASE = 'true'
 $env:DEMO_SEED_ALLOW_WRITE = 'false'
 $env:DEMO_SEED_BATCH_ID = 'baixada'
-$env:DEMO_SEED_DUMP_CLIENT = 'mysql'
 npm run seed:demo:preview
 if ($LASTEXITCODE -ne 0) { throw 'Resolva os conflitos da prévia.' }
 ```
 
-Suspenda as escritas da API durante o backup e a carga. Rode os passos seguintes após sua aprovação manual. O backup é verificado pelo comando de backup e novamente pelo comando de carga. Se `arthere_state` existir, a verificação exige sua definição no dump e, se houver registros, os comandos de inserção. A carga e a limpeza conferem o conteúdo de `arthere_state` antes e depois, na mesma transação. A carga compara os dados preexistentes antes e depois, incluindo hashes de senha e mídia, dentro da transação. A saída inclui somente o resultado da verificação, sem valores reais.
+Suspenda as escritas da API durante o backup e a carga. Rode os passos seguintes após sua aprovação manual. O backup é verificado pelo comando de backup e novamente pelo comando de carga. Se `arthere_state` existir, a verificação exige sua estrutura e os registros correspondentes no arquivo. A carga e a limpeza conferem o conteúdo de `arthere_state` antes e depois, na mesma transação. A carga compara os dados preexistentes antes e depois, incluindo hashes de senha e mídia, dentro da transação. A saída inclui somente o resultado da verificação, sem valores reais.
 
 ```powershell
 $backupJson = npm run --silent seed:demo:backup
@@ -85,7 +84,7 @@ A limpeza compara todos os IDs das tabelas da aplicação com o manifesto. Qualq
 
 ## Configurar o ambiente demonstrativo
 
-1. Use Node 24 e instale as dependências no diretório `backend` com `npm ci`. Tenha `mariadb-dump` no PATH.
+1. Use Node 24 e instale as dependências no diretório `backend` com `npm ci`.
 2. Solicite ao administrador um database dedicado e um usuário com acesso somente a ele. Em MariaDB, **escape os underscores** no privilégio de database para evitar curingas, por exemplo, ``GRANT ALL PRIVILEGES ON `arthere\_demo\_banca`.* TO ...``. A confirmação do administrador deve abranger as referências entre schemas. Use TLS verificável para hosts remotos.
 3. Em um ambiente próprio, aponte `DATABASE_URL` para o database demonstrativo somente ao executar `npm run prisma:deploy` e `npm run prisma:generate` ou iniciar a API demonstrativa. Para o seed, informe o destino em `DEMO_SEED_DATABASE_URL` e mantenha `DATABASE_URL` vazio ou apontando para o database normal.
 4. Crie um diretório privado fora do repositório e configure `DEMO_SEED_ARTIFACT_DIR` para seu caminho absoluto. Em Linux/macOS, use permissão `700`. Configure `DEMO_SEED_PASSWORD` por variável de ambiente ou segredo local. Use uma senha aleatória entre 20 e 72 bytes. O administrador fornece as credenciais por canal privado.
@@ -100,7 +99,7 @@ npm run seed:demo:preview
 npm run seed:demo:backup
 ```
 
-A prévia funciona offline sem `DEMO_SEED_DATABASE_URL`. Com o destino definido, verifica migrations, grants, conflitos e conteúdo sem gravar no database. O backup cria um dump consistente em transação única, compacta, verifica formato e conclusão do dump e grava o SHA-256, tamanho, destino e horário. Preserve o dump e o recibo juntos em armazenamento privado. Suspenda alterações da API antes do backup e mantenha o ambiente sem tráfego de escrita até concluir a operação.
+A prévia funciona offline sem `DEMO_SEED_DATABASE_URL`. Com o destino definido, verifica migrations, grants, conflitos e conteúdo sem gravar no database. O backup lê um snapshot consistente InnoDB em uma transação, guarda a estrutura SQL e os registros de todas as tabelas autorizadas no arquivo `.jsonl.gz` e valida as contagens, os checksums das tabelas e o final do arquivo. O recibo `.json` guarda o SHA-256 do arquivo, tamanho, destino e horário. Preserve os dois arquivos juntos em armazenamento privado. Suspenda alterações da API antes do backup e mantenha o ambiente sem tráfego de escrita até concluir a operação.
 
 Com a aprovação para o **destino demonstrativo**, ative `DEMO_SEED_ALLOW_WRITE=true` na sessão e passe o nome exato do database e o ID emitido pelo backup dos últimos 24 h.
 
@@ -123,7 +122,16 @@ npm run seed:demo:clean -- --batch baixada --confirm arthere_demo_banca --backup
 
 A limpeza aplica filtros explícitos de IDs em ordem de dependência, mantém o manifesto e verifica que os registros foram removidos. Para atualizar a programação, faça uma nova prévia com outro lote depois de limpar ou prepare um database demonstrativo separado.
 
-Para testar uma restauração, use outro servidor ou instância descartável **sem o database homônimo**. Confira o SHA-256 e o gzip antes de importar. Em Linux, rode `sha256sum ARQUIVO.sql.gz` e `gzip -t ARQUIVO.sql.gz`; compare os resultados com o recibo. Importe na instância descartável com `gzip -dc ARQUIVO.sql.gz | mariadb --host HOST_ISOLADO --user ADMIN --password`. O dump carrega o nome original do database. Confira contagens, migrations, manifesto e imagens na restauração. Utilize acesso interativo ou arquivo de opções privado para a senha. A restauração em ambiente compartilhado exige avaliação individual do DBA.
+Para testar a restauração, use um MySQL local descartável da mesma versão do servidor de origem, com um schema vazio `arthere_restore_*` previamente provisionado e uma credencial restrita a ele. Esse schema é apenas para o teste de recuperação. A operação diária no remoto usa o `db_arthere` existente.
+
+```powershell
+# Defina DEMO_SEED_RESTORE_DATABASE_URL localmente com a conexão do schema descartável.
+npm run seed:demo:restore -- --confirm arthere_restore_teste --backup ID_DO_BACKUP
+```
+
+O restaurador revisa o recibo e o conteúdo antes de escrever no destino descartável. Recria tabelas, registros e constraints, compara a estrutura, as contagens e os checksums e verifica as chaves estrangeiras. Se uma restauração falhar, descarte o ambiente de teste antes de tentar novamente. O comando recusa `db_arthere`, hosts remotos e schemas com objetos preexistentes. O ID pode ser antigo para recuperação. Para autorizar carga ou limpeza, continua exigido um backup do destino nas últimas 24 horas com o mesmo conjunto de tabelas.
+
+O formato é um backup lógico completo do schema compatível com as verificações do seed, incluindo migrations, mídias, relações, controles de lote e `arthere_state`. Tipos de coluna incompatíveis, objetos SQL fora do esquema aceito ou divergências rejeitam a operação. Contas e privilégios do servidor e recuperação por log binário pertencem à infraestrutura MySQL. Backups SQL antigos continuam utilizáveis com suas ferramentas originais. Gere um backup no novo formato para autorizar a carga com esta versão.
 
 ## Imagens
 
@@ -134,6 +142,8 @@ O pipeline roda offline. Usa sete imagens de acervo Wikimedia Commons com licen�
 `npm run seed:demo:test` verifica geração determinística, integridade de datas, geolocalização, fallback e operação offline. Para executar também a suíte de rollback, concorrência e limpeza, forneça `DEMO_SEED_TEST_DATABASE_URL` apontando para um MariaDB local descartável com as migrations aplicadas e o schema vazio.
 
 ### Resultados da verificação
+
+- O formato Node foi restaurado num MySQL 8.4.8 descartável. A verificação confirmou as 11 migrations, 75 usuários, 350 imagens, as relações e a tabela `arthere_state` com JSON, bytes binários, valores numéricos de alta precisão e timestamp de microssegundos.
 
 - A adaptação para o banco compartilhado passou em MySQL 8.4.8 descartável com o cliente oficial `mysqldump`. Prévia, backup, carga, validação e limpeza preservaram o usuário de controle e seu hash de senha. Os oito testes automatizados também passaram com MariaDB isolado, incluindo o bloqueio de uma candidatura externa ligada a um evento demonstrativo.
 

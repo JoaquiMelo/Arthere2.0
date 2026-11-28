@@ -4,10 +4,10 @@ import { activeBatch, assertAvailable, assertEmpty, cleanup, cleanupPlan, ensure
 import { cities, specialties } from './catalog';
 import { prepareImages } from './images';
 import { makePlan, todayInBrazil, type SeedConfig } from './plan';
-import { backup, connect, databaseTarget, inspect, SeedError, verifyBackup } from './safety';
+import { backup, connect, databaseTarget, inspect, restore, SeedError, verifyBackup } from './safety';
 import { validatePlan } from './validate';
 
-const commands = ['preview', 'populate', 'validate', 'clean-preview', 'clean', 'report', 'backup'];
+const commands = ['preview', 'populate', 'validate', 'clean-preview', 'clean', 'report', 'backup', 'restore'];
 const log = (data: unknown) => console.log(JSON.stringify(data, null, 2));
 
 function settings(batchOption?: string) {
@@ -64,14 +64,21 @@ async function main() {
     },
   });
 
+  if (action === 'restore') {
+    const url = process.env.DEMO_SEED_RESTORE_DATABASE_URL;
+    if (!url || !values.confirm || !values.backup) throw new SeedError('Informe DEMO_SEED_RESTORE_DATABASE_URL, --confirm e --backup.');
+    log(await restore(url, values.confirm, values.backup));
+    return;
+  }
   const { config, requestedAnchor } = settings(values.batch);
-  const url = process.env.DEMO_SEED_DATABASE_URL;
+  const allowPrimary = process.env.DEMO_SEED_ALLOW_PRIMARY_DATABASE === 'true';
+  const url = process.env.DEMO_SEED_DATABASE_URL || (allowPrimary ? process.env.DATABASE_URL : undefined);
   if (!url && action === 'preview') {
     log({ destino: 'não configurado', modo: 'prévia offline', conflitos: 'verificação local do plano; falta consultar o destino', ...planReport(config) });
     return;
   }
   if (!url) throw new SeedError('Defina DEMO_SEED_DATABASE_URL para o schema dedicado de demonstração.');
-  const target = databaseTarget(url, process.env.DATABASE_URL, process.env.DEMO_SEED_ALLOW_PRIMARY_DATABASE === 'true');
+  const target = databaseTarget(url, process.env.DATABASE_URL, allowPrimary);
   if (target.primary && config.batch !== 'baixada') throw new SeedError('Use o lote baixada no banco principal.');
   const writes = action === 'populate' || action === 'clean';
   if (writes && (process.env.DEMO_SEED_ALLOW_WRITE !== 'true' || values.confirm !== target.database || !values.backup)) {
