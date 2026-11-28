@@ -1,5 +1,51 @@
 # Etapa 4.5 — Arthere Intelligent Data Seed
 
+## Banco principal MySQL no PowerShell
+
+O modo compartilhado aceita somente o schema `db_arthere`. A URL do seed deve ter o mesmo host, porta e schema de `DATABASE_URL`. A credencial do seed deve ter acesso restrito ao schema. O seed usa `baixada` como identificador fixo no banco principal. Os registros continuarão visíveis e marcados como demonstrativos na API existente.
+
+Antes da janela de manutenção, confirme com o DBA que o banco usa as migrations da versão atual, apenas tabelas InnoDB do Arthere e nenhuma referência entre schemas, trigger, rotina ou evento do MySQL. No grant do usuário do seed, escape o underscore de `db_arthere` para evitar um padrão de nomes. O seed usa o `mysqldump` do MySQL para o banco principal e verifica o TLS de destinos remotos. Caso o servidor use uma CA própria, informe o caminho de seu PEM em `DEMO_SEED_TLS_CA`, tanto para o dump como para a conexão. Se `mysqldump.exe` estiver fora do PATH, informe seu caminho em `DEMO_SEED_DUMP_BIN`.
+
+No arquivo **local e não versionado** `backend/.env`, configure `DATABASE_URL` com a referência da API e `DEMO_SEED_DATABASE_URL` com a credencial de manutenção. Use a codificação percentual de caracteres especiais nas URLs. Defina `DEMO_SEED_PASSWORD` com a senha aleatória das três contas e `DEMO_SEED_ARTIFACT_DIR` com um diretório absoluto privado fora do Git, com ACL restrita. Deixe `DEMO_SEED_ALLOW_WRITE=false` e `DEMO_SEED_ALLOW_PRIMARY_DATABASE=false` no arquivo. `DEMO_SEED_BATCH_ID=baixada` e `DEMO_SEED_RANDOM_SEED=20261128` fixam a configuração inicial. As variáveis ficam na sessão do PowerShell durante a operação, sem alterações nas configurações do Render.
+
+```powershell
+git pull --ff-only origin main
+Set-Location backend
+npm ci
+npm run prisma:generate
+$env:DEMO_SEED_ALLOW_PRIMARY_DATABASE = 'true'
+$env:DEMO_SEED_ALLOW_WRITE = 'false'
+$env:DEMO_SEED_BATCH_ID = 'baixada'
+$env:DEMO_SEED_DUMP_CLIENT = 'mysql'
+npm run seed:demo:preview
+if ($LASTEXITCODE -ne 0) { throw 'Resolva os conflitos da prévia.' }
+```
+
+Suspenda as escritas da API durante o backup e a carga. Rode os passos seguintes após sua aprovação manual. O backup é verificado pelo comando de backup e novamente pelo comando de carga. A carga compara os dados preexistentes antes e depois, incluindo hashes de senha e mídia, dentro da transação. A saída inclui somente o resultado da verificação, sem valores reais.
+
+```powershell
+$backupJson = npm run --silent seed:demo:backup
+if ($LASTEXITCODE -ne 0) { throw 'Backup falhou. A carga foi interrompida.' }
+$backup = $backupJson | Out-String | ConvertFrom-Json
+if (-not $backup.id) { throw 'Recibo de backup inválido.' }
+try {
+  $env:DEMO_SEED_ALLOW_WRITE = 'true'
+  npm run seed:demo -- --batch baixada --confirm db_arthere --backup $backup.id
+  if ($LASTEXITCODE -ne 0) { throw 'Carga interrompida.' }
+  npm run seed:demo:validate -- --batch baixada
+  if ($LASTEXITCODE -ne 0) { throw 'Validação detectou divergências.' }
+} finally {
+  $env:DEMO_SEED_ALLOW_WRITE = 'false'
+}
+```
+
+Para remoção em outra janela de manutenção, rode `npm run seed:demo:clean:preview -- --batch baixada`. Se estiver livre de bloqueios, gere um **novo** backup como no bloco acima e substitua o comando de população por `npm run seed:demo:clean -- --batch baixada --confirm db_arthere --backup $backup.id`. Uma referência externa ou alteração no lote bloqueia a limpeza inteira. Por exemplo, uma candidatura real para um evento demonstrativo permanece intacta, junto do evento. A limpeza nunca remove por e-mail ou por nome. Após a operação, encerre a sessão ou remova as autorizações do PowerShell.
+
+```powershell
+Remove-Item Env:DEMO_SEED_ALLOW_PRIMARY_DATABASE -ErrorAction SilentlyContinue
+Remove-Item Env:DEMO_SEED_ALLOW_WRITE -ErrorAction SilentlyContinue
+```
+
 ## Auditoria e modelo
 
 A aplicação usa NestJS, Prisma 7, MariaDB/MySQL e Expo SDK 58. O seed usa o cliente gerado e os modelos existentes.
@@ -29,11 +75,11 @@ O lote de teste `banca-qa` foi criado em `127.0.0.1:33328/arthere_demo_showcase`
 
 ## Isolamento e rastreabilidade
 
-Use um database MySQL/MariaDB separado com nome `arthere_demo_*`, inclusive se o servidor for compartilhado. A execução recusa um alvo com o nome do database em `DATABASE_URL`, grants globais, grants por padrão de nomes, tabelas inesperadas, engines não transacionais, triggers ou referências visíveis entre schemas. A conta do banco deve ter acesso exclusivamente ao schema demonstrativo. O DBA também deve confirmar a ausência de referências de outros schemas que o usuário restrito não tenha permissão de ver.
+No modo de demonstração isolada, use um database MySQL/MariaDB separado com nome `arthere_demo_*`, inclusive se o servidor for compartilhado. A execução recusa um alvo com o nome do database em `DATABASE_URL`, grants globais, grants por padrão de nomes, tabelas inesperadas, engines não transacionais, triggers ou referências visíveis entre schemas. A conta do banco deve ter acesso exclusivamente ao schema demonstrativo. O DBA também deve confirmar a ausência de referências de outros schemas que o usuário restrito não tenha permissão de ver.
 
 A API de demonstração roda separadamente, com acesso restrito, credenciais próprias e `JWT_SECRET` diferente. Aponte o Expo para essa API por `EXPO_PUBLIC_API_URL`. Mantenha o acesso do app normal no destino habitual. Use somente contas de teste na API demonstrativa. Os nomes de perfis, publicações, trabalhos e avaliações incluem **Demonstração**.
 
-O seed cria sua tabela de controle exclusivamente no schema dedicado, durante a primeira população confirmada. As migrations existentes são suficientes para os modelos da aplicação. Uma transação serializável com bloqueio de linha grava registros, imagens, manifesto de IDs e assinatura dos dados em conjunto. Concorrência é serializada. Uma execução repetida com os mesmos parâmetros preserva o lote existente. Se a conexão cair, consulte o relatório e rode novamente usando a mesma configuração.
+O seed cria sua tabela de controle apenas no schema autorizado, durante a primeira população confirmada. As migrations existentes são suficientes para os modelos da aplicação. Uma transação serializável com bloqueio de linha grava registros, imagens, manifesto de IDs e assinatura dos dados em conjunto. Concorrência é serializada. Uma execução repetida com os mesmos parâmetros preserva o lote existente. Se a conexão cair, consulte o relatório e rode novamente usando a mesma configuração.
 
 A limpeza compara todos os IDs das tabelas da aplicação com o manifesto. Qualquer registro adicional bloqueia a limpeza, inclusive candidaturas, mensagens, usuários ou uploads criados enquanto se testava o app. Com o tráfego da API suspenso, use a prévia para investigar. Para reapresentar depois de interações de teste, também é possível preparar um novo schema demonstrativo. O processo aceita registros do próprio lote já ausentes. O histórico do lote removido é preservado.
 
@@ -89,6 +135,8 @@ O pipeline roda offline. Usa sete imagens de acervo Wikimedia Commons com licen�
 
 ### Resultados da verificação
 
+- A adaptação para o banco compartilhado passou em MySQL 8.4.8 descartável com o cliente oficial `mysqldump`. Prévia, backup, carga, validação e limpeza preservaram o usuário de controle e seu hash de senha. Os oito testes automatizados também passaram com MariaDB isolado, incluindo o bloqueio de uma candidatura externa ligada a um evento demonstrativo.
+
 - Os seis testes automatizados passaram, incluindo rollback de uma falha após o início da transação, execução concorrente com uma única criação e proteção de um usuário fora do manifesto.
 - A API NestJS no ambiente isolado confirmou login nos três papéis, filtros por cidade e especialidade, coordenadas, portfólios, permissão de candidaturas, eventos, álbuns, vagas e mídias persistidas. A prévia Expo Web usou essa mesma API para conferir início, perfil, portfólio, calendário, álbum e vagas. O componente nativo do mapa ficou isolado na prévia web.
 - Todos os 80 pontos gravados ficaram dentro dos polígonos dos municípios correspondentes. [Malhas municipais do IBGE](https://servicodados.ibge.gov.br/api/docs/malhas?versao=3)
@@ -97,4 +145,4 @@ O pipeline roda offline. Usa sete imagens de acervo Wikimedia Commons com licen�
 
 A implementação está em `backend/prisma/seed/demo/`. Foram adicionados Faker com localização pt-BR e Resvg como dependências de desenvolvimento. As tabelas e rotas da API e o frontend mantêm os mesmos contratos. As alterações de configuração do repositório são `backend/package.json`, seu lockfile e `backend/.env.example`.
 
-A fase de escrita no banco atual exige aprovação explícita. O roteiro proposto usa um destino dedicado, sem alterar o banco atual nem a infraestrutura de produção. O destino remoto e o backup correspondente ainda precisam ser identificados antes de aprovar a população.
+A fase de escrita no banco atual exige aprovação explícita. O modo compartilhado é manual e o deploy no Render não chama comandos de seed.

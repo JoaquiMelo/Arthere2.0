@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 import { config as loadEnvironment } from 'dotenv';
-import { activeBatch, assertEmpty, cleanup, cleanupPlan, ensureLedger, listBatches, population, report, validation } from './batches';
+import { activeBatch, assertAvailable, assertEmpty, cleanup, cleanupPlan, ensureLedger, listBatches, population, report, validation } from './batches';
 import { cities, specialties } from './catalog';
 import { prepareImages } from './images';
 import { makePlan, todayInBrazil, type SeedConfig } from './plan';
@@ -71,7 +71,8 @@ async function main() {
     return;
   }
   if (!url) throw new SeedError('Defina DEMO_SEED_DATABASE_URL para o schema dedicado de demonstração.');
-  const target = databaseTarget(url, process.env.DATABASE_URL);
+  const target = databaseTarget(url, process.env.DATABASE_URL, process.env.DEMO_SEED_ALLOW_PRIMARY_DATABASE === 'true');
+  if (target.primary && config.batch !== 'baixada') throw new SeedError('Use o lote baixada no banco principal.');
   const writes = action === 'populate' || action === 'clean';
   if (writes && (process.env.DEMO_SEED_ALLOW_WRITE !== 'true' || values.confirm !== target.database || !values.backup)) {
     throw new SeedError('Informe DEMO_SEED_ALLOW_WRITE=true, --confirm com o nome exato do schema e --backup com o ID verificado.');
@@ -94,10 +95,13 @@ async function main() {
         const blockers: string[] = [];
         if (current) {
           if (JSON.stringify(current.config) !== JSON.stringify(config)) blockers.push('Já existe um lote ativo com outra configuração.');
-          const check = await validation(db, current.config.batch);
+          const check = await validation(db, current.config.batch, target.primary);
           if (!check.valid) blockers.push('O lote ativo sofreu alterações ou recebeu registros externos.');
         } else {
-          try { await assertEmpty(db); } catch (error) {
+          try {
+            if (target.primary) await assertAvailable(db, makePlan(config));
+            else await assertEmpty(db);
+          } catch (error) {
             if (!(error instanceof SeedError)) throw error;
             blockers.push(error.message);
           }
@@ -113,25 +117,26 @@ async function main() {
       case 'populate': {
         await verifyBackup(target, info, values.backup!);
         if (!info.hasControl) {
-          await assertEmpty(db);
+          if (target.primary) await assertAvailable(db, makePlan(config));
+          else await assertEmpty(db);
           await ensureLedger(db);
         }
         console.error(JSON.stringify({ fase: 'preparando lote', destino: info.target, lote: config.batch }));
-        const { status, manifest } = await population(db, makePlan(config), password!, values.backup!);
+        const { status, manifest } = await population(db, makePlan(config), password!, values.backup!, target.primary);
         log({ destino: info.target, status, lote: manifest.config, quantidades: manifest.counts,
           contasDeAcesso: manifest.accounts, backup: manifest.backupId });
         break;
       }
       case 'validate': {
         if (!info.hasControl) throw new SeedError('Nenhum lote registrado neste destino.');
-        const result = await validation(db, config.batch);
+        const result = await validation(db, config.batch, target.primary);
         log({ destino: info.target, ...result });
         if (!result.valid) process.exitCode = 1;
         break;
       }
       case 'clean-preview': {
         if (!info.hasControl) throw new SeedError('Nenhum lote registrado neste destino.');
-        const planned = await db.$transaction((tx) => cleanupPlan(tx, config.batch),
+        const planned = await db.$transaction((tx) => cleanupPlan(tx, config.batch, target.primary),
           { isolationLevel: 'RepeatableRead', timeout: 45_000 });
         log({ destino: info.target, modo: 'somente leitura', ...planned });
         if (planned.blocked) process.exitCode = 1;
@@ -140,7 +145,7 @@ async function main() {
       case 'clean': {
         if (!info.hasControl) throw new SeedError('Nenhum lote registrado neste destino.');
         await verifyBackup(target, info, values.backup!);
-        log({ destino: info.target, status: 'removido', ...await cleanup(db, config.batch, values.backup!) });
+        log({ destino: info.target, status: 'removido', ...await cleanup(db, config.batch, values.backup!, target.primary) });
         break;
       }
       case 'report': {

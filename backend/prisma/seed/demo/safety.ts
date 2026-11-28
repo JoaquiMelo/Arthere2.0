@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
-import { createReadStream, createWriteStream } from 'node:fs';
+import { createReadStream, createWriteStream, readFileSync } from 'node:fs';
 import { mkdtemp, readFile, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve } from 'node:path';
@@ -20,19 +20,22 @@ const applicationTables = [
 const expectedTables = new Set([...applicationTables, '_prisma_migrations', controlTable]);
 type Queryable = Pick<Prisma.TransactionClient, '$queryRaw' | '$executeRaw'>;
 
-export function databaseTarget(value: string, other?: string) {
+export function databaseTarget(value: string, other?: string, allowPrimary = false) {
   const url = parseTarget(value);
   const { host, port, database } = url;
-  if (!/^arthere_demo_[a-z0-9_]{1,40}$/.test(database) || !url.user || !url.password) {
-    throw new SeedError('Use um banco arthere_demo_* com usuário dedicado e credenciais próprias.');
+  const primary = database === 'db_arthere';
+  const application = other ? parseTarget(other, false) : undefined;
+  if (primary && (!allowPrimary || application?.database !== database
+    || application.host !== host || application.port !== port)) {
+    throw new SeedError('Para db_arthere, habilite DEMO_SEED_ALLOW_PRIMARY_DATABASE e confirme o mesmo host, porta e schema em DATABASE_URL.');
   }
-  if (other) {
-    const application = parseTarget(other, false);
-    if (application.database.toLowerCase() === database) {
-      throw new SeedError('O nome do banco-alvo coincide com DATABASE_URL. Separe os destinos antes de continuar.');
-    }
+  if ((!primary && !/^arthere_demo_[a-z0-9_]{1,40}$/.test(database)) || !url.user || !url.password) {
+    throw new SeedError('Use um schema autorizado com credenciais próprias.');
   }
-  return { ...url, label: `${host}:${port}/${database}` };
+  if (!primary && application?.database.toLowerCase() === database) {
+    throw new SeedError('O nome do banco-alvo coincide com DATABASE_URL. Separe os destinos antes de continuar.');
+  }
+  return { ...url, primary, label: `${host}:${port}/${database}` };
 }
 
 function parseTarget(value: string, strict = true) {
@@ -58,7 +61,9 @@ export function connect(target: Target) {
   const { host, port, user, password, database, local } = target;
   return new PrismaClient({ adapter: new PrismaMariaDb({
     host, port, user, password, database,
-    ...(local ? {} : { ssl: { rejectUnauthorized: true } }),
+    ...(local ? {} : { ssl: { rejectUnauthorized: true,
+      ...(process.env.DEMO_SEED_TLS_CA ? { ca: readFileSync(process.env.DEMO_SEED_TLS_CA, 'utf8') } : {}),
+    } }),
     connectionLimit: 4, connectTimeout: 5_000, acquireTimeout: 8_000,
   }) });
 }
@@ -89,8 +94,11 @@ export async function inspect(db: Queryable, target: Target) {
        OR (TABLE_SCHEMA = DATABASE() AND REFERENCED_TABLE_SCHEMA <> DATABASE())`;
   const triggers = await db.$queryRaw<{ count: bigint }[]>`
     SELECT COUNT(*) AS count FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = DATABASE()`;
-  if (Number(foreign[0].count) || Number(triggers[0].count)) {
-    throw new SeedError('O destino possui triggers ou referências entre bancos. A operação foi interrompida.');
+  const databaseCode = await db.$queryRaw<{ count: bigint }[]>`
+    SELECT (SELECT COUNT(*) FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = DATABASE())
+      + (SELECT COUNT(*) FROM information_schema.EVENTS WHERE EVENT_SCHEMA = DATABASE()) AS count`;
+  if (Number(foreign[0].count) || Number(triggers[0].count) || Number(databaseCode[0].count)) {
+    throw new SeedError('O destino possui triggers, rotinas, eventos SQL ou referências entre bancos. A operação foi interrompida.');
   }
 
   const grants = await db.$queryRaw<Record<string, unknown>[]>`SHOW GRANTS FOR CURRENT_USER()`;
@@ -99,7 +107,7 @@ export async function inspect(db: Queryable, target: Target) {
     const grant = String(Object.values(row)[0]);
     return /WITH GRANT OPTION/i.test(grant) || (!/^GRANT USAGE ON \*\.\* TO /i.test(grant) && !grant.includes(schemaGrant));
   })) {
-    throw new SeedError('O usuário do seed deve ter acesso apenas ao schema demonstrativo (escape os underscores no GRANT) e não pode delegar permissões.');
+    throw new SeedError('O usuário do seed deve ter acesso apenas ao schema de destino (escape os underscores no GRANT) e não pode delegar permissões.');
   }
 
   return { target: target.label, identity: sha256(`${target.label}|${current.serverName}`), hasControl: names.has(controlTable) };
@@ -183,14 +191,21 @@ export async function backup(target: Target, info: DatabaseInfo) {
   const escaped = JSON.stringify(target.password);
   try {
     await writeFile(optionFile, `[client]\npassword=${escaped}\n`, { flag: 'wx', mode: 0o600 });
+    const dialect = process.env.DEMO_SEED_DUMP_CLIENT || (target.primary ? 'mysql' : 'mariadb');
+    if (dialect !== 'mysql' && dialect !== 'mariadb') throw new SeedError('Use mysql ou mariadb em DEMO_SEED_DUMP_CLIENT.');
+    const mysql = dialect === 'mysql';
+    const dumpOptions = mysql
+      ? ['--no-tablespaces', '--set-gtid-purged=OFF', ...(target.local ? [] : ['--ssl-mode=VERIFY_IDENTITY'])]
+      : target.local ? [] : ['--ssl', '--ssl-verify-server-cert'];
     const args = [
       `--defaults-file=${optionFile}`, '--protocol=TCP', `--host=${target.host}`,
       `--port=${target.port}`, `--user=${target.user}`, '--single-transaction', '--skip-lock-tables',
       '--quick', '--hex-blob', '--default-character-set=utf8mb4', '--skip-add-drop-table',
-      ...(target.local ? [] : ['--ssl', '--ssl-verify-server-cert']),
+      ...dumpOptions,
+      ...(!target.local && process.env.DEMO_SEED_TLS_CA ? [`--ssl-ca=${process.env.DEMO_SEED_TLS_CA}`] : []),
       '--databases', target.database,
     ];
-    const child = spawn(process.env.DEMO_SEED_DUMP_BIN || 'mariadb-dump', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(process.env.DEMO_SEED_DUMP_BIN || (mysql ? 'mysqldump' : 'mariadb-dump'), args, { stdio: ['ignore', 'pipe', 'pipe'] });
     child.stderr.resume();
     const exit = new Promise<void>((done, fail) => {
       child.once('error', fail);
@@ -210,7 +225,7 @@ export async function backup(target: Target, info: DatabaseInfo) {
       child.kill();
       await rm(file, { force: true });
       await rm(root + '.json', { force: true });
-      throw new SeedError('Não foi possível gerar um dump consistente. Verifique o cliente MariaDB, o acesso e a integridade do destino.');
+      throw new SeedError('Não foi possível gerar um dump consistente. Verifique o cliente de backup, o acesso e a integridade do destino.');
     }
   } finally {
     await rm(options, { recursive: true, force: true });

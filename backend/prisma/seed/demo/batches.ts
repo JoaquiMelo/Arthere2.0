@@ -53,8 +53,8 @@ const compare = (a: string, b: string) => a.localeCompare(b, 'en');
 type Identified = { id?: string; filename?: string; eventoId?: string };
 
 async function snapshot(db: Tx | PrismaClient) {
-  const data = {
-    usuarios: await db.usuario.findMany({ select: { id: true, email: true, tipo: true, criadoEm: true } }),
+  return {
+    usuarios: await db.usuario.findMany({ select: { id: true, email: true, tipo: true, criadoEm: true, senha: true } }),
     agentes: await db.agenteCriativo.findMany(),
     contratantes: await db.contratante.findMany(),
     trabalhos: await db.portfolio.findMany(),
@@ -64,21 +64,85 @@ async function snapshot(db: Tx | PrismaClient) {
     solicitacoesEvento: await db.solicitacaoEvento.findMany(),
     candidaturasVaga: await db.candidatura.findMany(),
     avaliacoes: await db.avaliacao.findMany(),
-    imagens: await db.$queryRaw<{ filename: string; mime: string; sha256: string }[]>
-      `SELECT filename, mime, SHA2(conteudo, 256) AS sha256 FROM upload_imagem`,
-    conversas: await db.conversa.findMany({ select: { id: true } }),
-    mensagens: await db.mensagem.findMany({ select: { id: true } }),
-  };
-  const id = (row: Identified) => row.id ?? row.filename ?? row.eventoId!;
-  const sorted = Object.entries(data).map(([group, rows]) => [group, (rows as Identified[]).sort((a, b) => compare(id(a), id(b)))] as const);
-  return {
-    ids: Object.fromEntries(sorted.map(([group, rows]) => [group, rows.map(id)])),
-    digest: sha256(JSON.stringify(sorted)),
-    images: data.imagens,
+    imagens: await db.$queryRaw<{ filename: string; mime: string; sha256: string; criadoEm: Date }[]>
+      `SELECT filename, mime, SHA2(conteudo, 256) AS sha256, criadoEm FROM upload_imagem`,
+    conversas: await db.conversa.findMany(),
+    mensagens: await db.mensagem.findMany(),
   };
 }
 
-type Snapshot = Awaited<ReturnType<typeof snapshot>>;
+type Data = Awaited<ReturnType<typeof snapshot>>;
+type Row = Identified & Record<string, unknown>;
+type Groups = Record<string, Row[]>;
+const rowId = (row: Identified) => row.id ?? row.filename ?? row.eventoId!;
+
+function summarize(data: Groups) {
+  const sorted = Object.entries(data).map(([group, rows]) => [group, [...rows].sort((a, b) => compare(rowId(a), rowId(b)))] as const);
+  const digest = sha256(JSON.stringify(sorted));
+  return {
+    ids: Object.fromEntries(sorted.map(([group, rows]) => [group, rows.map(rowId)])),
+    digest,
+  };
+}
+
+function partition(data: Data, ids: Manifest['ids'], owned: boolean): Groups {
+  return Object.fromEntries(Object.entries(data).map(([group, rows]) => {
+    const known = new Set(ids[group] ?? []);
+    return [group, (rows as Row[]).filter((row) => known.has(rowId(row)) === owned)];
+  }));
+}
+
+function legacySummary(data: Groups) {
+  return summarize({
+    ...data,
+    usuarios: data.usuarios.map(({ senha: _, ...row }) => row),
+    imagens: data.imagens.map(({ criadoEm: _, ...row }) => row),
+    conversas: data.conversas.map(({ id }) => ({ id })),
+    mensagens: data.mensagens.map(({ id }) => ({ id })),
+  });
+}
+
+function checkPreserved(before: Groups, after: Groups) {
+  if (summarize(before).digest !== summarize(after).digest) {
+    throw new SeedError('Os registros preexistentes divergiram dentro da transação. Operação revertida.');
+  }
+}
+
+function primaryReferences(outside: Groups, ids: Manifest['ids']) {
+  const entityIds = new Set(Object.entries(ids).filter(([group]) => group !== 'imagens').flatMap(([, values]) => values).map((id) => id.toLowerCase()));
+  const filenames = new Set((ids.imagens ?? []).map((filename) => filename.toLowerCase()));
+  return Object.fromEntries(Object.entries(outside).map(([group, rows]) => [group, rows.filter((row) =>
+    Object.entries(row).some(([key, value]) => key.endsWith('Id') && typeof value === 'string' && entityIds.has(value.toLowerCase()))
+    || (JSON.stringify(row).toLowerCase().match(/[0-9a-f-]{36}\.png/g) ?? []).some((name) => filenames.has(name)),
+  ).length]));
+}
+
+function plannedIds(plan: Plan) {
+  const records = {
+    usuarios: plan.users, agentes: plan.agents, contratantes: plan.contractors,
+    trabalhos: plan.works, eventos: plan.events, albuns: plan.albums, vagas: plan.jobs,
+    solicitacoesEvento: plan.eventRequests, candidaturasVaga: plan.jobRequests, avaliacoes: plan.reviews,
+    imagens: plan.art, conversas: [], mensagens: [],
+  };
+  return Object.fromEntries(Object.entries(records).map(([group, rows]) =>
+    [group, (rows as Identified[]).map(rowId).sort(compare)]));
+}
+
+export async function assertAvailable(db: Tx | PrismaClient, plan: Plan, current?: Data) {
+  if (await db.usuario.count({ where: { OR: [
+    { id: { in: plan.users.map(({ id }) => id!) } },
+    { email: { in: plan.users.map(({ email }) => email) } },
+  ] } })) throw new SeedError('Há IDs ou e-mails do lote já utilizados por contas que não pertencem ao manifesto.');
+  const existing = current ?? await snapshot(db);
+  const known = Object.fromEntries(Object.entries(plannedIds(plan)).map(([group, ids]) => [group, ids.map((id) => id.toLowerCase())]));
+  const groups = Object.entries(existing).filter(([group, rows]) => {
+    const expected = new Set(known[group]);
+    return rows.some((row) => expected.has(rowId(row).toLowerCase()));
+  });
+  if (groups.length) throw new SeedError(`Há identificadores do lote em uso nas tabelas: ${groups.map(([group]) => group).join(', ')}.`);
+}
+
+type Snapshot = ReturnType<typeof summarize>;
 
 export async function assertEmpty(db: Tx | PrismaClient) {
   const counts = await Promise.all([
@@ -116,7 +180,7 @@ async function locked<T>(db: PrismaClient, operation: (tx: Tx) => Promise<T>) {
   }
 }
 
-export async function population(db: PrismaClient, plan: Plan, password: string, backupId: string) {
+export async function population(db: PrismaClient, plan: Plan, password: string, backupId: string, primary = false) {
   const counts = validatePlan(plan);
   const images = prepareImages(plan);
   const { works, events } = withImageCredits(plan, images.credits);
@@ -131,14 +195,17 @@ export async function population(db: PrismaClient, plan: Plan, password: string,
       if (JSON.stringify(active.config) !== JSON.stringify(plan.config)) {
         throw new SeedError('Já existe um lote ativo com outra configuração. A população não substitui registros.');
       }
-      const current = await snapshot(tx);
+      const data = await snapshot(tx);
+      const current = primary ? summarize(partition(data, active.ids, true)) : legacySummary(data);
       if (current.digest !== active.digest) throw new SeedError('O lote existe, mas sofreu alterações. Execute a validação para identificar divergências.');
       return { status: 'inalterado', manifest: active };
     }
     if ((await listBatches(tx)).some(({ batch }) => batch === plan.config.batch)) {
       throw new SeedError('Este identificador pertence a uma execução anterior. Escolha um novo lote.');
     }
-    await assertEmpty(tx);
+    const before = primary ? await snapshot(tx) : undefined;
+    if (before) await assertAvailable(tx, plan, before);
+    else await assertEmpty(tx);
     await tx.usuario.createMany({ data: plan.users.map((user) => ({ ...user, senha: interactive.has(user.email) ? sampleHash : lockedHash })) });
     await tx.agenteCriativo.createMany({ data: plan.agents });
     await tx.contratante.createMany({ data: plan.contractors });
@@ -153,18 +220,14 @@ export async function population(db: PrismaClient, plan: Plan, password: string,
     await tx.candidatura.createMany({ data: plan.jobRequests });
     await tx.avaliacao.createMany({ data: plan.reviews });
 
-    const current = await snapshot(tx);
-    const actualImages = new Map(current.images.map((image) => [image.filename, image]));
-    const expectedRows = {
-      usuarios: plan.users, agentes: plan.agents, contratantes: plan.contractors,
-      trabalhos: plan.works, eventos: plan.events, albuns: plan.albums, vagas: plan.jobs,
-      solicitacoesEvento: plan.eventRequests, candidaturasVaga: plan.jobRequests, avaliacoes: plan.reviews,
-      imagens: images.rows, conversas: [], mensagens: [],
-    };
-    for (const [group, rows] of Object.entries(expectedRows)) {
-      const ids = (rows as Identified[]).map((row) => row.id ?? row.filename ?? row.eventoId!).sort(compare);
-      if (JSON.stringify(ids) !== JSON.stringify(current.ids[group])) throw new SeedError(`IDs inesperados em ${group}.`);
+    const ids = plannedIds(plan);
+    const data = await snapshot(tx);
+    const current = primary ? summarize(partition(data, ids, true)) : legacySummary(data);
+    if (before) checkPreserved(before, partition(data, ids, false));
+    for (const [group, values] of Object.entries(ids)) {
+      if (JSON.stringify(values) !== JSON.stringify(current.ids[group])) throw new SeedError(`IDs inesperados em ${group}.`);
     }
+    const actualImages = new Map(data.imagens.map((image) => [image.filename, image]));
     if (!images.credits.every((credit) => actualImages.get(credit.filename)?.sha256 === credit.sha256
       && actualImages.get(credit.filename)?.mime === 'image/png')) throw new SeedError('Falha na verificação de imagens persistidas.');
     const manifest: Manifest = { version: 1, config: plan.config, accounts: plan.accounts, counts,
@@ -176,11 +239,12 @@ export async function population(db: PrismaClient, plan: Plan, password: string,
   });
 }
 
-export async function validation(db: PrismaClient, batch: string) {
+export async function validation(db: PrismaClient, batch: string, primary = false) {
   return db.$transaction(async (tx) => {
     const manifest = await activeBatch(tx, batch);
     if (!manifest) throw new SeedError('Lote ativo não encontrado.');
-    const current = await snapshot(tx);
+    const data = await snapshot(tx);
+    const current = primary ? summarize(partition(data, manifest.ids, true)) : legacySummary(data);
     return {
       batch, valid: current.digest === manifest.digest, expected: manifest.counts,
       counts: Object.fromEntries(Object.entries(current.ids).map(([key, ids]) => [key, ids.length])),
@@ -190,23 +254,30 @@ export async function validation(db: PrismaClient, batch: string) {
   }, { isolationLevel: 'RepeatableRead', timeout: 45_000 });
 }
 
-export async function cleanupPlan(db: Tx | PrismaClient, batch: string) {
+export async function cleanupPlan(db: Tx | PrismaClient, batch: string, primary = false) {
   const manifest = await activeBatch(db, batch);
   if (!manifest) throw new SeedError('Lote ativo não encontrado.');
-  const current = await snapshot(db);
+  const data = await snapshot(db);
+  const owned = partition(data, manifest.ids, true);
+  const current = primary ? summarize(owned) : legacySummary(data);
   const drift = differences(current, manifest);
   const eligible = Object.fromEntries(Object.entries(current.ids).map(([group, rows]) => {
     const owned = new Set(manifest.ids[group] ?? []);
     return [group, rows.filter((id) => owned.has(id))];
   }));
-  const blocked = Object.values(drift).some(({ outside }) => outside > 0);
-  return { batch, blocked, differences: drift, eligible };
+  const references = primary ? primaryReferences(partition(data, manifest.ids, false), manifest.ids) : {};
+  // Alterações no lote podem ter ligado registros fictícios a registros reais.
+  const changedBatch = primary && current.digest !== manifest.digest;
+  const blocked = changedBatch || Object.values(references).some(Boolean)
+    || (!primary && Object.values(drift).some(({ outside }) => outside > 0));
+  return { batch, blocked, changedBatch, references, differences: drift, eligible };
 }
 
-export async function cleanup(db: PrismaClient, batch: string, backupId: string) {
+export async function cleanup(db: PrismaClient, batch: string, backupId: string, primary = false) {
   return locked(db, async (tx) => {
-    const planned = await cleanupPlan(tx, batch);
-    if (planned.blocked) throw new SeedError('Há registros fora do manifesto. A limpeza foi interrompida para evitar efeitos em cascata.');
+    const planned = await cleanupPlan(tx, batch, primary);
+    if (planned.blocked) throw new SeedError('Há referências de registros fora do manifesto ou alterações no lote. Consulte a prévia de limpeza.');
+    const before = primary ? partition(await snapshot(tx), planned.eligible, false) : undefined;
     const id = (group: string) => ({ in: planned.eligible[group] });
     await tx.avaliacao.deleteMany({ where: { id: id('avaliacoes') } });
     await tx.candidatura.deleteMany({ where: { id: id('candidaturasVaga') } });
@@ -219,7 +290,8 @@ export async function cleanup(db: PrismaClient, batch: string, backupId: string)
     await tx.contratante.deleteMany({ where: { id: id('contratantes') } });
     await tx.usuario.deleteMany({ where: { id: id('usuarios') } });
     await tx.uploadImagem.deleteMany({ where: { filename: id('imagens') } });
-    await assertEmpty(tx);
+    if (before) checkPreserved(before, await snapshot(tx));
+    else await assertEmpty(tx);
     const manifest = await activeBatch(tx, batch);
     const removed = Object.fromEntries(Object.entries(planned.eligible).map(([group, ids]) => [group, ids.length]));
     const audit = { ...manifest, cleanup: { backupId, removed, at: new Date().toISOString() } };

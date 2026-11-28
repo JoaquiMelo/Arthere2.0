@@ -43,7 +43,7 @@ npm run start:dev
 
 ## Dados de demonstração
 
-Consulte [Arthere Intelligent Data Seed](../docs/DEMO_SEED.md) para prévia, backup, carga e limpeza em um schema dedicado.
+Consulte [Arthere Intelligent Data Seed](../docs/DEMO_SEED.md) para prévia, backup, carga e limpeza. O guia inclui o modo manual do banco principal.
 
 ## Testar a API
 

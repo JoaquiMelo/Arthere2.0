@@ -66,7 +66,7 @@ test('prévia offline sem credenciais nem conexão ao banco', () => {
 });
 
 test('bloqueia destinos de aplicação e opções de conexão ambíguas', () => {
-  assert.throws(() => databaseTarget('mysql://demo:senha@localhost/arthere'), /arthere_demo/);
+  assert.throws(() => databaseTarget('mysql://demo:senha@localhost/arthere'), /schema autorizado/);
   assert.throws(() => databaseTarget('mysql://demo:senha@localhost/arthere_demo_qa',
     'mysql://outra:senha@servidor/arthere_demo_qa'), /coincide/);
   assert.throws(() => databaseTarget('mysql://demo:senha@localhost/arthere_demo_qa?database=arthere'), /URL do banco/);
@@ -108,6 +108,47 @@ test('MariaDB isolado: rollback, concorrência, idempotência, proteção de ter
     assert.equal((await cleanup(db, batch, 'backup-de-teste')).removed.usuarios, 75);
     await assertEmpty(db);
     assert.equal((await listBatches(db)).find((row) => row.batch === batch)?.state, 'cleaned');
+  } finally {
+    await db.$disconnect();
+  }
+});
+
+test('db_arthere exige opt-in e o mesmo servidor da API', () => {
+  const url = 'mysql://demo:senha@localhost/db_arthere';
+  assert.throws(() => databaseTarget(url, url), /ALLOW_PRIMARY/);
+  assert.throws(() => databaseTarget(url, url.replace('localhost', 'outro'), true), /mesmo host/);
+  assert.equal(databaseTarget(url, url, true).primary, true);
+});
+
+test('modo compartilhado preserva contas reais e bloqueia referências externas', { skip: !testUrl }, async () => {
+  const target = databaseTarget(testUrl!);
+  assert.ok(target.local && /^arthere_demo_(qa|test)(_|$)/.test(target.database));
+  const db = connect(target);
+  const batch = `teste-principal-${randomBytes(4).toString('hex')}`;
+  const plan = makePlan({ ...config, batch });
+  const password = randomBytes(26).toString('hex');
+  try {
+    await inspect(db, target);
+    await assertEmpty(db);
+    await ensureLedger(db);
+    const real = await db.usuario.create({ data: {
+      id: 'real-seed-test', email: 'real@example.com', senha: 'hash-externo', tipo: 'AGENTE',
+    } });
+    const agent = await db.agenteCriativo.create({ data: { usuarioId: real.id, nome: 'Controle', especialidade: 'Design' } });
+    assert.equal((await population(db, plan, password, 'teste', true)).status, 'criado');
+    assert.equal((await population(db, plan, password, 'teste', true)).status, 'inalterado');
+    assert.equal((await validation(db, batch, true)).valid, true);
+    assert.equal((await cleanupPlan(db, batch, true)).blocked, false);
+    const link = await db.solicitacaoEvento.create({ data: { agenteId: agent.id, eventoId: plan.events[0].id! } });
+    assert.equal((await cleanupPlan(db, batch, true)).references.solicitacoesEvento, 1);
+    await assert.rejects(cleanup(db, batch, 'teste', true), /fora do manifesto/);
+    assert.ok(await db.solicitacaoEvento.findUnique({ where: { id: link.id } }));
+    await db.solicitacaoEvento.delete({ where: { id: link.id } });
+    assert.equal((await cleanup(db, batch, 'teste', true)).removed.usuarios, 75);
+    assert.deepEqual(await db.usuario.findUnique({ where: { id: real.id } }), real);
+    assert.deepEqual(await db.agenteCriativo.findUnique({ where: { id: agent.id } }), agent);
+    await db.usuario.delete({ where: { id: real.id } });
+    await assertEmpty(db);
   } finally {
     await db.$disconnect();
   }
