@@ -38,7 +38,7 @@ export async function stateDigest(db: Queryable) {
   })).sort()));
 }
 
-export function databaseTarget(value: string, other?: string, allowPrimary = false) {
+export function databaseTarget(value: string, other?: string, allowPrimary = false, allowExistingAccount = false) {
   const url = parseTarget(value);
   const { host, port, database } = url;
   const primary = database === 'db_arthere';
@@ -53,7 +53,10 @@ export function databaseTarget(value: string, other?: string, allowPrimary = fal
   if (!primary && application?.database.toLowerCase() === database) {
     throw new SeedError('O nome do banco-alvo coincide com DATABASE_URL. Separe os destinos antes de continuar.');
   }
-  return { ...url, primary, label: `${host}:${port}/${database}` };
+  if (allowExistingAccount && (!primary || application?.user !== url.user)) {
+    throw new SeedError('A autorização de conta compartilhada vale apenas para a conta da API no db_arthere.');
+  }
+  return { ...url, primary, allowExistingAccount, label: `${host}:${port}/${database}` };
 }
 
 function parseTarget(value: string, strict = true) {
@@ -128,7 +131,7 @@ export async function inspect(db: Queryable, target: Target) {
     throw new SeedError('O destino possui triggers, rotinas, eventos SQL ou referências entre bancos. A operação foi interrompida.');
   }
 
-  await assertScopedGrants(db, target.database);
+  await assertScopedGrants(db, target.database, target.allowExistingAccount);
 
   const hasState = names.has(stateTable);
   const hasStateRows = hasState && (await db.$queryRaw<unknown[]>`SELECT 1 FROM arthere_state LIMIT 1`).length > 0;
@@ -136,14 +139,30 @@ export async function inspect(db: Queryable, target: Target) {
     hasControl: names.has(controlTable), hasState, tables: [...names].sort(), hasStateRows };
 }
 
-async function assertScopedGrants(db: Queryable, database: string) {
+export function allowedSeedGrants(grants: string[], database: string, allowExistingAccount = false) {
+  if (!grants.length) return false;
+  const scopes = grants.map((grant) => grant.split(/\s+TO\s+/i)[0]);
+  const usage = (grant: string, index: number) => grant === 'GRANT USAGE ON *.*' &&
+    !/\bWITH GRANT OPTION\b/i.test(grants[index]);
+
+  if (allowExistingAccount && database === 'db_arthere') {
+    // Explicit opt-in for the observed application grants, never for global grants or roles.
+    const match = (grant: string) => /^GRANT [A-Z_, ]+ ON `(db\\?_arthere2?)`\.\*$/.exec(grant)?.[1].replace('\\', '');
+    return scopes.some((grant) => match(grant) === database)
+      && scopes.every((grant, index) => usage(grant, index) || Boolean(match(grant)));
+  }
+
+  const schemaGrant = ` ON \`${database.replaceAll('_', '\\_')}\`.*`;
+  return scopes.every((grant, index) => !/\bWITH GRANT OPTION\b/i.test(grants[index]) &&
+    (usage(grant, index) || (grant.startsWith('GRANT ') && grant.endsWith(schemaGrant))));
+}
+
+async function assertScopedGrants(db: Queryable, database: string, allowExistingAccount = false) {
   const grants = await db.$queryRaw<Record<string, unknown>[]>`SHOW GRANTS FOR CURRENT_USER()`;
-  const schemaGrant = ` ON \`${database.replaceAll('_', '\\_')}\`.* TO `;
-  if (!grants.length || grants.some((row) => {
-    const grant = String(Object.values(row)[0]);
-    return /WITH GRANT OPTION/i.test(grant) || (!/^GRANT USAGE ON \*\.\* TO /i.test(grant) && !grant.includes(schemaGrant));
-  })) {
-    throw new SeedError('O usuário do seed deve ter acesso apenas ao schema de destino (escape os underscores no GRANT) e não pode delegar permissões.');
+  if (!allowedSeedGrants(grants.map((row) => String(Object.values(row)[0])), database, allowExistingAccount)) {
+    throw new SeedError(allowExistingAccount
+      ? 'A conta compartilhada precisa ter acesso a db_arthere. São aceitos grants nesses schemas (db_arthere e db_arthere2) e USAGE global sem delegação.'
+      : 'O usuário do seed deve ter acesso apenas ao schema de destino (escape os underscores no GRANT) e não pode delegar permissões.');
   }
 }
 
@@ -255,7 +274,7 @@ export async function restore(url: string, confirm: string, id: string) {
   }
   const { file, receipt } = await loadBackup(id);
   await readArchive(file, receipt);
-  const target = { ...parsed, primary: false, label: `${parsed.host}:${parsed.port}/${parsed.database}` };
+  const target = { ...parsed, primary: false, allowExistingAccount: false, label: `${parsed.host}:${parsed.port}/${parsed.database}` };
   const connection = await createConnection(connectionOptions(target));
   try {
     await assertScopedGrants(reader(connection), target.database);

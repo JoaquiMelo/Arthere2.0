@@ -83,8 +83,13 @@ async function main() {
     options: {
       batch: { type: 'string' }, confirm: { type: 'string' }, backup: { type: 'string' },
       'full-manifest': { type: 'boolean' },
+      'allow-existing-account': { type: 'boolean' },
     },
   });
+
+  if (values['allow-existing-account'] && action !== 'populate-primary') {
+    throw new SeedError('--allow-existing-account é exclusivo de seed:subir.');
+  }
 
   if (action === 'restore') {
     const url = process.env.DEMO_SEED_RESTORE_DATABASE_URL;
@@ -104,7 +109,7 @@ async function main() {
     return;
   }
   if (!url) throw new SeedError('Defina DEMO_SEED_DATABASE_URL para o schema dedicado de demonstração.');
-  const target = databaseTarget(url, process.env.DATABASE_URL, allowPrimary);
+  const target = databaseTarget(url, process.env.DATABASE_URL, allowPrimary, values['allow-existing-account']);
   if (direct && !target.primary) throw new SeedError('seed:subir exige que a conexão aponte para db_arthere.');
   if (target.primary && config.batch !== 'baixada') throw new SeedError('Use o lote baixada no banco principal.');
   const writes = action === 'populate' || action === 'clean';

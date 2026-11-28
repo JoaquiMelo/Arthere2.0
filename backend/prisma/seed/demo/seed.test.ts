@@ -10,7 +10,7 @@ import { readArchive } from './archive';
 import { activeBatch, assertEmpty, cleanup, cleanupPlan, ensureLedger, listBatches, population, validation } from './batches';
 import { prepareImages, sha256, validPng } from './images';
 import { demo, makePlan } from './plan';
-import { connect, databaseTarget, inspect, stateDigest } from './safety';
+import { allowedSeedGrants, connect, databaseTarget, inspect, stateDigest } from './safety';
 import { validatePlan } from './validate';
 
 const config = { batch: 'teste-baixada', seed: 20261128, anchor: '2026-11-28' };
@@ -72,6 +72,26 @@ test('bloqueia destinos de aplicação e opções de conexão ambíguas', () => 
   assert.throws(() => databaseTarget('mysql://demo:senha@localhost/arthere_demo_qa',
     'mysql://outra:senha@servidor/arthere_demo_qa'), /coincide/);
   assert.throws(() => databaseTarget('mysql://demo:senha@localhost/arthere_demo_qa?database=arthere'), /URL do banco/);
+});
+
+test('conta da API exige opt-in e fica limitada ao perfil de grants autorizado', () => {
+  const api = 'mysql://app:senha@localhost/db_arthere';
+  assert.equal(databaseTarget(api, api, true, true).allowExistingAccount, true);
+  assert.throws(() => databaseTarget(api.replace('app:', 'outra:'), api, true, true), /conta da API/);
+  const usage = 'GRANT USAGE ON *.* TO conta';
+  const current = 'GRANT ALL PRIVILEGES ON `db_arthere`.* TO conta WITH GRANT OPTION';
+  const extra = 'GRANT ALL PRIVILEGES ON `db_arthere2`.* TO conta';
+  assert.equal(allowedSeedGrants([usage, current, extra], 'db_arthere'), false);
+  assert.equal(allowedSeedGrants([usage, current, extra], 'db_arthere', true), true);
+  assert.equal(allowedSeedGrants([usage, 'GRANT SELECT ON `db\\_arthere`.* TO conta'], 'db_arthere'), true);
+  assert.equal(allowedSeedGrants([usage, extra], 'db_arthere', true), false);
+  for (const unexpected of [
+    'GRANT SELECT ON *.* TO conta',
+    'GRANT papel TO conta',
+    'GRANT ALL PRIVILEGES ON `outro_banco`.* TO conta',
+    'GRANT ALL PRIVILEGES ON `db_arthere%`.* TO conta',
+    'GRANT USAGE ON *.* TO conta WITH GRANT OPTION',
+  ]) assert.equal(allowedSeedGrants([current, unexpected], 'db_arthere', true), false);
 });
 
 const testUrl = process.env.DEMO_SEED_TEST_DATABASE_URL;

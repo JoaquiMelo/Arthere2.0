@@ -10,6 +10,14 @@ Para carregar o lote `baixada` em um único passo, use o comando abaixo na pasta
 npm run seed:subir -- --confirm db_arthere
 ```
 
+Se a conta configurada em `DATABASE_URL` já tem acesso ao `db_arthere` e ao `db_arthere2`, deixe `DEMO_SEED_DATABASE_URL` vazio para usar essa conta e autorize o perfil compartilhado na execução:
+
+```powershell
+npm run seed:subir -- --confirm db_arthere --allow-existing-account
+```
+
+Esse opt-in vale apenas para a conta da API e o lote `baixada`. Aceita grants nos dois schemas conhecidos, inclusive delegação de permissões no nível do schema. Grants globais além de `USAGE`, papéis e outros schemas continuam bloqueados. A conta mantém seus privilégios no servidor. O seed seleciona apenas `db_arthere` e exige backup verificado antes da escrita. Os outros comandos continuam exigindo uma conta restrita.
+
 Antes da janela de manutenção, confirme com o DBA que o banco usa as migrations da versão atual, apenas tabelas InnoDB previstas do Arthere, incluindo a tabela operacional opcional `arthere_state`, e nenhuma referência entre schemas, trigger, rotina ou evento do MySQL. No grant do usuário do seed, escape o underscore de `db_arthere` para evitar um padrão de nomes. O backup conecta diretamente ao MySQL remoto pelo driver do backend, com verificação TLS. Caso o servidor use uma CA própria, informe o caminho de seu PEM em `DEMO_SEED_TLS_CA`. O fluxo no Windows usa Node.js 24 e npm.
 
 No arquivo **local e não versionado** `backend/.env`, mantenha `DATABASE_URL` com a conexão da API. Deixe `DEMO_SEED_DATABASE_URL` vazia para usar essa mesma conexão, ou informe uma credencial de manutenção para o mesmo destino. Use a codificação percentual de caracteres especiais nas URLs. Defina `DEMO_SEED_PASSWORD` com a senha aleatória das três contas e `DEMO_SEED_ARTIFACT_DIR` com um diretório absoluto privado fora do Git, com ACL restrita. Deixe `DEMO_SEED_ALLOW_WRITE=false` e `DEMO_SEED_ALLOW_PRIMARY_DATABASE=false` no arquivo. `DEMO_SEED_BATCH_ID=baixada` e `DEMO_SEED_RANDOM_SEED=20261128` fixam a configuração inicial. As variáveis ficam na sessão do PowerShell durante a operação, sem alterações nas configurações do Render.
