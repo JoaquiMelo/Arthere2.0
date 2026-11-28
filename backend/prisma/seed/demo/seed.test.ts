@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import { activeBatch, assertEmpty, cleanup, cleanupPlan, ensureLedger, listBatches, population, validation } from './batches';
 import { prepareImages, validPng } from './images';
 import { demo, makePlan } from './plan';
-import { connect, databaseTarget, inspect } from './safety';
+import { connect, databaseTarget, inspect, stateDigest } from './safety';
 import { validatePlan } from './validate';
 
 const config = { batch: 'teste-baixada', seed: 20261128, anchor: '2026-11-28' };
@@ -120,7 +120,7 @@ test('db_arthere exige opt-in e o mesmo servidor da API', () => {
   assert.equal(databaseTarget(url, url, true).primary, true);
 });
 
-test('modo compartilhado preserva contas reais e bloqueia referências externas', { skip: !testUrl }, async () => {
+test('modo compartilhado preserva contas reais e arthere_state e bloqueia referências externas', { skip: !testUrl }, async () => {
   const target = databaseTarget(testUrl!);
   assert.ok(target.local && /^arthere_demo_(qa|test)(_|$)/.test(target.database));
   const db = connect(target);
@@ -128,7 +128,14 @@ test('modo compartilhado preserva contas reais e bloqueia referências externas'
   const plan = makePlan({ ...config, batch });
   const password = randomBytes(26).toString('hex');
   try {
-    await inspect(db, target);
+    await db.$executeRaw`CREATE TABLE IF NOT EXISTS arthere_state
+      (id VARCHAR(40) PRIMARY KEY, counter BIGINT NOT NULL, payload JSON NOT NULL) ENGINE=InnoDB`;
+    await db.$executeRaw`INSERT INTO arthere_state (id, counter, payload) VALUES (${batch}, ${9007199254740993n}, '{"demo":false}')`;
+    const state = await stateDigest(db);
+    assert.ok(state);
+    const info = await inspect(db, target);
+    assert.equal(info.hasState, true);
+    assert.equal(info.hasStateRows, true);
     await assertEmpty(db);
     await ensureLedger(db);
     const real = await db.usuario.create({ data: {
@@ -137,6 +144,7 @@ test('modo compartilhado preserva contas reais e bloqueia referências externas'
     const agent = await db.agenteCriativo.create({ data: { usuarioId: real.id, nome: 'Controle', especialidade: 'Design' } });
     assert.equal((await population(db, plan, password, 'teste', true)).status, 'criado');
     assert.equal((await population(db, plan, password, 'teste', true)).status, 'inalterado');
+    assert.equal(await stateDigest(db), state);
     assert.equal((await validation(db, batch, true)).valid, true);
     assert.equal((await cleanupPlan(db, batch, true)).blocked, false);
     const link = await db.solicitacaoEvento.create({ data: { agenteId: agent.id, eventoId: plan.events[0].id! } });
@@ -147,6 +155,8 @@ test('modo compartilhado preserva contas reais e bloqueia referências externas'
     assert.equal((await cleanup(db, batch, 'teste', true)).removed.usuarios, 75);
     assert.deepEqual(await db.usuario.findUnique({ where: { id: real.id } }), real);
     assert.deepEqual(await db.agenteCriativo.findUnique({ where: { id: agent.id } }), agent);
+    assert.equal(await stateDigest(db), state);
+    await db.$executeRaw`DELETE FROM arthere_state WHERE id = ${batch}`;
     await db.usuario.delete({ where: { id: real.id } });
     await assertEmpty(db);
   } finally {

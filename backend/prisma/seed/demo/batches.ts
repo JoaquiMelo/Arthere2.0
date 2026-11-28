@@ -3,7 +3,7 @@ import { hash } from 'bcrypt';
 import type { Prisma, PrismaClient } from '../../../src/generated/prisma/client';
 import { prepareImages, sha256, withImageCredits, type Credit } from './images';
 import type { Plan, SeedConfig } from './plan';
-import { SeedError } from './safety';
+import { SeedError, stateDigest } from './safety';
 import { amount, validatePlan } from './validate';
 
 type Tx = Prisma.TransactionClient;
@@ -171,7 +171,12 @@ async function locked<T>(db: PrismaClient, operation: (tx: Tx) => Promise<T>) {
         const row = await tx.$queryRaw<{ batch: string }[]>
           `SELECT batch FROM arthere_demo_seed_batches WHERE batch = ${lockId} FOR UPDATE`;
         if (!row.length) throw new SeedError('Registro de bloqueio ausente.');
-        return operation(tx);
+        const stateBefore = await stateDigest(tx);
+        const result = await operation(tx);
+        if (await stateDigest(tx) !== stateBefore) {
+          throw new SeedError('Os registros de arthere_state divergiram. Operação revertida.');
+        }
+        return result;
       }, { isolationLevel: 'Serializable', timeout: 90_000, maxWait: 8_000 });
     } catch (error) {
       if (attempt >= 1 || (error as { code?: string })?.code !== 'P2034') throw error;

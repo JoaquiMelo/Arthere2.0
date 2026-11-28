@@ -4,7 +4,7 @@
 
 O modo compartilhado aceita somente o schema `db_arthere`. A URL do seed deve ter o mesmo host, porta e schema de `DATABASE_URL`. A credencial do seed deve ter acesso restrito ao schema. O seed usa `baixada` como identificador fixo no banco principal. Os registros continuarão visíveis e marcados como demonstrativos na API existente.
 
-Antes da janela de manutenção, confirme com o DBA que o banco usa as migrations da versão atual, apenas tabelas InnoDB do Arthere e nenhuma referência entre schemas, trigger, rotina ou evento do MySQL. No grant do usuário do seed, escape o underscore de `db_arthere` para evitar um padrão de nomes. O seed usa o `mysqldump` do MySQL para o banco principal e verifica o TLS de destinos remotos. Caso o servidor use uma CA própria, informe o caminho de seu PEM em `DEMO_SEED_TLS_CA`, tanto para o dump como para a conexão. Se `mysqldump.exe` estiver fora do PATH, informe seu caminho em `DEMO_SEED_DUMP_BIN`.
+Antes da janela de manutenção, confirme com o DBA que o banco usa as migrations da versão atual, apenas tabelas InnoDB previstas do Arthere, incluindo a tabela operacional opcional `arthere_state`, e nenhuma referência entre schemas, trigger, rotina ou evento do MySQL. No grant do usuário do seed, escape o underscore de `db_arthere` para evitar um padrão de nomes. O seed usa o `mysqldump` do MySQL para o banco principal e verifica o TLS de destinos remotos. Caso o servidor use uma CA própria, informe o caminho de seu PEM em `DEMO_SEED_TLS_CA`, tanto para o dump como para a conexão. Se `mysqldump.exe` estiver fora do PATH, informe seu caminho em `DEMO_SEED_DUMP_BIN`.
 
 No arquivo **local e não versionado** `backend/.env`, configure `DATABASE_URL` com a referência da API e `DEMO_SEED_DATABASE_URL` com a credencial de manutenção. Use a codificação percentual de caracteres especiais nas URLs. Defina `DEMO_SEED_PASSWORD` com a senha aleatória das três contas e `DEMO_SEED_ARTIFACT_DIR` com um diretório absoluto privado fora do Git, com ACL restrita. Deixe `DEMO_SEED_ALLOW_WRITE=false` e `DEMO_SEED_ALLOW_PRIMARY_DATABASE=false` no arquivo. `DEMO_SEED_BATCH_ID=baixada` e `DEMO_SEED_RANDOM_SEED=20261128` fixam a configuração inicial. As variáveis ficam na sessão do PowerShell durante a operação, sem alterações nas configurações do Render.
 
@@ -21,7 +21,7 @@ npm run seed:demo:preview
 if ($LASTEXITCODE -ne 0) { throw 'Resolva os conflitos da prévia.' }
 ```
 
-Suspenda as escritas da API durante o backup e a carga. Rode os passos seguintes após sua aprovação manual. O backup é verificado pelo comando de backup e novamente pelo comando de carga. A carga compara os dados preexistentes antes e depois, incluindo hashes de senha e mídia, dentro da transação. A saída inclui somente o resultado da verificação, sem valores reais.
+Suspenda as escritas da API durante o backup e a carga. Rode os passos seguintes após sua aprovação manual. O backup é verificado pelo comando de backup e novamente pelo comando de carga. Se `arthere_state` existir, a verificação exige sua definição no dump e, se houver registros, os comandos de inserção. A carga e a limpeza conferem o conteúdo de `arthere_state` antes e depois, na mesma transação. A carga compara os dados preexistentes antes e depois, incluindo hashes de senha e mídia, dentro da transação. A saída inclui somente o resultado da verificação, sem valores reais.
 
 ```powershell
 $backupJson = npm run --silent seed:demo:backup

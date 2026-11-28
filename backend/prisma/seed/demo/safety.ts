@@ -17,8 +17,25 @@ const applicationTables = [
   'usuario', 'agente_criativo', 'contratante', 'portfolio', 'evento', 'evento_album',
   'projeto', 'candidatura', 'avaliacao', 'solicitacao_evento', 'upload_imagem', 'conversa', 'mensagem',
 ];
-const expectedTables = new Set([...applicationTables, '_prisma_migrations', controlTable]);
+const stateTable = 'arthere_state';
+const expectedTables = new Set([...applicationTables, '_prisma_migrations', controlTable, stateTable]);
 type Queryable = Pick<Prisma.TransactionClient, '$queryRaw' | '$executeRaw'>;
+
+export async function stateDigest(db: Queryable) {
+  const exists = await db.$queryRaw<unknown[]>`
+    SELECT 1 FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ${stateTable}`;
+  if (!exists.length) return null;
+  // The operational table has no Prisma model. Fingerprint every column and row.
+  const rows = await db.$queryRaw<Record<string, unknown>[]>`SELECT * FROM arthere_state`;
+  return sha256(JSON.stringify(rows.map((row) => JSON.stringify(row, (_, value) => {
+    if (typeof value === 'bigint') return { bigint: value.toString() };
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      return Object.fromEntries(Object.keys(value).sort().map((key) => [key, value[key]]));
+    }
+    return value;
+  })).sort()));
+}
 
 export function databaseTarget(value: string, other?: string, allowPrimary = false) {
   const url = parseTarget(value);
@@ -110,7 +127,10 @@ export async function inspect(db: Queryable, target: Target) {
     throw new SeedError('O usuário do seed deve ter acesso apenas ao schema de destino (escape os underscores no GRANT) e não pode delegar permissões.');
   }
 
-  return { target: target.label, identity: sha256(`${target.label}|${current.serverName}`), hasControl: names.has(controlTable) };
+  const hasState = names.has(stateTable);
+  const hasStateRows = hasState && (await db.$queryRaw<unknown[]>`SELECT 1 FROM arthere_state LIMIT 1`).length > 0;
+  return { target: target.label, identity: sha256(`${target.label}|${current.serverName}`),
+    hasControl: names.has(controlTable), hasState, hasStateRows };
 }
 
 export type DatabaseInfo = Awaited<ReturnType<typeof inspect>>;
@@ -141,18 +161,26 @@ async function hashFile(path: string) {
   return hash.digest('hex');
 }
 
-async function checkDump(path: string, database: string) {
+async function checkDump(path: string, database: string, info: DatabaseInfo) {
   let header = '';
   let tail = '';
+  let stateDefinition = false;
+  let stateRows = false;
   await pipeline(createReadStream(path), createGunzip(), async (stream) => {
     for await (const block of stream) {
       const text = block.toString('utf8');
       if (header.length < 32_768) header = (header + text).slice(0, 32_768);
-      tail = (tail + text).slice(-2_048);
+      const window = tail + text;
+      stateDefinition ||= /(?:^|\n)CREATE TABLE `arthere_state`/.test(window);
+      stateRows ||= /(?:^|\n)INSERT INTO `arthere_state`/.test(window);
+      tail = window.slice(-2_048);
     }
   });
   if (!header.includes(`-- Current Database: \`${database}\``) || !tail.includes('-- Dump completed on ')) {
     throw new SeedError('O dump não contém o cabeçalho do destino ou a marca de conclusão.');
+  }
+  if ((info.hasState && !stateDefinition) || (info.hasStateRows && !stateRows)) {
+    throw new SeedError('O dump não contém a tabela arthere_state ou seus registros.');
   }
 }
 
@@ -174,7 +202,7 @@ export async function verifyBackup(target: Target, info: DatabaseInfo, id: strin
       || await hashFile(file) !== receipt.sha256) {
       throw new Error();
     }
-    await checkDump(file, target.database);
+    await checkDump(file, target.database, info);
     return receipt;
   } catch {
     throw new SeedError('Backup ausente, vencido, íntegro apenas parcialmente ou de outro destino. Gere um novo backup verificado.');
@@ -214,7 +242,7 @@ export async function backup(target: Target, info: DatabaseInfo) {
     const file = root + '.sql.gz';
     try {
       await Promise.all([exit, pipeline(child.stdout, createGzip(), createWriteStream(file, { flags: 'wx', mode: 0o600 }))]);
-      await checkDump(file, target.database);
+      await checkDump(file, target.database, info);
       const receipt: Backup = {
         id, identity: info.identity, target: info.target, createdAt: started.toISOString(),
         sha256: await hashFile(file), bytes: (await stat(file)).size,
