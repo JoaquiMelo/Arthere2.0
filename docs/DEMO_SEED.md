@@ -4,6 +4,12 @@
 
 O modo compartilhado aceita somente o schema `db_arthere`. A URL do seed deve ter o mesmo host, porta e schema de `DATABASE_URL`. A credencial do seed deve ter acesso restrito ao schema. O seed usa `baixada` como identificador fixo no banco principal. Os registros continuarão visíveis e marcados como demonstrativos na API existente.
 
+Para carregar o lote `baixada` em um único passo, use o comando abaixo na pasta `backend`, durante a janela de manutenção com as escritas da API suspensas. Configure uma vez `DEMO_SEED_PASSWORD` e `DEMO_SEED_ARTIFACT_DIR` no `.env`. A confirmação no comando vale como autorização para esse destino e esse lote. O comando confere a conexão e os conflitos, gera e verifica o backup automaticamente e só então grava o lote. Se o lote íntegro já existir, retorna `inalterado`. Os comandos separados seguem disponíveis para quem prefere aprovar o backup em outra etapa.
+
+```powershell
+npm run seed:subir -- --confirm db_arthere
+```
+
 Antes da janela de manutenção, confirme com o DBA que o banco usa as migrations da versão atual, apenas tabelas InnoDB previstas do Arthere, incluindo a tabela operacional opcional `arthere_state`, e nenhuma referência entre schemas, trigger, rotina ou evento do MySQL. No grant do usuário do seed, escape o underscore de `db_arthere` para evitar um padrão de nomes. O backup conecta diretamente ao MySQL remoto pelo driver do backend, com verificação TLS. Caso o servidor use uma CA própria, informe o caminho de seu PEM em `DEMO_SEED_TLS_CA`. O fluxo no Windows usa Node.js 24 e npm.
 
 No arquivo **local e não versionado** `backend/.env`, mantenha `DATABASE_URL` com a conexão da API. Deixe `DEMO_SEED_DATABASE_URL` vazia para usar essa mesma conexão, ou informe uma credencial de manutenção para o mesmo destino. Use a codificação percentual de caracteres especiais nas URLs. Defina `DEMO_SEED_PASSWORD` com a senha aleatória das três contas e `DEMO_SEED_ARTIFACT_DIR` com um diretório absoluto privado fora do Git, com ACL restrita. Deixe `DEMO_SEED_ALLOW_WRITE=false` e `DEMO_SEED_ALLOW_PRIMARY_DATABASE=false` no arquivo. `DEMO_SEED_BATCH_ID=baixada` e `DEMO_SEED_RANDOM_SEED=20261128` fixam a configuração inicial. As variáveis ficam na sessão do PowerShell durante a operação, sem alterações nas configurações do Render.

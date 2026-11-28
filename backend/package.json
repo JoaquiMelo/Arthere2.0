@@ -12,6 +12,7 @@
     "prisma:validate":"prisma validate",
     "prisma:studio":"prisma studio",
     "seed:demo:preview":"ts-node prisma/seed/demo/index.ts preview",
+    "seed:subir":"ts-node prisma/seed/demo/index.ts populate-primary",
     "seed:demo":"ts-node prisma/seed/demo/index.ts populate",
     "seed:demo:validate":"ts-node prisma/seed/demo/index.ts validate",
     "seed:demo:clean:preview":"ts-node prisma/seed/demo/index.ts clean-preview",

@@ -4,10 +4,10 @@ import { activeBatch, assertAvailable, assertEmpty, cleanup, cleanupPlan, ensure
 import { cities, specialties } from './catalog';
 import { prepareImages } from './images';
 import { makePlan, todayInBrazil, type SeedConfig } from './plan';
-import { backup, connect, databaseTarget, inspect, restore, SeedError, verifyBackup } from './safety';
+import { backup, connect, databaseTarget, inspect, restore, SeedError, verifyBackup, type DatabaseInfo } from './safety';
 import { validatePlan } from './validate';
 
-const commands = ['preview', 'populate', 'validate', 'clean-preview', 'clean', 'report', 'backup', 'restore'];
+const commands = ['preview', 'populate', 'validate', 'clean-preview', 'clean', 'report', 'backup', 'restore', 'populate-primary'];
 const log = (data: unknown) => console.log(JSON.stringify(data, null, 2));
 
 function settings(batchOption?: string) {
@@ -52,6 +52,28 @@ function passwordForSamples() {
   return password;
 }
 
+async function populationBlockers(db: ReturnType<typeof connect>, info: DatabaseInfo, config: SeedConfig,
+  current: Awaited<ReturnType<typeof activeBatch>>, primary: boolean) {
+  const blockers: string[] = [];
+  if (current) {
+    if (JSON.stringify(current.config) !== JSON.stringify(config)) blockers.push('Já existe um lote ativo com outra configuração.');
+    const check = await validation(db, current.config.batch, primary);
+    if (!check.valid) blockers.push('O lote ativo sofreu alterações ou recebeu registros externos.');
+  } else {
+    try {
+      if (primary) await assertAvailable(db, makePlan(config));
+      else await assertEmpty(db);
+    } catch (error) {
+      if (!(error instanceof SeedError)) throw error;
+      blockers.push(error.message);
+    }
+  }
+  if (info.hasControl && (await listBatches(db)).some((row) => row.batch === config.batch && row.state === 'cleaned')) {
+    blockers.push('O identificador do lote já foi usado em uma execução removida.');
+  }
+  return blockers;
+}
+
 async function main() {
   loadEnvironment({ quiet: true });
   const action = process.argv[2];
@@ -71,7 +93,11 @@ async function main() {
     return;
   }
   const { config, requestedAnchor } = settings(values.batch);
-  const allowPrimary = process.env.DEMO_SEED_ALLOW_PRIMARY_DATABASE === 'true';
+  const direct = action === 'populate-primary';
+  if (direct && (values.confirm !== 'db_arthere' || values.backup || config.batch !== 'baixada')) {
+    throw new SeedError('Use npm run seed:subir -- --confirm db_arthere para carregar apenas o lote baixada.');
+  }
+  const allowPrimary = direct || process.env.DEMO_SEED_ALLOW_PRIMARY_DATABASE === 'true';
   const url = process.env.DEMO_SEED_DATABASE_URL || (allowPrimary ? process.env.DATABASE_URL : undefined);
   if (!url && action === 'preview') {
     log({ destino: 'não configurado', modo: 'prévia offline', conflitos: 'verificação local do plano; falta consultar o destino', ...planReport(config) });
@@ -79,6 +105,7 @@ async function main() {
   }
   if (!url) throw new SeedError('Defina DEMO_SEED_DATABASE_URL para o schema dedicado de demonstração.');
   const target = databaseTarget(url, process.env.DATABASE_URL, allowPrimary);
+  if (direct && !target.primary) throw new SeedError('seed:subir exige que a conexão aponte para db_arthere.');
   if (target.primary && config.batch !== 'baixada') throw new SeedError('Use o lote baixada no banco principal.');
   const writes = action === 'populate' || action === 'clean';
   if (writes && (process.env.DEMO_SEED_ALLOW_WRITE !== 'true' || values.confirm !== target.database || !values.backup)) {
@@ -87,7 +114,7 @@ async function main() {
   if ((action === 'clean' || action === 'clean-preview') && !values.batch) {
     throw new SeedError('Identifique explicitamente o lote a limpar com --batch.');
   }
-  const password = action === 'populate' ? passwordForSamples() : undefined;
+  const password = action === 'populate' || direct ? passwordForSamples() : undefined;
   const db = connect(target);
   try {
     const info = await inspect(db, target);
@@ -99,37 +126,38 @@ async function main() {
         log({ status: 'backup verificado', ...await backup(target, info) });
         break;
       case 'preview': {
-        const blockers: string[] = [];
-        if (current) {
-          if (JSON.stringify(current.config) !== JSON.stringify(config)) blockers.push('Já existe um lote ativo com outra configuração.');
-          const check = await validation(db, current.config.batch, target.primary);
-          if (!check.valid) blockers.push('O lote ativo sofreu alterações ou recebeu registros externos.');
-        } else {
-          try {
-            if (target.primary) await assertAvailable(db, makePlan(config));
-            else await assertEmpty(db);
-          } catch (error) {
-            if (!(error instanceof SeedError)) throw error;
-            blockers.push(error.message);
-          }
-        }
-        if (info.hasControl && (await listBatches(db)).some((row) => row.batch === config.batch && row.state === 'cleaned')) {
-          blockers.push('O identificador do lote já foi usado em uma execução removida.');
-        }
+        const blockers = await populationBlockers(db, info, config, current, target.primary);
         log({ destino: info.target, modo: 'somente leitura', migrations: 'compatíveis', conflitos: blockers,
           ...planReport(config) });
         if (blockers.length) process.exitCode = 1;
         break;
       }
+      case 'populate-primary':
       case 'populate': {
-        await verifyBackup(target, info, values.backup!);
+        const plan = makePlan(config);
+        let backupId = values.backup;
+        if (direct) {
+          const blockers = await populationBlockers(db, info, config, current, true);
+          if (blockers.length) throw new SeedError(blockers.join(' '));
+          if (current) {
+            log({ destino: info.target, status: 'inalterado', lote: current.config, quantidades: current.counts,
+              contasDeAcesso: current.accounts, backup: current.backupId });
+            break;
+          }
+          validatePlan(plan);
+          console.error(JSON.stringify({ fase: 'gerando backup', destino: info.target, lote: config.batch }));
+          backupId = (await backup(target, info)).id;
+          console.error(JSON.stringify({ fase: 'backup verificado', backup: backupId }));
+        } else {
+          await verifyBackup(target, info, backupId!);
+        }
         if (!info.hasControl) {
-          if (target.primary) await assertAvailable(db, makePlan(config));
+          if (target.primary) await assertAvailable(db, plan);
           else await assertEmpty(db);
           await ensureLedger(db);
         }
         console.error(JSON.stringify({ fase: 'preparando lote', destino: info.target, lote: config.batch }));
-        const { status, manifest } = await population(db, makePlan(config), password!, values.backup!, target.primary);
+        const { status, manifest } = await population(db, plan, password!, backupId!, target.primary);
         log({ destino: info.target, status, lote: manifest.config, quantidades: manifest.counts,
           contasDeAcesso: manifest.accounts, backup: manifest.backupId });
         break;
