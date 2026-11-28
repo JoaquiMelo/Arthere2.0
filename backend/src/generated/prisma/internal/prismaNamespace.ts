@@ -1769,14 +1769,14 @@ export type EnumStatusCandidaturaFieldRefInput<$PrismaModel> = FieldRefInputType
  * Reference to a field of type 'Json'
  */
 export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
-
+    
 
 
 /**
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
-
+    
 
 
 /**
@@ -1790,7 +1790,7 @@ export type EnumStatusSolicitacaoEventoFieldRefInput<$PrismaModel> = FieldRefInp
  * Reference to a field of type 'Bytes'
  */
 export type BytesFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Bytes'>
-
+    
 
 /**
  * Batch Payload for updateMany & deleteMany & createMany

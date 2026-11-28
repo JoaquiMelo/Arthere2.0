@@ -212,13 +212,13 @@ export type EventoAggregateArgs<ExtArgs extends runtime.Types.Extensions.Interna
   _avg?: EventoAvgAggregateInputType
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-   *
+   * 
    * Select which fields to sum
   **/
   _sum?: EventoSumAggregateInputType
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-   *
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: EventoMinAggregateInputType
