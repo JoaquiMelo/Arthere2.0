@@ -18,7 +18,7 @@
 | 4.2. Consistência visual e modo escuro | Aprovada para prosseguir. Testes em aparelho pendentes. |
 | 4.3. Microinterações e acessibilidade | Implementada e verificada em desenvolvimento. Testes em aparelho pendentes. |
 | 4.4. Chat e avaliações | Aguardando aprovação da 4.3. |
-| 4.5. Notificações internas e avaliação de push | Planejada. |
+| 4.5. Arthere Intelligent Data Seed | Implementação e prévia em ambiente isolado. Carga remota depende de aprovação. |
 | 5.1 a 5.3. Segurança, desempenho e testes | Planejadas. |
 | 6. Entrega e TCC | Planejada. Considerar Windows e iPhone 11 na estratégia de distribuição. |
 

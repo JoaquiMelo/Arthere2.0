@@ -1,0 +1,79 @@
+[
+  {
+    "category": "Fotografia",
+    "kind": "work",
+    "file": "costa.png",
+    "author": "Nane Caldas",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:PE_de_Ilhabela_-_Nane_Caldas(003).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/a/ab/PE_de_Ilhabela_-_Nane_Caldas%28003%29.jpg",
+    "sha256": "4a11679c7f34566a147470e3845195c5335eb41fbe2492b18a5f1ef6296e19f3"
+  },
+  {
+    "category": "Audiovisual",
+    "kind": "work",
+    "file": "documentario.png",
+    "author": "No attribution",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Television_documentary_recording_example.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/e/e9/Television_documentary_recording_example.jpg",
+    "sha256": "0a40ddfc58857a6d9806d302c4a84700359efedae320b74a60f944515fc01504"
+  },
+  {
+    "category": "Música",
+    "kind": "work",
+    "file": "instrumentos.png",
+    "author": "Bengt Nyman",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Instruments_on_stage.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Instruments_on_stage.jpg",
+    "sha256": "d4b32ff27589f14b2274bb0cb413d6daa5e632d37e044acf399d2915defebfe2"
+  },
+  {
+    "category": "Artes visuais",
+    "kind": "work",
+    "file": "pintura.png",
+    "author": "Fons Heijnsbroek",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Abstract_modern_painting_art_on_canvas_with_oil_paint_-_title,_%27no._5.080%27_-_painted_on_canvas_in_1998_by_artist_Fons_Heijnsbroek_-_free_download_art_image_in_high_resolution.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Abstract_modern_painting_art_on_canvas_with_oil_paint_-_title%2C_%27no._5.080%27_-_painted_on_canvas_in_1998_by_artist_Fons_Heijnsbroek_-_free_download_art_image_in_high_resolution.jpg",
+    "sha256": "b751b4c380fa216d20bf41ff86d4bf17aff8c9ecd1ea341829fa35ef6fdb075f"
+  },
+  {
+    "category": "Música",
+    "kind": "event",
+    "file": "palco.png",
+    "author": "Vyacheslav Argenberg",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pattaya_Zoom_Music_Festival,_Main_stage_in_lights.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Pattaya_Zoom_Music_Festival%2C_Main_stage_in_lights.jpg",
+    "sha256": "7503d2fbe0f6e7d925547d2cc30fda847f20de762e9fcba22869c6c122c8db90"
+  },
+  {
+    "category": "Artesanato",
+    "kind": "work",
+    "file": "ceramica.png",
+    "author": "Sailko",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Viennese_art_ceramic_workshop,_lampada,_1910_ca.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Viennese_art_ceramic_workshop%2C_lampada%2C_1910_ca.jpg",
+    "sha256": "da049961ab76654517ce2a3a6bed64733b955b6e1a3a64407fe78a56fc35e7db"
+  },
+  {
+    "category": "Moda",
+    "kind": "work",
+    "file": "vestido.png",
+    "author": "CC0 image from Smithsonian National American History Museum",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Feedsack_dress_by_Mrs._Dorothy_Overall_(NMAH-JN2020-00083-000001).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/0/01/Feedsack_dress_by_Mrs._Dorothy_Overall_%28NMAH-JN2020-00083-000001%29.jpg",
+    "sha256": "43137ffcded69d655ee0af6115adb86f24a2f5ffc572d8eb47e03d6e5936b270"
+  }
+]

@@ -41,6 +41,10 @@ npm run start:dev
 - 20261001150000_event_participation_requests: cria solicitações de participação em eventos.
 - 20261001153000_chat_persistence: cria conversas e mensagens.\n- 20261116090000_add_image_storage_fields: adiciona URLs de banner para perfis e imagem para eventos.
 
+## Dados de demonstração
+
+Consulte [Arthere Intelligent Data Seed](../docs/DEMO_SEED.md) para prévia, backup, carga e limpeza em um schema dedicado.
+
 ## Testar a API
 
 Com o servidor iniciado, a API fica disponível na porta definida pela variável `PORT`. Na configuração padrão do projeto, utilize:
